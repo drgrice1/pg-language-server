@@ -1,0 +1,411 @@
+{
+    "name": "pg-language-server",
+    "displayName": "PG Lanbuage Server",
+    "description": "Code navigation, autocompletion, syntax checking, and linting for PG",
+    "author": "drgrice1",
+    "license": "MIT",
+    "version": "0.0.1",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/drgrice1/pg-language-server"
+    },
+    "publisher": "drgrice1",
+    "categories": [],
+    "keywords": [
+		"pg",
+		"perl",
+		"lsp",
+		"languageserver"
+	],
+    "engines": {
+        "vscode": "^1.43.0",
+		"coc.nvim": "^0.0.82"
+    },
+    "activationEvents": [
+        "onLanguage:pg"
+    ],
+    "main": "./dist/server.js",
+    "browser": "./client/dist/browserClientMain",
+    "contributes": {
+        "configuration": {
+            "type": "object",
+            "title": "Perl Navigator",
+            "properties": {
+                "perlnavigator.perlPath": {
+                    "scope": "resource",
+                    "type": "string",
+                    "default": "perl",
+                    "description": "Full path to the perl executable (no aliases, .bat files or ~/)"
+                },
+                "perlnavigator.perlParams": {
+                    "scope": "resource",
+                    "type": "array",
+                    "default": [],
+                    "description": "Pass miscellaneous command line arguments to pass to the perl executable"
+                },
+                "perlnavigator.perlEnv": {
+                    "scope": "resource",
+                    "type": "object",
+                    "default": {},
+                    "description": "Pass environment variables to the perl executable. Skipped if undefined."
+                },
+                "perlnavigator.perlEnvAdd": {
+                    "scope": "resource",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Add environment variables to current environment, or totally replace (perlEnv related)."
+                },
+                "perlnavigator.enableWarnings": {
+                    "scope": "resource",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable warnings using -Mwarnings command switch"
+                },
+                "perlnavigator.perlimportsLintEnabled": {
+                    "scope": "resource",
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Enable perlimports as a linter."
+                },
+                "perlnavigator.perlimportsTidyEnabled": {
+                    "scope": "resource",
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Enable perlimports as a tidier."
+                },
+                "perlnavigator.perlimportsProfile": {
+                    "scope": "resource",
+                    "type": "string",
+                    "default": "",
+                    "description": "Path to perlimports.toml (no aliases, .bat files or ~/)"
+                },
+                "perlnavigator.perltidyProfile": {
+                    "scope": "resource",
+                    "type": "string",
+                    "default": "",
+                    "description": "Path to perl tidy profile (no aliases, .bat files or ~/)"
+                },
+                "perlnavigator.perltidyEnabled": {
+                    "scope": "resource",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable perl tidy."
+                },
+                "perlnavigator.perlcriticProfile": {
+                    "scope": "resource",
+                    "type": "string",
+                    "default": "",
+                    "description": "Path to perl critic profile. Otherwise perlcritic itself will default to ~/.perlcriticrc. (no aliases, .bat files or ~/)"
+                },
+                "perlnavigator.perlcriticEnabled": {
+                    "scope": "resource",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable perl critic."
+                },
+                "perlnavigator.perlcriticSeverity": {
+                    "scope": "resource",
+                    "type": "number",
+                    "description": "Override severity level for perl critic (normally in profile)"
+                },
+                "perlnavigator.perlcriticTheme": {
+                    "scope": "resource",
+                    "type": "string",
+                    "description": "Override theme for perl critic (normally in profile)"
+                },
+                "perlnavigator.perlcriticExclude": {
+                    "scope": "resource",
+                    "type": "string",
+                    "description": "Regex pattern with policies to exclude for perl critic (normally in profile)"
+                },
+                "perlnavigator.perlcriticInclude": {
+                    "scope": "resource",
+                    "type": "string",
+                    "description": "Regex pattern with policies to include for perl critic (normally in profile)"
+                },
+                "perlnavigator.perlCompileEnabled": {
+                    "scope": "resource",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable running perl -c on your code"
+                },
+                "perlnavigator.severity5": {
+                    "scope": "resource",
+                    "type": "string",
+                    "enum": [
+                        "error",
+                        "warning",
+                        "info",
+                        "hint",
+                        "none"
+                    ],
+                    "default": "warning",
+                    "description": "Editor Diagnostic severity level for Critic severity 5"
+                },
+                "perlnavigator.severity4": {
+                    "scope": "resource",
+                    "type": "string",
+                    "enum": [
+                        "error",
+                        "warning",
+                        "info",
+                        "hint",
+                        "none"
+                    ],
+                    "default": "info",
+                    "description": "Editor Diagnostic severity level for Critic severity 4"
+                },
+                "perlnavigator.severity3": {
+                    "scope": "resource",
+                    "type": "string",
+                    "enum": [
+                        "error",
+                        "warning",
+                        "info",
+                        "hint",
+                        "none"
+                    ],
+                    "default": "hint",
+                    "description": "Editor Diagnostic severity level for Critic severity 3"
+                },
+                "perlnavigator.severity2": {
+                    "scope": "resource",
+                    "type": "string",
+                    "enum": [
+                        "error",
+                        "warning",
+                        "info",
+                        "hint",
+                        "none"
+                    ],
+                    "default": "hint",
+                    "description": "Editor Diagnostic severity level for Critic severity 2"
+                },
+                "perlnavigator.severity1": {
+                    "scope": "resource",
+                    "type": "string",
+                    "enum": [
+                        "error",
+                        "warning",
+                        "info",
+                        "hint",
+                        "none"
+                    ],
+                    "default": "hint",
+                    "description": "Editor Diagnostic severity level for Critic severity 1"
+                },
+                "perlnavigator.includePaths": {
+                    "scope": "resource",
+                    "type": "array",
+                    "default": [],
+                    "description": "Array of paths added to @INC. You can use $workspaceFolder as a placeholder."
+                },
+                "perlnavigator.includeLib": {
+                    "scope": "resource",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Boolean to indicate if $project/lib should be added to the path by default"
+                },
+                "perlnavigator.logging": {
+                    "scope": "resource",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Log to stdout from the navigator. Viewable in the Perl Navigator LSP log"
+                },
+                "perlnavigator.trace.server": {
+                    "scope": "window",
+                    "type": "string",
+                    "enum": [
+                        "off",
+                        "messages",
+                        "verbose"
+                    ],
+                    "default": "messages",
+                    "description": "Traces the communication between VS Code and the language server."
+                }
+            }
+        },
+        "grammars": [
+            {
+                "language": "perl",
+                "scopeName": "source.perl",
+                "path": "./server/perl.tmLanguage.json",
+                "unbalancedBracketScopes": [
+                    "variable.other.predefined.perl"
+                ]
+            },
+            {
+                "injectTo": [
+                    "source.perl"
+                ],
+                "scopeName": "source.perl.frameworks",
+                "path": "./syntaxes/perl-scopes.json"
+            },
+            {
+                "injectTo": [
+                    "source.perl"
+                ],
+                "scopeName": "source.perl.package.moose",
+                "path": "./syntaxes/moose.json"
+            },
+            {
+                "injectTo": [
+                    "source.perl"
+                ],
+                "scopeName": "source.perl.package.dataclass",
+                "path": "./syntaxes/dataclass.json"
+            },
+            {
+                "injectTo": [
+                    "source.perl"
+                ],
+                "scopeName": "source.perl.package.objectpad",
+                "path": "./syntaxes/object-pad.json"
+            },
+            {
+                "injectTo": [
+                    "source.perl"
+                ],
+                "scopeName": "source.perl.package.moops",
+                "path": "./syntaxes/moops.json"
+            },
+            {
+                "injectTo": [
+                    "source.perl"
+                ],
+                "scopeName": "source.perl.package.zydeco",
+                "path": "./syntaxes/zydeco.json"
+            },
+            {
+                "injectTo": [
+                    "source.perl"
+                ],
+                "scopeName": "source.perl.package.mars",
+                "path": "./syntaxes/mars.json"
+            },
+            {
+                "injectTo": [
+                    "source.perl"
+                ],
+                "scopeName": "source.perl.package.async",
+                "path": "./syntaxes/async.json"
+            },
+            {
+                "injectTo": [
+                    "source.perl"
+                ],
+                "scopeName": "source.perl.package.trycatch",
+                "path": "./syntaxes/trycatch.json"
+            },
+            {
+                "injectTo": [
+                    "source.perl"
+                ],
+                "scopeName": "source.perl.package.v536",
+                "path": "./syntaxes/v536.json"
+            },
+            {
+                "injectTo": [
+                    "source.perl"
+                ],
+                "scopeName": "source.perl.package.v510",
+                "path": "./syntaxes/v510.json"
+            },
+            {
+                "injectTo": [
+                    "source.perl"
+                ],
+                "scopeName": "source.perl.package.isa",
+                "path": "./syntaxes/isa.json"
+            },
+            {
+                "injectTo": [
+                    "source.perl"
+                ],
+                "scopeName": "source.perl.package.state",
+                "path": "./syntaxes/state.json"
+            },
+            {
+                "injectTo": [
+                    "source.perl"
+                ],
+                "scopeName": "source.perl.package.defer",
+                "path": "./syntaxes/defer.json"
+            },
+            {
+                "injectTo": [
+                    "source.perl"
+                ],
+                "scopeName": "source.perl.package.dynamically",
+                "path": "./syntaxes/dynamically.json"
+            },
+            {
+                "injectTo": [
+                    "source.perl"
+                ],
+                "scopeName": "source.perl.package.funcparams",
+                "path": "./syntaxes/funcparams.json"
+            },
+            {
+                "injectTo": [
+                    "source.perl"
+                ],
+                "scopeName": "source.perl.package.dios",
+                "path": "./syntaxes/dios.json"
+            },
+            {
+                "injectTo": [
+                    "source.perl"
+                ],
+                "scopeName": "source.perl.package.match",
+                "path": "./syntaxes/match.json"
+            },
+            {
+                "injectTo": [
+                    "source.perl"
+                ],
+                "scopeName": "source.perl.package.dancer",
+                "path": "./syntaxes/dancer.json"
+            }
+        ]
+    },
+    "scripts": {
+        "compile": "tsc -b",
+        "watch": "tsc -b -w",
+        "package": "export NODE_OPTIONS=--openssl-legacy-provider; webpack --mode production --devtool hidden-source-map"
+    },
+    "devDependencies": {
+		"lru-cache": "^6.0.0",
+		"nanoid": "^3.1.31",
+		"vscode-languageserver": "^7.0.0",
+		"vscode-languageserver-textdocument": "^1.0.1",
+		"vscode-oniguruma": "^2.0.1",
+		"vscode-textmate": "^9.0.0",
+		"vscode-uri": "^1.0.1",
+        "@types/node": "^18.11.18",
+        "@types/webpack-env": "^1.16.0",
+        "@typescript-eslint/eslint-plugin": "^4.23.0",
+        "@typescript-eslint/parser": "^4.23.0",
+        "eslint": "^7.26.0",
+        "path-browserify": "^1.0.1",
+        "pkg": "^5.8.0",
+        "ts-loader": "^9.3.0",
+        "typescript": "^4.8.4",
+        "webpack": "^5.76.1",
+        "webpack-cli": "^4.7.0"
+    },
+    "pkg": {
+        "scripts": "dist/server.js",
+        "assets": [
+            "src/**/*",
+            "node_modules/vscode-oniguruma/release/onig.wasm",
+            "perl.tmLanguage.json"
+        ],
+        "targets": [
+            "node20-linux-x64",
+            "node20-macos-x64",
+            "node20-win-x64"
+        ],
+        "outputPath": "dist"
+    }
+}
