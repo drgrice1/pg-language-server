@@ -1,24 +1,28 @@
-import { Connection } from "vscode-languageserver/node";
-import { NavigatorSettings } from "./types";
+import { Connection } from 'vscode-languageserver/node';
+import { NavigatorSettings } from './types';
 
-import { WorkDoneProgressBegin, WorkDoneProgressEnd, WorkDoneProgressReport, WorkDoneProgress } from "vscode-languageserver-protocol";
+import { WorkDoneProgressBegin, WorkDoneProgressEnd, WorkDoneProgress } from 'vscode-languageserver-protocol';
 
-import { nanoid } from "nanoid/non-secure";
+import { nanoid } from 'nanoid/non-secure';
 
-export async function startProgress(connection: Connection, title: string, settings: NavigatorSettings): Promise<string | null> {
+export async function startProgress(
+    connection: Connection,
+    title: string,
+    settings: NavigatorSettings
+): Promise<string | null> {
     if (!settings.enableProgress) {
         return null;
     }
     const progressToken = nanoid();
 
-    await connection.sendRequest("window/workDoneProgress/create", {
-        token: progressToken,
+    await connection.sendRequest('window/workDoneProgress/create', {
+        token: progressToken
     });
 
     const beginReport: WorkDoneProgressBegin = {
         title,
         cancellable: false,
-        kind: "begin",
+        kind: 'begin'
     };
 
     connection.sendProgress(WorkDoneProgress.type, progressToken, beginReport);
@@ -29,7 +33,7 @@ export async function startProgress(connection: Connection, title: string, setti
 export function endProgress(connection: Connection, progressToken: string | null) {
     if (!progressToken) return;
 
-    const endReport = <WorkDoneProgressEnd>{ kind: "end" };
+    const endReport = <WorkDoneProgressEnd>{ kind: 'end' };
     connection.sendProgress(WorkDoneProgress.type, progressToken, endReport);
     return;
 }

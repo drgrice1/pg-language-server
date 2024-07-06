@@ -14,17 +14,18 @@ sub get_modules {
     }
     @dirs = myuniq(@dirs);
 
-
     my @files;
     my @find_dirs = reduce_dirs(@dirs);
     File::Find::find(
         {
             wanted => sub {
-                    if($File::Find::dir =~ /\/\./){$File::Find::prune = 1; return }; # Skip hidden dirs
-                    push @files, $_ if -f $_ and /\.pm$/ },
-            no_chdir => 1,
-            follow_fast => 1,  # May generate duplicates
-            follow_skip => 2,  # Don't if we observe duplicates
+                # Skip hidden dirs
+                if ($File::Find::dir =~ /\/\./) { $File::Find::prune = 1; return }
+                push @files, $_ if -f $_ and /\.pm$/;
+            },
+            no_chdir    => 1,
+            follow_fast => 1,    # May generate duplicates
+            follow_skip => 2,    # Don't if we observe duplicates
         },
         @find_dirs
     );
@@ -40,23 +41,22 @@ sub get_modules {
                 push @ds, $dir;
             }
         }
-        my $d = (sort {length($b) <=> length($a)} @ds)[0];
-        my $rel = substr($file, (length($d)+1));
+        my $d   = (sort { length($b) <=> length($a) } @ds)[0];
+        my $rel = substr($file, (length($d) + 1));
         $rel =~ s/\.pm$//;
         $rel =~ s{/}{::}g;
-        $mods->{$rel} = $file if !defined($mods->{$rel}); # Dedupes with a preference for the first found in @INC, since that's the perl resolution order.
+        # Dedupes with a preference for the first found in @INC, since that's the perl resolution order.
+        $mods->{$rel} = $file if !defined($mods->{$rel});
     }
     return $mods;
 }
-
-
 
 sub reduce_dirs {
     # Reduce a list of directory names by eliminating
     # names which contain other names.  For example,
     # if the input array contains (/a/b/c/d /a/b/c /a/b),
     # return an array containing (/a/b).
-    my @dirs = @_;
+    my @dirs            = @_;
     my %substring_count = map { $_ => 0 } @dirs;
 
     for my $x (@dirs) {
@@ -78,7 +78,7 @@ sub myuniq {
     # List::Util didn't add uniq until Perl 5.26
     my %seen = ();
     my $k;
-    return grep { defined $_ ? !$seen{$k=$_}++ : 0 } @_;
+    return grep { defined $_ ? !$seen{ $k = $_ }++ : 0 } @_;
 }
 
 # use Time::HiRes;
@@ -91,35 +91,43 @@ delete $modsFound->{$_} foreach @modsToSkip;
 
 print "Dumping Mods\n";
 
-foreach my $mod (keys %$modsFound){
-    # Name mangling to avoid picking up random stuff from stdout. 
-    print "\tM\t$mod\t$modsFound->{$mod}\t\n"; 
+foreach my $mod (keys %$modsFound) {
+    # Name mangling to avoid picking up random stuff from stdout.
+    print "\tM\t$mod\t$modsFound->{$mod}\t\n";
 }
 
 #print "Elapsed: " . (Time::HiRes::time() - $start);
 
 1;
 
-
 =head1 NAME
- 
+
 ModHunter
 
 =head1 SYNOPSIS
 
-The mod hunter is for finding the list of importable modules. Not sure why this is so hard.
-ExtUtils doesn't work because it relies on packlists, and many modules (especially local in-house mods) don't have packlists.
+The mod hunter is for finding the list of importable modules. Not sure why this
+is so hard.  ExtUtils doesn't work because it relies on packlists, and many
+modules (especially local in-house mods) don't have packlists.
 
-The FAQ lists some options https://perldoc.perl.org/perlfaq3#How-do-I-find-which-modules-are-installed-on-my-system?
-But one option is ExtUtils and the other gives filenames, not importable module names
+The FAQ lists some options
+https://perldoc.perl.org/perlfaq3#How-do-I-find-which-modules-are-installed-on-my-system?
+But one option is ExtUtils and the other gives filenames, not importable module
+names
 
-App::Module::Lister is close, but opens all of the files which would slow this down substantially and is more likely to throw file system errors
-HTML::Perlinfo::Modules is also close, but prints all the modules as HTML instead of returning the list. Perhaps it could be modified.
+App::Module::Lister is close, but opens all of the files which would slow this
+down substantially and is more likely to throw file system errors
+HTML::Perlinfo::Modules is also close, but prints all the modules as HTML
+instead of returning the list. Perhaps it could be modified.
 
-This script is mostly copied PerlMonks: https://www.perlmonks.org/?node_id=795418, and modified for my purposes. If someone has a maintained library that does this, let me know so I can delete this script entirely.
-I modified it to skip private directories and to preserve order during lookup 
+This script is mostly copied PerlMonks:
+https://www.perlmonks.org/?node_id=795418, and modified for my purposes. If
+someone has a maintained library that does this, let me know so I can delete
+this script entirely.  I modified it to skip private directories and to preserve
+order during lookup
 
-This is also pretty slow on Windows (takes 10 to 15 seconds on my machine), so we only run it on Server starup and when configuration changes
+This is also pretty slow on Windows (takes 10 to 15 seconds on my machine), so
+we only run it on Server starup and when configuration changes
 
 
 

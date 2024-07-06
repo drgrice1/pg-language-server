@@ -1,13 +1,23 @@
-import { TextDocumentPositionParams, SignatureHelp, SignatureInformation, ParameterInformation } from "vscode-languageserver/node";
-import { TextDocument, Position } from "vscode-languageserver-textdocument";
-import { ElemSource, ParseType, PerlDocument, PerlElem, PerlSymbolKind } from "./types";
-import { lookupSymbol } from "./utils";
-import { parseFromUri } from "./parser";
-import fs = require("fs");
-import Uri from "vscode-uri";
+import { TextDocumentPositionParams } from 'vscode-languageserver/node';
+import { ElemSource, ParseType, PerlDocument, PerlElem, PerlSymbolKind } from './types';
+import { parseFromUri } from './parser';
+import * as fs from 'fs';
+import Uri from 'vscode-uri';
 
-export async function refineElementIfSub(elem: PerlElem, params: TextDocumentPositionParams, perlDoc: PerlDocument): Promise<PerlElem | undefined> {
-    if (![PerlSymbolKind.LocalSub, PerlSymbolKind.ImportedSub, PerlSymbolKind.Inherited, PerlSymbolKind.LocalMethod, PerlSymbolKind.Method].includes(elem.type)) {
+export async function refineElementIfSub(
+    elem: PerlElem,
+    params: TextDocumentPositionParams,
+    perlDoc: PerlDocument
+): Promise<PerlElem | undefined> {
+    if (
+        ![
+            PerlSymbolKind.LocalSub,
+            PerlSymbolKind.ImportedSub,
+            PerlSymbolKind.Inherited,
+            PerlSymbolKind.LocalMethod,
+            PerlSymbolKind.Method
+        ].includes(elem.type)
+    ) {
         return;
     }
 
@@ -28,7 +38,7 @@ export async function refineElement(elem: PerlElem, perlDoc: PerlDocument): Prom
         const resolvedUri = await getUriFromElement(elem, perlDoc);
         if (!resolvedUri) return refined;
 
-        let doc = await parseFromUri(resolvedUri, ParseType.refinement);
+        const doc = await parseFromUri(resolvedUri, ParseType.refinement);
         if (!doc) return refined;
 
         let refinedElems: PerlElem[] | undefined;
@@ -37,7 +47,7 @@ export async function refineElement(elem: PerlElem, perlDoc: PerlDocument): Prom
         } else {
             // Looks up Foo::Bar::baz by only the function name baz
             // Will fail if you have multiple same name functions in the same file.
-            let match = elem.name.match(/\w+$/);
+            const match = elem.name.match(/\w+$/);
             if (match) {
                 refinedElems = doc.elems.get(match[0]);
             }
@@ -58,7 +68,7 @@ async function getUriFromElement(elem: PerlElem, perlDoc: PerlDocument): Promise
     const elemResolved = perlDoc.elems.get(elem.package);
     if (!elemResolved) return;
 
-    for (let potentialElem of elemResolved) {
+    for (const potentialElem of elemResolved) {
         if (await isFile(potentialElem.uri)) {
             return potentialElem.uri;
         }
@@ -73,7 +83,7 @@ async function isFile(uri: string): Promise<boolean> {
     try {
         const stats = await fs.promises.stat(file);
         return stats.isFile();
-    } catch (err) {
+    } catch {
         // File or directory doesn't exist
         return false;
     }

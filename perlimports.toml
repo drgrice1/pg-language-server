@@ -9,15 +9,12 @@
 # particular, you're encouraged to leave preserve_duplicates and
 # preserve_unused disabled.
 
-cache                           = false # setting this to true is currently discouraged
+cache                           = false                                            # setting this to true is currently discouraged
 ignore_modules                  = []
 ignore_modules_filename         = ""
-ignore_modules_pattern          = "" # regex like "^(Foo|Foo::Bar)"
+ignore_modules_pattern          = ""                                               # regex like "^(Foo|Foo::Bar)"
 ignore_modules_pattern_filename = ""
-libs                            = [
-  "server/src/perl",
-  "server/src/perl/lib_bs22/",
-]
+libs                            = ["server/src/perl", "server/src/perl/lib_bs22/"]
 log_filename                    = ""
 log_level                       = "warn"
 never_export_modules            = []

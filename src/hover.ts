@@ -1,14 +1,19 @@
-import { TextDocumentPositionParams, Hover, MarkupContent, MarkupKind } from "vscode-languageserver/node";
-import { TextDocument } from "vscode-languageserver-textdocument";
-import { PerlDocument, PerlElem, PerlSymbolKind } from "./types";
-import { getSymbol, lookupSymbol } from "./utils";
-import { refineElementIfSub } from "./refinement";
+import { TextDocumentPositionParams, Hover, MarkupContent, MarkupKind } from 'vscode-languageserver/node';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+import { PerlDocument, PerlElem, PerlSymbolKind } from './types';
+import { getSymbol, lookupSymbol } from './utils';
+import { refineElementIfSub } from './refinement';
 import { getPod } from './pod';
 
-import Uri from "vscode-uri";
+import Uri from 'vscode-uri';
 
-export async function getHover(params: TextDocumentPositionParams, perlDoc: PerlDocument, txtDoc: TextDocument, modMap: Map<string, string>): Promise<Hover | undefined> {
-    let position = params.position;
+export async function getHover(
+    params: TextDocumentPositionParams,
+    perlDoc: PerlDocument,
+    txtDoc: TextDocument,
+    modMap: Map<string, string>
+): Promise<Hover | undefined> {
+    const position = params.position;
     const symbol = getSymbol(position, txtDoc);
 
     let elem = perlDoc.canonicalElems.get(symbol);
@@ -22,19 +27,18 @@ export async function getHover(params: TextDocumentPositionParams, perlDoc: Perl
 
     const refined = await refineElementIfSub(elem, params, perlDoc);
 
-    let title = buildHoverDoc(symbol, elem, refined);
+    const title = buildHoverDoc(symbol, elem, refined);
 
     // Sometimes, there's nothing worth showing.
     // I'm assuming we won't get any useful POD if we can't get a useful title. Could be wrong
     if (!title) return;
 
     let merged = title;
-    
+
     let docs = await getPod(elem, perlDoc, modMap);
 
-    if(docs){
-        if(!docs.startsWith("\n"))
-            docs = "\n" + docs; // Markdown requires two newlines to make one
+    if (docs) {
+        if (!docs.startsWith('\n')) docs = '\n' + docs; // Markdown requires two newlines to make one
         merged += `\n${docs}`;
     }
 
@@ -49,23 +53,23 @@ export async function getHover(params: TextDocumentPositionParams, perlDoc: Perl
 }
 
 function buildHoverDoc(symbol: string, elem: PerlElem, refined: PerlElem | undefined) {
-    let sig = "";
+    let sig = '';
     let name = elem.name;
     // Early return.
     if ([PerlSymbolKind.LocalVar, PerlSymbolKind.ImportedVar, PerlSymbolKind.Canonical].includes(elem.type)) {
         if (elem.typeDetail.length > 0) return `(object) ${elem.typeDetail}`;
-        else if (symbol.startsWith("$self"))
+        else if (symbol.startsWith('$self'))
             // We either know the object type, or it's $self
             return `(object) ${elem.package}`;
     }
     if (refined && refined.signature) {
         let signature = refined.signature;
         signature = [...signature];
-        if (symbol.indexOf("->") != -1 && refined.type != PerlSymbolKind.LocalMethod) {
+        if (symbol.indexOf('->') != -1 && refined.type != PerlSymbolKind.LocalMethod) {
             signature.shift();
-            name = name.replace(/::(\w+)$/, "->$1");
+            name = name.replace(/::(\w+)$/, '->$1');
         }
-        if (signature.length > 0) sig = "(" + signature.join(", ") + ")";
+        if (signature.length > 0) sig = '(' + signature.join(', ') + ')';
     }
     let desc;
     switch (elem.type) {
@@ -99,7 +103,7 @@ function buildHoverDoc(symbol: string, elem: PerlElem, refined: PerlElem | undef
             desc = `(package) ${elem.name}`;
             break;
         case PerlSymbolKind.Module: {
-            let file = Uri.parse(elem.uri).fsPath;
+            const file = Uri.parse(elem.uri).fsPath;
             desc = `(module) ${elem.name}: ${file}`;
             break;
         }

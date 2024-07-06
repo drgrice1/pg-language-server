@@ -1,17 +1,22 @@
-import fs = require("fs");
-import { PerlDocument, PerlElem, PerlSymbolKind } from "./types";
-import Uri from "vscode-uri";
-import { isFile } from "./utils";
+import * as fs from 'fs';
+import { PerlDocument, PerlElem, PerlSymbolKind } from './types';
+import Uri from 'vscode-uri';
+import { isFile } from './utils';
 
-export async function getPod(elem: PerlElem, perlDoc: PerlDocument, modMap: Map<string, string>): Promise<string | undefined> {
+export async function getPod(
+    elem: PerlElem,
+    perlDoc: PerlDocument,
+    modMap: Map<string, string>
+): Promise<string | undefined> {
     // File may not exists. Return nothing if it doesn't
 
     const absolutePath = await resolvePathForDoc(elem, perlDoc, modMap);
 
-    if(!absolutePath) return;
+    if (!absolutePath) return;
 
+    let fileContent;
     try {
-        var fileContent = await fs.promises.readFile(absolutePath, "utf8");
+        fileContent = await fs.promises.readFile(absolutePath, 'utf8');
     } catch {
         return;
     }
@@ -19,32 +24,51 @@ export async function getPod(elem: PerlElem, perlDoc: PerlDocument, modMap: Map<
     // Initialize state variables
     let inPodBlock = false;
     let inRelevantBlock = true;
-    let podContent = "";
-    let podBuffer = ""; // We "buffer" pod when searching to avoid empty sections
+    let podContent = '';
+    let podBuffer = ''; // We "buffer" pod when searching to avoid empty sections
     let meaningFullContent = false;
     let searchItem;
-    if([PerlSymbolKind.Package, PerlSymbolKind.Module].includes(elem.type)){
+    if ([PerlSymbolKind.Package, PerlSymbolKind.Module].includes(elem.type)) {
         // Search all. Note I'm not really treating packages different from Modules
-    } else if([PerlSymbolKind.ImportedSub, PerlSymbolKind.Method, PerlSymbolKind.Inherited, PerlSymbolKind.PathedField, 
-                PerlSymbolKind.LocalMethod, PerlSymbolKind.LocalSub].includes(elem.type)){
+    } else if (
+        [
+            PerlSymbolKind.ImportedSub,
+            PerlSymbolKind.Method,
+            PerlSymbolKind.Inherited,
+            PerlSymbolKind.PathedField,
+            PerlSymbolKind.LocalMethod,
+            PerlSymbolKind.LocalSub
+        ].includes(elem.type)
+    ) {
         searchItem = elem.name;
-        searchItem = searchItem.replace(/^[\w:]+::(\w+)$/, "$1"); // Remove package
+        searchItem = searchItem.replace(/^[\w:]+::(\w+)$/, '$1'); // Remove package
     } else {
         return;
     }
 
-    let markdown = "";
+    let markdown = '';
 
     // Quick search for leading comments of a very specific form with comment blocks the preceed a sub (and aren't simply get/set without docs)
     // These regexes are painful, but I didn't want to mix this with the line-by-line POD parsing which would overcomplicate that piece
     let match, match2;
-    if(searchItem && (match = fileContent.match(`\\r?\\n#(?:####+| \-+) *(?:\\r?\\n# *)*${searchItem}\\r?\\n((?:(?:#.*| *)\\r?\\n)+)sub +${searchItem}\\b`))){
+    if (
+        searchItem &&
+        (match = fileContent.match(
+            `\\r?\\n#(?:####+| -+) *(?:\\r?\\n# *)*${searchItem}\\r?\\n((?:(?:#.*| *)\\r?\\n)+)sub +${searchItem}\\b`
+        ))
+    ) {
         // Ensure it's not an empty get/set pair.
-        if(!( (match2 = searchItem.match(/^get_(\w+)$/)) && match[1].match(new RegExp(`^(?:# +set_${match2[1]}\\r?\\n)?[\\s#]*$`)))){
-            let content = match[1].replace(/^ *#+ ?/gm,'');
-            content = content.replace(/^\s+|\s+$/g,'');
-            if(content){ // It may still be empty for non-get functions
-                markdown += "```text\n" + content + "\n```\n"
+        if (
+            !(
+                (match2 = searchItem.match(/^get_(\w+)$/)) &&
+                match[1].match(new RegExp(`^(?:# +set_${match2[1]}\\r?\\n)?[\\s#]*$`))
+            )
+        ) {
+            let content = match[1].replace(/^ *#+ ?/gm, '');
+            content = content.replace(/^\s+|\s+$/g, '');
+            if (content) {
+                // It may still be empty for non-get functions
+                markdown += '```text\n' + content + '\n```\n';
             }
         }
     }
@@ -52,75 +76,75 @@ export async function getPod(elem: PerlElem, perlDoc: PerlDocument, modMap: Map<
     // Split the file into lines and iterate through them
     const lines = fileContent.split(/\r?\n/);
     for (const line of lines) {
-        if (line.startsWith("=cut")) {
+        if (line.startsWith('=cut')) {
             // =cut lines are not added.
             inPodBlock = false;
         }
 
-         if (line.match(/^=(pod|head\d|over|item|back|begin|end|for|encoding)/)) {
+        if (line.match(/^=(pod|head\d|over|item|back|begin|end|for|encoding)/)) {
             inPodBlock = true;
             meaningFullContent = false;
-            if(searchItem && line.match(new RegExp(`^=(head\\d|item).*\\b${searchItem}\\b`))){
+            if (searchItem && line.match(new RegExp(`^=(head\\d|item).*\\b${searchItem}\\b`))) {
                 // This is structured so if we hit two relevant block in a row, we keep them both
                 inRelevantBlock = true;
             } else {
                 inRelevantBlock = false;
-                podBuffer = "";
+                podBuffer = '';
             }
-        } else if(line.match(/\w/)){
+        } else if (line.match(/\w/)) {
             // For this section, we found something that's not a header and has content
             meaningFullContent = true;
         }
 
-        if(inPodBlock){
-            if(searchItem){
-                if(inRelevantBlock) {
-                    podBuffer += line + "\n";   
+        if (inPodBlock) {
+            if (searchItem) {
+                if (inRelevantBlock) {
+                    podBuffer += line + '\n';
                 }
-            }
-            else {
-                podContent += line + "\n";
+            } else {
+                podContent += line + '\n';
             }
         }
 
-        if(meaningFullContent && podBuffer != ""){
+        if (meaningFullContent && podBuffer != '') {
             podContent += podBuffer;
-            podBuffer = "";
+            podBuffer = '';
         }
     }
-    
+
     markdown += convertPODToMarkdown(podContent);
 
     return markdown;
 }
 
-
-async function resolvePathForDoc(elem: PerlElem, perlDoc: PerlDocument, modMap: Map<string, string>): Promise<string | undefined> {
-    let absolutePath = Uri.parse(elem.uri).fsPath;
+async function resolvePathForDoc(
+    elem: PerlElem,
+    perlDoc: PerlDocument,
+    modMap: Map<string, string>
+): Promise<string | undefined> {
+    const absolutePath = Uri.parse(elem.uri).fsPath;
 
     const foundPath = await fsPathOrAlt(absolutePath);
-    if(foundPath){
+    if (foundPath) {
         return foundPath;
     }
 
     if (elem.package) {
-        let elemResolved = perlDoc.elems.get(elem.package);
-        
-        if(!elemResolved){
+        const elemResolved = perlDoc.elems.get(elem.package);
 
+        if (!elemResolved) {
             // Looking up a module by the package name is only convention, but helps for things like POSIX
             const modUri = modMap.get(elem.package);
-            if(modUri){
-                let modPath = await fsPathOrAlt(Uri.parse(modUri).fsPath);
-                if(modPath){
+            if (modUri) {
+                const modPath = await fsPathOrAlt(Uri.parse(modUri).fsPath);
+                if (modPath) {
                     return modPath;
                 }
             }
             return;
         }
 
-
-        for (let potentialElem of elemResolved) {
+        for (const potentialElem of elemResolved) {
             const potentialPath = Uri.parse(potentialElem.uri).fsPath;
             const foundPackPath = await fsPathOrAlt(potentialPath);
             if (foundPackPath) {
@@ -128,42 +152,38 @@ async function resolvePathForDoc(elem: PerlElem, perlDoc: PerlDocument, modMap: 
             }
         }
     }
-    if(await badFile(absolutePath)){
+    if (await badFile(absolutePath)) {
         return;
     }
-
 }
 
-async function fsPathOrAlt(fsPath: string | undefined): Promise<string | undefined>{
-
-    if(!fsPath){
+async function fsPathOrAlt(fsPath: string | undefined): Promise<string | undefined> {
+    if (!fsPath) {
         return;
     }
 
-    if(/\.pm$/.test(fsPath)){
-        let podPath = fsPath.replace(/\.pm$/, ".pod");
-        if(!await badFile(podPath)){
+    if (/\.pm$/.test(fsPath)) {
+        const podPath = fsPath.replace(/\.pm$/, '.pod');
+        if (!(await badFile(podPath))) {
             return podPath;
         }
     }
-    if(!await badFile(fsPath)){
+    if (!(await badFile(fsPath))) {
         return fsPath;
     }
     return;
-
 }
 
 async function badFile(fsPath: string): Promise<boolean> {
-
     if (!fsPath || fsPath.length <= 1) {
         return true;
     }
 
-    if( /\w+\.c$/.test(fsPath) ){
+    if (/\w+\.c$/.test(fsPath)) {
         return true;
     }
 
-    if(!(await isFile(fsPath))){
+    if (!(await isFile(fsPath))) {
         return true;
     }
 
@@ -180,17 +200,17 @@ type ConversionState = {
 };
 
 const convertPODToMarkdown = (pod: string): string => {
-    let finalMarkdown: string = "";
+    let finalMarkdown: string = '';
     let state: ConversionState = {
         inList: false,
         inVerbatim: false,
         inCustomBlock: false,
-        markdown: "",
+        markdown: '',
         encoding: null,
-        waitingForListTitle: false,
+        waitingForListTitle: false
     };
 
-    const lines = pod.split("\n");
+    const lines = pod.split('\n');
 
     for (let i = 0; i < lines.length; i++) {
         let line = lines[i];
@@ -209,39 +229,42 @@ const convertPODToMarkdown = (pod: string): string => {
         line = processInlineElements(line);
 
         // Handling =pod to start documentation
-        if (line.startsWith("=pod")) {
+        if (line.startsWith('=pod')) {
             continue; // Generally, we just skip this.
         }
         // Headings
-        else if (line.startsWith("=head")) {
+        else if (line.startsWith('=head')) {
             const output = processHeadings(line);
 
-            if(/\w/.test(finalMarkdown) || !/^\n##+ NAME\n$/.test(output)){
-                // I find it a waste of space to include the headline "NAME". We're short on space in the hover 
+            if (/\w/.test(finalMarkdown) || !/^\n##+ NAME\n$/.test(output)) {
+                // I find it a waste of space to include the headline "NAME". We're short on space in the hover
                 finalMarkdown += output;
             }
         }
         // List markers and items
-        else if (line.startsWith("=over") || line.startsWith("=item") || line.startsWith("=back") || state.waitingForListTitle) {
+        else if (
+            line.startsWith('=over') ||
+            line.startsWith('=item') ||
+            line.startsWith('=back') ||
+            state.waitingForListTitle
+        ) {
             state = processList(line, state);
             finalMarkdown += state.markdown;
         }
         // Custom blocks like =begin and =end
-        else if (line.startsWith("=begin") || line.startsWith("=end")) {
+        else if (line.startsWith('=begin') || line.startsWith('=end')) {
             state = processCustomBlock(line, state);
             finalMarkdown += state.markdown;
         }
         // Format-specific blocks like =for
-        else if (line.startsWith("=for")) {
+        else if (line.startsWith('=for')) {
             finalMarkdown += processFormatSpecificBlock(line);
         }
         // Encoding
-        else if (line.startsWith("=encoding")) {
+        else if (line.startsWith('=encoding')) {
             state = processEncoding(line, state);
-        }
-
-        else if(state.inList){
-            if(line){
+        } else if (state.inList) {
+            if (line) {
                 finalMarkdown += ` ${line} `;
             }
         }
@@ -260,71 +283,72 @@ const processHeadings = (line: string): string => {
     level = Math.min(level, 3); // Maximum 6 indentation levels in Markdown
     // Ensure that the heading level is valid.
     if (isNaN(level) || level < 1 || level > 6) {
-        return "";
+        return '';
     }
 
     // Extract the actual text of the heading, which follows the =head command.
     const text = line.slice(7).trim();
 
     // Convert the heading to its Markdown equivalent. I marked head1 -> ### because I prefer the compact form.
-    const markdownHeading = `\n##${"#".repeat(level)} ${text}\n`;
+    const markdownHeading = `\n##${'#'.repeat(level)} ${text}\n`;
 
     return markdownHeading;
 };
 
 const processList = (line: string, state: ConversionState): ConversionState => {
-    let markdown: string = "";
+    let markdown: string = '';
 
     // The =over command starts a list.
-    if (line.startsWith("=over")) {
+    if (line.startsWith('=over')) {
         state.inList = true;
-        markdown = "\n";
+        markdown = '\n';
     }
 
     // The =item command denotes a list item.
     else if (/^=item \*\s*$/.test(line)) {
-        state.waitingForListTitle= true;
-        markdown = "";
+        state.waitingForListTitle = true;
+        markdown = '';
     } else if (state.waitingForListTitle && /[^\s]/.test(line)) {
         state.waitingForListTitle = false;
         markdown = `\n- ${line}  \n  `;
     }
 
     // The =item command denotes a list item.
-    else if (line.startsWith("=item")) {
+    else if (line.startsWith('=item')) {
         state.inList = true;
 
         // Remove the '=item' part to get the actual text for the list item.
         let listItem = line.substring(6).trim();
-	if (listItem.startsWith("* ")) // Doubled up list identifiers
-		listItem = listItem.replace("*", "");
+        if (listItem.startsWith('* '))
+            // Doubled up list identifiers
+            listItem = listItem.replace('*', '');
         markdown = `\n- ${listItem}  \n  `; // Unordered list
     }
     // The =back command ends the list.
-    else if (line.startsWith("=back")) {
+    else if (line.startsWith('=back')) {
         state.inList = false;
-        markdown = "\n";
+        markdown = '\n';
     }
 
     return {
         ...state,
-        markdown,
+        markdown
     };
 };
 
 const processCustomBlock = (line: string, state: ConversionState): ConversionState => {
-    let markdown = "";
+    let markdown = '';
 
     // =begin starts a custom block
-    if (line.startsWith("=begin")) {
+    if (line.startsWith('=begin')) {
         // Extract the format following =begin
         const format = line.slice(7).trim();
         state.inCustomBlock = true;
 
         // Choose Markdown representation based on the format
         switch (format) {
-            case "code":
-                markdown = "```perl\n";
+            case 'code':
+                markdown = '```perl\n';
                 break;
             // Add cases for other formats as needed
             default:
@@ -333,15 +357,15 @@ const processCustomBlock = (line: string, state: ConversionState): ConversionSta
         }
     }
     // =end ends the custom block
-    else if (line.startsWith("=end")) {
+    else if (line.startsWith('=end')) {
         // Extract the format following =end
         const format = line.slice(5).trim();
         state.inCustomBlock = false;
 
         // Close the Markdown representation
         switch (format) {
-            case "code":
-                markdown = "```\n";
+            case 'code':
+                markdown = '```\n';
                 break;
             // Add cases for other formats as needed
             default:
@@ -352,30 +376,30 @@ const processCustomBlock = (line: string, state: ConversionState): ConversionSta
 
     return {
         ...state,
-        markdown,
+        markdown
     };
 };
 
 const processFormatSpecificBlock = (line: string): string => {
     // The `=for` command itself is followed by the format and then the text.
-    const parts = line.split(" ").slice(1);
+    const parts = line.split(' ').slice(1);
 
     if (parts.length < 2) {
-        return "";
+        return '';
     }
 
     // Extract the format and the actual text.
     const format = parts[0].trim();
-    const text = parts.slice(1).join(" ").trim();
+    const text = parts.slice(1).join(' ').trim();
 
     // Choose the Markdown representation based on the format.
-    let markdown = "";
+    let markdown = '';
     switch (format) {
-        case "text":
+        case 'text':
             // Plain text, just add it.
             markdown = `${text}\n`;
             break;
-        case "html":
+        case 'html':
             // If it's HTML, encapsulate it within comments for safety.
             markdown = `<!-- HTML: ${text} -->\n`;
             break;
@@ -393,47 +417,46 @@ const processFormatSpecificBlock = (line: string): string => {
 const tempPlaceholder = '\uFFFF';
 
 const processInlineElements = (line: string): string => {
-
     line = line.replaceAll('`', tempPlaceholder);
 
     // WWW::Mechanize is a good test for this one. Code blocks with embedded link
-    line = line.replace(/C<([^<>]*)L<< (?:.+?\|\/?)?(.+?) >>([^<>]*)>/g, "C<< $1 $2 $3 >>");
+    line = line.replace(/C<([^<>]*)L<< (?:.+?\|\/?)?(.+?) >>([^<>]*)>/g, 'C<< $1 $2 $3 >>');
 
     // Handle code (C<code>), while allowing E<> replacements
-    line = line.replace(/C<((?:[^<>]|[EL]<[^<>]+>)+?)>/g, (match, code) => escapeBackticks(code));
+    line = line.replace(/C<((?:[^<>]|[EL]<[^<>]+>)+?)>/g, (_match, code) => escapeBackticks(code));
 
     // Unfortunately doesn't require the <<< to be matched in quantity. E<> is allowed automatically
-    line = line.replace(/C<< (.+?) >>/g, (match, code) => escapeBackticks(code));
-    line = line.replace(/C<<<+ (.+?) >+>>/g, (match, code) => escapeBackticks(code));
+    line = line.replace(/C<< (.+?) >>/g, (_match, code) => escapeBackticks(code));
+    line = line.replace(/C<<<+ (.+?) >+>>/g, (_match, code) => escapeBackticks(code));
 
     // Handle special characters (E<entity>)
-    line = line.replace(/E<([^>]+)>/g, (match, entity) => convertE(entity));
+    line = line.replace(/E<([^>]+)>/g, (_match, entity) => convertE(entity));
 
     // Mapping the Unicode non-character U+FFFF back to escaped backticks
     line = line.replace(new RegExp(tempPlaceholder, 'g'), '\\`');
 
     // Handle bold (B<bold>)
-    line = line.replace(/B<([^<>]+)>/g, "**$1**");
-    line = line.replace(/B<< (.+?) >>/g, "**$1**");
+    line = line.replace(/B<([^<>]+)>/g, '**$1**');
+    line = line.replace(/B<< (.+?) >>/g, '**$1**');
 
     // Handle italics (I<italic>)
-    line = line.replace(/I<([^<>]+)>/g, "*$1*");
-    line = line.replace(/I<< (.+?) >>/g, "*$1*");
+    line = line.replace(/I<([^<>]+)>/g, '*$1*');
+    line = line.replace(/I<< (.+?) >>/g, '*$1*');
 
     // Handle links (L<name>), URLS auto-link in vscode's markdown
-    line = line.replace(/L<(http[^>]+)>/g, " $1 ");
+    line = line.replace(/L<(http[^>]+)>/g, ' $1 ');
 
-    line = line.replace(/L<([^<>]+)>/g, "`$1`");
-    line = line.replace(/L<< (.*?) >>/g, "`$1`");
+    line = line.replace(/L<([^<>]+)>/g, '`$1`');
+    line = line.replace(/L<< (.*?) >>/g, '`$1`');
 
     // Handle non-breaking spaces (S<text>)
-    line = line.replace(/S<([^<>]+)>/g, "$1");
+    line = line.replace(/S<([^<>]+)>/g, '$1');
 
     // Handle file names (F<name>), converting to italics
-    line = line.replace(/F<([^<>]+)>/g, "*$1*");
+    line = line.replace(/F<([^<>]+)>/g, '*$1*');
 
     // Handle index entries (X<entry>), ignoring as Markdown doesn't have an index
-    line = line.replace(/X<([^<>]+)>/g, "");
+    line = line.replace(/X<([^<>]+)>/g, '');
 
     // Escape HTML entities last since we use them above
     line = escapeHTML(line);
@@ -441,66 +464,62 @@ const processInlineElements = (line: string): string => {
     return line;
 };
 
-
 function escapeRegExp(str: string): string {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
-  }
-  
-
+}
 
 const escapeHTML = (str: string): string => {
     const map: { [key: string]: string } = {
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;",
-        "\\\\": "\\", // Two backslashes become one
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;',
+        '\\\\': '\\', // Two backslashes become one
 
         // These are required for the regex to consume & to ensure they don't get mapped to amp style.
-        "\\&": "\\&", 
-        "\\<": "\\<", 
-        '\\"': '\\"', 
-        "\\'": "\\'", 
+        '\\&': '\\&',
+        '\\<': '\\<',
+        '\\"': '\\"',
+        "\\'": "\\'"
     };
 
     // If the number of backticks is odd, it means backticks are unbalanced
     const backtickCount = (str.match(/`/g) || []).length;
-    const segments = str.split("`");
+    const segments = str.split('`');
 
     if (backtickCount % 2 !== 0 || segments.length % 2 === 0) {
         // Handle the unbalanced backticks here
-        str = str.replaceAll("`", "");
+        str = str.replaceAll('`', '');
     }
 
     // Escape special characters and create a regex pattern
-    const pattern = new RegExp( Object.keys(map).map(escapeRegExp).join('|'), 'g' );
+    const pattern = new RegExp(Object.keys(map).map(escapeRegExp).join('|'), 'g');
 
     for (let i = 0; i < segments.length; i += 2) {
         segments[i] = segments[i].replace(pattern, (m) => map[m]);
     }
 
-    return segments.join("`");
+    return segments.join('`');
 };
 
 const escapeBackticks = (str: string): string => {
-    let count = (str.match(new RegExp(tempPlaceholder, 'g')) || []).length;
+    const count = (str.match(new RegExp(tempPlaceholder, 'g')) || []).length;
     str = str.replace(new RegExp(tempPlaceholder, 'g'), '`'); // Backticks inside don't need to be escaped.
-    let delimiters = "`".repeat(count + 1);
+    const delimiters = '`'.repeat(count + 1);
     return `${delimiters}${str}${delimiters}`;
 };
 
 const convertE = (content: string): string => {
-    
     switch (content) {
-        case "lt":
-            return "<";
-        case "gt":
-            return ">";
-        case "verbar":
-            return "|";
-        case "sol":
-            return "/";
+        case 'lt':
+            return '<';
+        case 'gt':
+            return '>';
+        case 'verbar':
+            return '|';
+        case 'sol':
+            return '/';
         default:
             if (/^0x[\da-fA-F]+$/.test(content)) {
                 return String.fromCodePoint(parseInt(content.substring(2), 16));
@@ -522,17 +541,17 @@ const shouldConsiderVerbatim = (line: string): boolean => {
 
 // Process verbatim text blocks
 const processVerbatim = (line: string, state: ConversionState): ConversionState => {
-    let markdown = "";
+    let markdown = '';
     if (/^\s+/.test(line)) {
         // If this is the start of a new verbatim block, add Markdown code fence
         if (!state.inVerbatim) {
-            markdown += "\n```\n";
+            markdown += '\n```\n';
         }
         state.inVerbatim = true;
 
         // Trim some starting whitespace and add the line to the block
         // Most pod code has 4 spaces or a tab, but I find 2 space indents most readable in the space constrained pop-up
-        markdown += line.replace(/^(?:\s{4}|\t)/, "  ") + "\n";
+        markdown += line.replace(/^(?:\s{4}|\t)/, '  ') + '\n';
     }
     // } else if(/^\s+/.test(line)){
     //     // Verbatim blocks in lists are tricky. Let's just do one line at a time for now so we don't need to keep track of indentation
@@ -542,23 +561,23 @@ const processVerbatim = (line: string, state: ConversionState): ConversionState 
     else if (state.inVerbatim) {
         // This line ends the verbatim block
         state.inVerbatim = false;
-        markdown += "```\n"; // End the Markdown code fence
+        markdown += '```\n'; // End the Markdown code fence
     }
 
     return {
         ...state,
-        markdown,
+        markdown
     };
 };
 
 const processEncoding = (line: string, state: ConversionState): ConversionState => {
     // Extract the encoding type from the line
-    const encodingType = line.split(" ")[1]?.trim();
+    const encodingType = line.split(' ')[1]?.trim();
 
     if (encodingType) {
         return {
             ...state,
-            encoding: encodingType,
+            encoding: encodingType
         };
     }
 

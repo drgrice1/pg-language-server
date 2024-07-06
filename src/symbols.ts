@@ -1,14 +1,14 @@
-import { SymbolInformation, Range, SymbolKind, Location, WorkspaceSymbolParams } from "vscode-languageserver/node";
+import { SymbolInformation, SymbolKind, Location, WorkspaceSymbolParams } from 'vscode-languageserver/node';
 
-import { TextDocument } from "vscode-languageserver-textdocument";
+import { TextDocument } from 'vscode-languageserver-textdocument';
 
-import { ParseType, PerlElem, PerlSymbolKind } from "./types";
-import { parseDocument } from "./parser";
+import { ParseType, PerlElem, PerlSymbolKind } from './types';
+import { parseDocument } from './parser';
 
 export async function getSymbols(textDocument: TextDocument, uri: string): Promise<SymbolInformation[]> {
-    let perlDoc = await parseDocument(textDocument, ParseType.outline);
+    const perlDoc = await parseDocument(textDocument, ParseType.outline);
 
-    let symbols: SymbolInformation[] = [];
+    const symbols: SymbolInformation[] = [];
     perlDoc.elems?.forEach((elements: PerlElem[], elemName: string) => {
         elements.forEach((element) => {
             let kind: SymbolKind;
@@ -50,14 +50,14 @@ export async function getSymbols(textDocument: TextDocument, uri: string): Promi
             const location: Location = {
                 range: {
                     start: { line: element.line, character: 0 },
-                    end: { line: element.lineEnd, character: 100 },
+                    end: { line: element.lineEnd, character: 100 }
                 },
-                uri: uri,
+                uri: uri
             };
             const newSymbol: SymbolInformation = {
                 kind: kind,
                 location: location,
-                name: elemName,
+                name: elemName
             };
 
             symbols.push(newSymbol);
@@ -67,30 +67,31 @@ export async function getSymbols(textDocument: TextDocument, uri: string): Promi
     return symbols;
 }
 
-export function getWorkspaceSymbols(params: WorkspaceSymbolParams, defaultMods: Map<string, string>): Promise<SymbolInformation[]> {
-    return new Promise((resolve, reject) => {
-        let symbols: SymbolInformation[] = [];
+export function getWorkspaceSymbols(
+    _params: WorkspaceSymbolParams,
+    defaultMods: Map<string, string>
+): Promise<SymbolInformation[]> {
+    return new Promise((resolve) => {
+        const symbols: SymbolInformation[] = [];
 
         // const lcQuery = params.query.toLowerCase(); // Currently unused.
         defaultMods.forEach((modUri: string, modName: string) => {
-            if (true) {
-                // Just send the whole list and let the client sort through it with fuzzy search
-                // if(!lcQuery || modName.toLowerCase().startsWith(lcQuery)){
+            // Just send the whole list and let the client sort through it with fuzzy search
+            // if(!lcQuery || modName.toLowerCase().startsWith(lcQuery)){
 
-                const location: Location = {
-                    range: {
-                        start: { line: 0, character: 0 },
-                        end: { line: 0, character: 100 },
-                    },
-                    uri: modUri,
-                };
+            const location: Location = {
+                range: {
+                    start: { line: 0, character: 0 },
+                    end: { line: 0, character: 100 }
+                },
+                uri: modUri
+            };
 
-                symbols.push({
-                    name: modName,
-                    kind: SymbolKind.Module,
-                    location: location,
-                });
-            }
+            symbols.push({
+                name: modName,
+                kind: SymbolKind.Module,
+                location: location
+            });
         });
         resolve(symbols);
     });

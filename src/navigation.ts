@@ -1,15 +1,20 @@
-import { DefinitionParams, Location, WorkspaceFolder } from "vscode-languageserver/node";
-import { TextDocument } from "vscode-languageserver-textdocument";
-import { PerlDocument, PerlElem, NavigatorSettings, ElemSource, ParseType } from "./types";
-import Uri from "vscode-uri";
-import { realpathSync, existsSync, realpath, promises } from "fs";
-import { getIncPaths, async_execFile, getSymbol, lookupSymbol, nLog, isFile } from "./utils";
-import { dirname, join } from "path";
-import { getPerlAssetsPath } from "./assets";
-import { refineElement } from "./refinement";
+import { DefinitionParams, Location, WorkspaceFolder } from 'vscode-languageserver/node';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+import { PerlDocument, PerlElem, NavigatorSettings } from './types';
+import Uri from 'vscode-uri';
+import { realpathSync, realpath } from 'fs';
+import { getIncPaths, async_execFile, getSymbol, lookupSymbol, nLog, isFile } from './utils';
+import { join } from 'path';
+import { getPerlAssetsPath } from './assets';
+import { refineElement } from './refinement';
 
-export async function getDefinition(params: DefinitionParams, perlDoc: PerlDocument, txtDoc: TextDocument, modMap: Map<string, string>): Promise<Location[] | undefined> {
-    let position = params.position;
+export async function getDefinition(
+    params: DefinitionParams,
+    perlDoc: PerlDocument,
+    txtDoc: TextDocument,
+    modMap: Map<string, string>
+): Promise<Location[] | undefined> {
+    const position = params.position;
     const symbol = getSymbol(position, txtDoc);
 
     if (!symbol) return;
@@ -20,7 +25,7 @@ export async function getDefinition(params: DefinitionParams, perlDoc: PerlDocum
         return;
     }
 
-    let locationsFound: Location[] = [];
+    const locationsFound: Location[] = [];
 
     for (const elem of foundElems) {
         const elemResolved: PerlElem | undefined = await resolveElemForNav(perlDoc, elem, symbol);
@@ -43,8 +48,8 @@ export async function getDefinition(params: DefinitionParams, perlDoc: PerlDocum
             uri: uri,
             range: {
                 start: { line: elemResolved.line, character: 0 },
-                end: { line: elemResolved.line, character: 500 },
-            },
+                end: { line: elemResolved.line, character: 500 }
+            }
         };
 
         locationsFound.push(newLoc);
@@ -53,25 +58,24 @@ export async function getDefinition(params: DefinitionParams, perlDoc: PerlDocum
     return locationsFound;
 }
 
-
 async function resolveElemForNav(perlDoc: PerlDocument, elem: PerlElem, symbol: string): Promise<PerlElem | undefined> {
-    let refined = await refineElement(elem, perlDoc);
+    const refined = await refineElement(elem, perlDoc);
     elem = refined || elem;
     if (!badFile(elem.uri)) {
-        if (perlDoc.uri == elem.uri && symbol.includes("->")) {
+        if (perlDoc.uri == elem.uri && symbol.includes('->')) {
             // Corinna methods don't have line numbers. Let's hunt for them. If you dont find anything better, just return the original element.
-            const method = symbol.split("->").pop();
+            const method = symbol.split('->').pop();
             if (method) {
                 // Shouldn't this always be defined? Double check
                 const found = perlDoc.elems.get(method);
 
                 if (found) {
-                    if (elem.line == 0 && elem.type == "x") {
+                    if (elem.line == 0 && elem.type == 'x') {
                         if (found[0].uri == perlDoc.uri) return found[0];
-                    } else if (elem.line > 0 && elem.type == "t") {
+                    } else if (elem.line > 0 && elem.type == 't') {
                         // Solve the off-by-one error at least for these. Eventually, you could consult a tagger for this step.
 
-                        for (let potentialElem of found) {
+                        for (const potentialElem of found) {
                             if (Math.abs(potentialElem.line - elem.line) <= 1) {
                                 return potentialElem;
                             }
@@ -90,7 +94,7 @@ async function resolveElemForNav(perlDoc: PerlDocument, elem: PerlElem, symbol: 
         if (elem.package) {
             const elemResolved = perlDoc.elems.get(elem.package);
             if (elemResolved) {
-                for (let potentialElem of elemResolved) {
+                for (const potentialElem of elemResolved) {
                     if (potentialElem.uri && !badFile(potentialElem.uri)) {
                         return potentialElem;
                     }
@@ -123,34 +127,40 @@ function badFile(uri: string): boolean {
         return true;
     }
 
-    return /(?:Sub[\\\/]Defer\.pm|Moo[\\\/]Object\.pm|Moose[\\\/]Object\.pm|\w+\.c|Inspectorito\.pm)$/.test(fsPath);
+    return /(?:Sub[\\/]Defer\.pm|Moo[\\/]Object\.pm|Moose[\\/]Object\.pm|\w+\.c|Inspectorito\.pm)$/.test(fsPath);
 }
 
-export async function getAvailableMods(workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): Promise<Map<string, string>> {
+export async function getAvailableMods(
+    workspaceFolders: WorkspaceFolder[] | null,
+    settings: NavigatorSettings
+): Promise<Map<string, string>> {
     let perlParams = settings.perlParams;
     perlParams = perlParams.concat(getIncPaths(workspaceFolders, settings));
-    const modHunterPath = join(await getPerlAssetsPath(), "lib_bs22", "ModHunter.pl");
+    const modHunterPath = join(await getPerlAssetsPath(), 'lib_bs22', 'ModHunter.pl');
     perlParams.push(modHunterPath);
-    nLog("Starting to look for perl modules with " + perlParams.join(" "), settings);
+    nLog('Starting to look for perl modules with ' + perlParams.join(' '), settings);
 
     const mods: Map<string, string> = new Map();
 
     let output: string;
     try {
         // This can be slow, especially if reading modules over a network or on windows.
-        const out = await async_execFile(settings.perlPath, perlParams, { timeout: 90000, maxBuffer: 20 * 1024 * 1024 });
+        const out = await async_execFile(settings.perlPath, perlParams, {
+            timeout: 90000,
+            maxBuffer: 20 * 1024 * 1024
+        });
         output = out.stdout;
-        nLog("Success running mod hunter", settings);
-    } catch (error: any) {
-        nLog("ModHunter failed. You will lose autocomplete on importing modules. Not a huge deal", settings);
-        nLog(error, settings);
+        nLog('Success running mod hunter', settings);
+    } catch (error: unknown) {
+        nLog('ModHunter failed. You will lose autocomplete on importing modules. Not a huge deal', settings);
+        nLog(error as string, settings);
         return mods;
     }
 
-    output.split("\n").forEach((mod) => {
-        var items = mod.split("\t");
+    output.split('\n').forEach((mod) => {
+        const items = mod.split('\t');
 
-        if (items.length != 5 || items[1] != "M" || !items[2] || !items[3]) {
+        if (items.length != 5 || items[1] != 'M' || !items[2] || !items[3]) {
             return;
         }
         // Load file
@@ -160,7 +170,7 @@ export async function getAvailableMods(workspaceFolders: WorkspaceFolder[] | nul
                 // Skip if error
             } else {
                 if (!path) return; // Could file be empty, but no error?
-                let uri = Uri.file(path).toString(); // Resolve symlinks
+                const uri = Uri.file(path).toString(); // Resolve symlinks
                 mods.set(items[2], uri);
             }
         });

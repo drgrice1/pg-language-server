@@ -2,7 +2,7 @@
 
 Provides syntax checking, autocompletion, perlcritic, code navigation, and hover for PG.
 
-Implemented as a Language Server using the Microsoft LSP libraries along with Perl doing the syntax checking and parsing.  
+Implemented as a Language Server using the Microsoft LSP libraries along with Perl doing the syntax checking and parsing.
 
 Works on Windows, MacOS, and Linux. The vscode extension includes everything needed to work, no additional installation should be necessary.
 Works on almost any version of Perl, tested all the way back to Perl 5.8. Has full support for multi-root workspaces, single file editing, and multiple open windows.
@@ -11,18 +11,18 @@ Install the vscode extension from here: [https://marketplace.visualstudio.com/it
 
 ## Currently Implemented Features
 
-* Syntax Checking
-* Perl Critic static code analysis/suggestions
-* Documentation on hover and autocomplete
-* Subroutine signatures
-* Code Navigation ("Go To Definition") anywhere, including to installed modules and compile-time dependencies
-* Code formatting via Perl::Tidy
-* Imports cleanup via perlimports
-* Outline view
-* Smart context-aware autocompletion and navigation
-* Hover for more details about objects, subs, and modules
-* Syntax highlighting for Object::Pad, Moose, Zydeco, Dancer2, etc.
-* Support for Classes including Moo/Moose style classes
+- Syntax Checking
+- Perl Critic static code analysis/suggestions
+- Documentation on hover and autocomplete
+- Subroutine signatures
+- Code Navigation ("Go To Definition") anywhere, including to installed modules and compile-time dependencies
+- Code formatting via Perl::Tidy
+- Imports cleanup via perlimports
+- Outline view
+- Smart context-aware autocompletion and navigation
+- Hover for more details about objects, subs, and modules
+- Syntax highlighting for Object::Pad, Moose, Zydeco, Dancer2, etc.
+- Support for Classes including Moo/Moose style classes
 
 ## Visual Studio Code Demo
 
@@ -92,26 +92,26 @@ Sublime Text requires the following minimum settings under LSP settings (modify 
 
 ```json
 {
-    "clients": {
-        "perlnavigator": {
-            "enabled": true,
-            "command": ["node", "C:\\temp\\PerlNavigator\\server\\out\\server.js","--stdio"],
-            "selector": "source.perl",
-        },
-        "settings": {
-            // "perlnavigator.perltidyProfile": "~/.perltidyrc",
-            // "perlnavigator.perlcriticProfile": "~/.perlcriticrc",
-            // "perlnavigator.perlEnvAdd": false, // default: true
-            // "perlnavigator.perlEnv": {
-            //     "KOHA_CONF": "/home/user/git/KohaCommunity/t/data/koha-conf.xml",
-            // },
-            // "perlnavigator.perlPath": "~/perl5/perlbrew/perls/perl-5.38.2/bin",
-            // "perlnavigator.perlcriticSeverity": 1,
-            // "perlnavigator.includePaths": [ "~/git/KohaCommunity", "~/git/KohaCommunity/lib" ],
-            // "perlnavigator.perlcriticEnabled": true,
-            // "perlnavigator.enableWarnings": true,
-        },
-    }
+ "clients": {
+  "perlnavigator": {
+   "enabled": true,
+   "command": ["node", "C:\\temp\\PerlNavigator\\server\\out\\server.js", "--stdio"],
+   "selector": "source.perl"
+  },
+  "settings": {
+   // "perlnavigator.perltidyProfile": "~/.perltidyrc",
+   // "perlnavigator.perlcriticProfile": "~/.perlcriticrc",
+   // "perlnavigator.perlEnvAdd": false, // default: true
+   // "perlnavigator.perlEnv": {
+   //     "KOHA_CONF": "/home/user/git/KohaCommunity/t/data/koha-conf.xml",
+   // },
+   // "perlnavigator.perlPath": "~/perl5/perlbrew/perls/perl-5.38.2/bin",
+   // "perlnavigator.perlcriticSeverity": 1,
+   // "perlnavigator.includePaths": [ "~/git/KohaCommunity", "~/git/KohaCommunity/lib" ],
+   // "perlnavigator.perlcriticEnabled": true,
+   // "perlnavigator.enableWarnings": true,
+  }
+ }
 }
 ```
 
@@ -126,7 +126,7 @@ You can use perl navigator with either lsp-mode or eglot. Eglot is built-in star
 The following is a sample configuration file to use the navigator with emacs and a custom perl location.
 This config uses company-mode, but is not required.
 
-``` lisp
+```lisp
  (setq-default eglot-workspace-configuration
                 '((:perlnavigator . (:perlPath
                               "/path/to/perl"
@@ -148,7 +148,7 @@ You can also use lsp-mode with emacs if you prefer. No special configuration is 
 
 If you need to configure can use something similar to the following configuration. Additional details [here](https://emacs-lsp.github.io/lsp-mode/page/lsp-perlnavigator/)
 
-``` lisp
+```lisp
 (use-package lsp-mode
   ...
   :custom (lsp-perlnavigator-executable (expand-file-name "~/path/to/perlnavigator))
@@ -190,16 +190,13 @@ The configuration can be added directly to coc-settings (`:CocConfig`) like the 
 
 ```json
 {
-  "languageserver": {
-    "perlnavigator": {
-      "command": "node",
-      "args": [
-        "/path/to/PerlNavigator/server/out/server.js",
-        "--stdio"
-      ],
-      "filetypes": ["perl"]
-    }
+ "languageserver": {
+  "perlnavigator": {
+   "command": "node",
+   "args": ["/path/to/PerlNavigator/server/out/server.js", "--stdio"],
+   "filetypes": ["perl"]
   }
+ }
 }
 ```
 
@@ -208,8 +205,8 @@ A simple configuration to enable PerlNavigator, after installing coc-perl (`:Coc
 
 ```json
 {
-  "perl.navigator.enable": true,
-  "perl.navigator.serverPath": "/path/to/PerlNavigator/server/out/server.js"
+ "perl.navigator.enable": true,
+ "perl.navigator.serverPath": "/path/to/PerlNavigator/server/out/server.js"
 }
 ```
 
@@ -219,18 +216,18 @@ For the Kate editor, you'll need to `Configure Kate -> LSP Client` and add a con
 
 ```json
 {
-  "servers":{
-    "perl": {
-      "command": ["d:\\Applications\\perlnavigator.exe", "--stdio"],
-      "url": "https://github.com/bscan/PerlNavigator",
-      "highlightingModeRegex": "^Perl$",
-      "settings": {
-        "perlnavigator": {
-          "perlPath": "perl",
-        }
-      }
+ "servers": {
+  "perl": {
+   "command": ["d:\\Applications\\perlnavigator.exe", "--stdio"],
+   "url": "https://github.com/bscan/PerlNavigator",
+   "highlightingModeRegex": "^Perl$",
+   "settings": {
+    "perlnavigator": {
+     "perlPath": "perl"
     }
+   }
   }
+ }
 }
 ```
 

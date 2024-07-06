@@ -1,19 +1,19 @@
-import { PerlDocument, PerlElem, PerlImport, PerlSymbolKind, TagKind, ElemSource } from "./types";
-import Uri from "vscode-uri";
+import { PerlDocument, PerlElem, PerlSymbolKind, TagKind, ElemSource } from './types';
+import Uri from 'vscode-uri';
 
-export function buildNav(stdout: string, filePath: string, fileuri: string): PerlDocument {
-    stdout = stdout.replaceAll("\r", "") // Windows
+export function buildNav(stdout: string, _filePath: string, fileuri: string): PerlDocument {
+    stdout = stdout.replaceAll('\r', ''); // Windows
 
-    let perlDoc: PerlDocument = {
+    const perlDoc: PerlDocument = {
         elems: new Map(),
         canonicalElems: new Map(),
         autoloads: new Map(),
         imported: new Map(),
         parents: new Map(),
-        uri: fileuri,
+        uri: fileuri
     };
 
-    stdout.split("\n").forEach((perl_elem) => {
+    stdout.split('\n').forEach((perl_elem) => {
         parseElem(perl_elem, perlDoc);
     });
 
@@ -21,25 +21,25 @@ export function buildNav(stdout: string, filePath: string, fileuri: string): Per
 }
 
 function parseElem(perlTag: string, perlDoc: PerlDocument): void {
-    var items = perlTag.split("\t");
+    const items = perlTag.split('\t');
 
     if (items.length != 7) {
         return;
     }
-    if (!items[0] || items[0] == "_") return; // Need a look-up key
+    if (!items[0] || items[0] == '_') return; // Need a look-up key
 
     const name = items[0];
-    const type = items[1] || "";
-    const typeDetail = items[2] || "";
-    const file = items[3] || "";
-    const pack = items[4] || "";
+    const type = items[1] || '';
+    const typeDetail = items[2] || '';
+    const file = items[3] || '';
+    const pack = items[4] || '';
 
-    const lines = items[5].split(";");
+    const lines = items[5].split(';');
 
     const startLine = lines[0] ? +lines[0] : 0;
     const endLine = lines[1] ? +lines[1] : startLine;
 
-    const value = items[6] || "";
+    const value = items[6] || '';
 
     if (type == TagKind.UseStatement) {
         // Explictly loaded module. Helpful for focusing autocomplete results
@@ -63,7 +63,7 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
         line: startLine,
         lineEnd: endLine,
         value: value,
-        source: ElemSource.symbolTable,
+        source: ElemSource.symbolTable
     };
 
     // Move fancy object types into the typeDetail field????
@@ -88,8 +88,8 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
     return;
 }
 
-function addVal(map: Map<string, any[]>, key: string, value: any) {
-    let array = map.get(key) || [];
+function addVal(map: Map<string, unknown[]>, key: string, value: unknown) {
+    const array = map.get(key) || [];
     array.push(value);
     map.set(key, array);
 }
