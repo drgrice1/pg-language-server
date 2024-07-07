@@ -1,29 +1,19 @@
 import { Connection } from 'vscode-languageserver/node';
 import { NavigatorSettings } from './types';
-
 import { WorkDoneProgressBegin, WorkDoneProgressEnd, WorkDoneProgress } from 'vscode-languageserver-protocol';
-
-import { nanoid } from 'nanoid/non-secure';
 
 export async function startProgress(
     connection: Connection,
     title: string,
     settings: NavigatorSettings
 ): Promise<string | null> {
-    if (!settings.enableProgress) {
-        return null;
-    }
-    const progressToken = nanoid();
+    if (!settings.enableProgress) return null;
 
-    await connection.sendRequest('window/workDoneProgress/create', {
-        token: progressToken
-    });
+    const progressToken = (await import('nanoid/non-secure')).nanoid();
 
-    const beginReport: WorkDoneProgressBegin = {
-        title,
-        cancellable: false,
-        kind: 'begin'
-    };
+    await connection.sendRequest('window/workDoneProgress/create', { token: progressToken });
+
+    const beginReport: WorkDoneProgressBegin = { title, cancellable: false, kind: 'begin' };
 
     connection.sendProgress(WorkDoneProgress.type, progressToken, beginReport);
 
