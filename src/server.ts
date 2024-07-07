@@ -35,8 +35,7 @@ import { startProgress, endProgress } from './progress';
 import { getSignature } from './signatures';
 import { getPerlAssetsPath } from './assets';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const LRU = require('lru-cache');
+import { LRUCache } from 'lru-cache';
 
 // It the editor doesn't request node-ipc, use stdio instead. Make sure this runs before createConnection
 if (process.argv.length <= 2) {
@@ -144,9 +143,9 @@ const documentDiags: Map<string, Diagnostic[]> = new Map();
 const documentCompDiags: Map<string, Diagnostic[]> = new Map();
 
 // My ballpark estimate is that 350k symbols will be about 35MB. Huge map, but a reasonable limit.
-const navSymbols = new LRU({
-    max: 350000,
-    length: function (value: PerlDocument) {
+const navSymbols = new LRUCache({
+    maxSize: 350000,
+    sizeCalculation(value: PerlDocument) {
         return value.elems.size;
     }
 });
@@ -262,7 +261,7 @@ documents.onDidClose((e) => {
     documentSettings.delete(e.document.uri);
     documentDiags.delete(e.document.uri);
     documentCompDiags.delete(e.document.uri);
-    navSymbols.del(e.document.uri);
+    navSymbols.delete(e.document.uri);
     connection.sendDiagnostics({ uri: e.document.uri, diagnostics: [] });
 });
 
