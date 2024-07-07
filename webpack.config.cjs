@@ -15,7 +15,7 @@ module.exports = [
         context: __dirname,
         target: 'node', // web extensions run in a webworker context
         entry: {
-            serverMain: './src/server.ts'
+            server: './src/server.ts'
         },
         output: {
             filename: '[name].js',

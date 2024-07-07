@@ -24,8 +24,6 @@
     "activationEvents": [
         "onLanguage:pg"
     ],
-    "main": "./dist/server.js",
-    "browser": "./client/dist/browserClientMain",
     "contributes": {
         "configuration": {
             "type": "object",

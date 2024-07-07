@@ -152,7 +152,8 @@ const navSymbols = new LRUCache({
 
 const timers: Map<string, NodeJS.Timeout> = new Map();
 
-// Keep track of modules available for import. Building this is a slow operations and varies based on workspace settings, not documents
+// Keep track of modules available for import. Building this is a slow operations and varies based on workspace
+// settings, not documents
 const availableMods: Map<string, Map<string, string>> = new Map();
 let modCacheBuilt: boolean = false;
 
@@ -314,7 +315,8 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
 
     let mixOldAndNew = perlOut.diags;
     if (oldCriticDiags && settings.perlcriticEnabled) {
-        // Resend old critic diags to avoid overall file "blinking" in between receiving compilation and critic. TODO: async wait if it's not that long.
+        // Resend old critic diags to avoid overall file "blinking" in between receiving compilation and critic.
+        // TODO: async wait if it's not that long.
         mixOldAndNew = perlOut.diags.concat(oldCriticDiags);
     }
     sendDiags({ uri: textDocument.uri, diagnostics: mixOldAndNew });
@@ -383,7 +385,7 @@ connection.onCompletion((params: TextDocumentPositionParams): CompletionList | u
     let mods = availableMods.get('default');
 
     if (!document) return;
-    if (!perlDoc) return; // navSymbols is an LRU cache, so the navigation elements will be missing if you open lots of files
+    if (!perlDoc) return;
     if (!mods) mods = new Map();
     const completions: CompletionItem[] = getCompletions(params, perlDoc, document, mods);
     return {
@@ -425,7 +427,7 @@ connection.onDefinition(async (params) => {
     let mods = availableMods.get('default');
     if (!mods) mods = new Map();
     if (!document) return;
-    if (!perlDoc) return; // navSymbols is an LRU cache, so the navigation elements will be missing if you open lots of files
+    if (!perlDoc) return;
     const locOut: Location | Location[] | undefined = await getDefinition(params, perlDoc, document, mods);
     return locOut;
 });
