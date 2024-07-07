@@ -5,7 +5,7 @@ import { getSymbol, lookupSymbol } from './utils';
 import { refineElementIfSub } from './refinement';
 import { getPod } from './pod';
 
-import Uri from 'vscode-uri';
+import { URI } from 'vscode-uri';
 
 export async function getHover(
     params: TextDocumentPositionParams,
@@ -103,7 +103,7 @@ function buildHoverDoc(symbol: string, elem: PerlElem, refined: PerlElem | undef
             desc = `(package) ${elem.name}`;
             break;
         case PerlSymbolKind.Module: {
-            const file = Uri.parse(elem.uri).fsPath;
+            const file = URI.parse(elem.uri).fsPath;
             desc = `(module) ${elem.name}: ${file}`;
             break;
         }

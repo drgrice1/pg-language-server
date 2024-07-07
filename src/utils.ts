@@ -1,5 +1,5 @@
 import { WorkspaceFolder } from 'vscode-languageserver-protocol';
-import Uri from 'vscode-uri';
+import { URI } from 'vscode-uri';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { TextDocument, Position } from 'vscode-languageserver-textdocument';
@@ -17,7 +17,7 @@ export function getIncPaths(workspaceFolders: WorkspaceFolder[] | null, settings
         if (path.indexOf('$workspaceFolder') != -1) {
             if (workspaceFolders) {
                 workspaceFolders.forEach((workspaceFolder) => {
-                    const incPath = Uri.parse(workspaceFolder.uri).fsPath;
+                    const incPath = URI.parse(workspaceFolder.uri).fsPath;
                     includePaths = includePaths.concat(['-I', path.replaceAll('$workspaceFolder', incPath)]);
                 });
             } else {
@@ -35,7 +35,7 @@ export function getIncPaths(workspaceFolders: WorkspaceFolder[] | null, settings
         // Add project root / lib for each workspace folder.
         if (workspaceFolders) {
             workspaceFolders.forEach((workspaceFolder) => {
-                const rootPath = Uri.parse(workspaceFolder.uri).fsPath;
+                const rootPath = URI.parse(workspaceFolder.uri).fsPath;
                 includePaths = includePaths.concat(['-I', path.join(rootPath, 'lib')]);
             });
         }
@@ -152,7 +152,7 @@ export function lookupSymbol(
     const foundMod = modMap.get(symbol);
     if (foundMod) {
         // Ideally we would've found the module in the PerlDoc, but perhaps it was "required" instead of "use'd"
-        const modUri = Uri.parse(foundMod).toString();
+        const modUri = URI.parse(foundMod).toString();
         const modElem: PerlElem = {
             name: symbol,
             type: PerlSymbolKind.Module,

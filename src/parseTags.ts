@@ -1,5 +1,5 @@
 import { PerlDocument, PerlElem, PerlSymbolKind, TagKind, ElemSource } from './types';
-import Uri from 'vscode-uri';
+import { URI } from 'vscode-uri';
 
 export function buildNav(stdout: string, _filePath: string, fileuri: string): PerlDocument {
     stdout = stdout.replaceAll('\r', ''); // Windows
@@ -58,7 +58,7 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
         name: name,
         type: type as PerlSymbolKind,
         typeDetail: typeDetail,
-        uri: Uri.file(file).toString(), //  Uri.from(file).toString(),
+        uri: URI.file(file).toString(),
         package: pack,
         line: startLine,
         lineEnd: endLine,

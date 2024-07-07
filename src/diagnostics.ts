@@ -2,7 +2,7 @@ import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver/node';
 import { ParseType, NavigatorSettings, CompilationResults, PerlDocument } from './types';
 import { WorkspaceFolder } from 'vscode-languageserver-protocol';
 import { join } from 'path';
-import Uri from 'vscode-uri';
+import { URI } from 'vscode-uri';
 import { getIncPaths, getPerlimportsProfile, async_execFile, nLog } from './utils';
 import { buildNav } from './parseTags';
 import { getPerlAssetsPath } from './assets';
@@ -24,7 +24,7 @@ export async function perlcompile(
     let perlParams: string[] = [...settings.perlParams, '-c'];
     const perlEnv = settings.perlEnv;
     const perlEnvAdd = settings.perlEnvAdd;
-    const filePath = Uri.parse(textDocument.uri).fsPath;
+    const filePath = URI.parse(textDocument.uri).fsPath;
 
     if (settings.enableWarnings) perlParams = perlParams.concat(['-Mwarnings', '-M-warnings=redefine']); // Force enable some warnings.
     perlParams = perlParams.concat(getIncPaths(workspaceFolders, settings));
@@ -206,7 +206,7 @@ export async function perlcritic(
     let criticParams: string[] = [...settings.perlParams, critic_path].concat(
         getCriticProfile(workspaceFolders, settings)
     );
-    criticParams = criticParams.concat(['--file', Uri.parse(textDocument.uri).fsPath]);
+    criticParams = criticParams.concat(['--file', URI.parse(textDocument.uri).fsPath]);
 
     // Add any extra params from settings
     if (settings.perlcriticSeverity)
@@ -257,7 +257,7 @@ export async function perlimports(
         '--lint',
         '--json',
         '--filename',
-        Uri.parse(textDocument.uri).fsPath
+        URI.parse(textDocument.uri).fsPath
     ];
 
     nLog('Now starting perlimports with: ' + cliParams.join(' '), settings);
@@ -298,7 +298,7 @@ function getCriticProfile(workspaceFolders: WorkspaceFolder[] | null, settings: 
         if (profile.indexOf('$workspaceFolder') != -1) {
             if (workspaceFolders) {
                 // TODO: Fix this too. Only uses the first workspace folder
-                const workspaceUri = Uri.parse(workspaceFolders[0].uri).fsPath;
+                const workspaceUri = URI.parse(workspaceFolders[0].uri).fsPath;
                 profileCmd.push('--profile');
                 profileCmd.push(profile.replaceAll('$workspaceFolder', workspaceUri));
             } else {

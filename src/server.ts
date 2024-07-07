@@ -21,7 +21,7 @@ import { homedir } from 'os';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { PublishDiagnosticsParams } from 'vscode-languageserver-protocol';
 
-import Uri from 'vscode-uri';
+import { URI } from 'vscode-uri';
 import { perlcompile, perlcritic, perlimports } from './diagnostics';
 import { cleanupTemporaryAssetPath } from './assets';
 import { getDefinition, getAvailableMods } from './navigation';
@@ -285,7 +285,7 @@ documents.onDidChangeContent((change) => {
 });
 
 async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
-    const fileName = basename(Uri.parse(textDocument.uri).fsPath);
+    const fileName = basename(URI.parse(textDocument.uri).fsPath);
 
     const settings = await getDocumentSettings(textDocument.uri);
     nLog('Found settings', settings);

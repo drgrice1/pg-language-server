@@ -8,7 +8,7 @@ import {
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { PerlDocument, PerlElem, CompletionPrefix, PerlSymbolKind, completionElem, ElemSource } from './types';
 import { getPod } from './pod';
-import Uri from 'vscode-uri';
+import { URI } from 'vscode-uri';
 
 export function getCompletions(
     params: TextDocumentPositionParams,
@@ -103,7 +103,7 @@ function getImportMatches(
     const lcSymbol = symbol.toLowerCase();
     modMap.forEach((modFile, mod) => {
         if (mod.toLowerCase().startsWith(lcSymbol)) {
-            const modUri = Uri.parse(modFile).toString();
+            const modUri = URI.parse(modFile).toString();
             const modElem: PerlElem = {
                 name: symbol,
                 type: PerlSymbolKind.Module,

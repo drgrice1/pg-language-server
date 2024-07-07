@@ -1,6 +1,6 @@
 import { PerlDocument, PerlElem, PerlSymbolKind, ParseType, TagKind, ElemSource } from './types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import Uri from 'vscode-uri';
+import { URI } from 'vscode-uri';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vsctm from 'vscode-textmate';
@@ -34,7 +34,7 @@ type ParseFunc = (state: ParserState) => boolean;
 
 export async function parseFromUri(uri: string, parseType: ParseType): Promise<PerlDocument | undefined> {
     // File may not exists. Return nothing if it doesn't
-    const absolutePath = Uri.parse(uri).fsPath;
+    const absolutePath = URI.parse(uri).fsPath;
     let content;
     try {
         content = await fs.promises.readFile(absolutePath, 'utf8');

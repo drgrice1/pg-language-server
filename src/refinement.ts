@@ -2,7 +2,7 @@ import { TextDocumentPositionParams } from 'vscode-languageserver/node';
 import { ElemSource, ParseType, PerlDocument, PerlElem, PerlSymbolKind } from './types';
 import { parseFromUri } from './parser';
 import * as fs from 'fs';
-import Uri from 'vscode-uri';
+import { URI } from 'vscode-uri';
 
 export async function refineElementIfSub(
     elem: PerlElem,
@@ -76,7 +76,7 @@ async function getUriFromElement(elem: PerlElem, perlDoc: PerlDocument): Promise
 }
 
 async function isFile(uri: string): Promise<boolean> {
-    const file = Uri.parse(uri).fsPath;
+    const file = URI.parse(uri).fsPath;
     if (!file || file.length < 1) {
         return false;
     }
