@@ -8,20 +8,20 @@ let pkgAssetPath: string;
 
 async function extractAssetsIfNecessary(): Promise<string> {
     if (!haveExtractedAssets) {
-        pkgAssetPath = mkdtempSync(join(tmpdir(), 'perl-navigator'));
+        pkgAssetPath = mkdtempSync(join(tmpdir(), 'pg-language-server'));
         const assets: string[] = [
-            'src/perl/lib_bs22/ModHunter.pl',
-            'src/perl/Inquisitor.pm',
-            'src/perl/criticWrapper.pl',
-            'src/perl/lib_bs22/Class/Inspector.pm',
-            'src/perl/lib_bs22/Devel/Symdump.pm',
-            'src/perl/lib_bs22/Devel/Symdump/Export.pm',
-            'src/perl/lib_bs22/Inspectorito.pm',
-            'src/perl/lib_bs22/SubUtilPP.pm',
-            'src/perl/lib_bs22/SourceStash.pm',
-            'src/perl/lib_bs22/pltags.pm',
-            'src/perl/defaultCriticProfile',
-            'src/perl/pgTidyWrapper.pl'
+            'server/src/perl/lib_bs22/ModHunter.pl',
+            'server/src/perl/Inquisitor.pm',
+            'server/src/perl/criticWrapper.pl',
+            'server/src/perl/lib_bs22/Class/Inspector.pm',
+            'server/src/perl/lib_bs22/Devel/Symdump.pm',
+            'server/src/perl/lib_bs22/Devel/Symdump/Export.pm',
+            'server/src/perl/lib_bs22/Inspectorito.pm',
+            'server/src/perl/lib_bs22/SubUtilPP.pm',
+            'server/src/perl/lib_bs22/SourceStash.pm',
+            'server/src/perl/lib_bs22/pltags.pm',
+            'server/src/perl/defaultCriticProfile',
+            'server/src/perl/pgTidyWrapper.pl'
         ];
 
         assets.forEach((asset) => {
@@ -54,7 +54,7 @@ async function getAssetsPath(): Promise<string> {
 }
 
 export async function getPerlAssetsPath(): Promise<string> {
-    return join(await getAssetsPath(), 'src', 'perl');
+    return join(await getAssetsPath(), 'server', 'src', 'perl');
 }
 
 export function cleanupTemporaryAssetPath() {

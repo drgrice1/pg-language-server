@@ -1,21 +1,52 @@
 /* eslint-env node */
-
-//@ts-check
 'use strict';
-
-//@ts-check
-/** @typedef {import('webpack').Configuration} WebpackConfig **/
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const path = require('path');
 
 module.exports = [
-    /** @type WebpackConfig */
+    // coc-client configuration
     {
         context: __dirname,
-        target: 'node', // web extensions run in a webworker context
+        target: 'node',
         entry: {
-            server: './src/server.ts'
+            extension: './coc-client/src/extension.ts'
+        },
+        output: {
+            filename: '[name].js',
+            path: path.resolve(__dirname, 'dist'),
+            library: { type: 'commonjs' }
+        },
+        resolve: {
+            modules: ['node_modules'],
+            extensions: ['.js', '.ts'],
+            mainFields: ['browser', 'module', 'main'],
+            mainFiles: ['extension']
+        },
+        module: {
+            rules: [
+                {
+                    test: /\.ts$/,
+                    exclude: /node_modules/,
+                    use: [
+                        {
+                            loader: 'ts-loader'
+                        }
+                    ]
+                }
+            ]
+        },
+        externals: {
+            'coc.nvim': 'commonjs coc.nvim'
+        },
+        devtool: 'source-map'
+    },
+    // language server configuration
+    {
+        context: __dirname,
+        target: 'node',
+        entry: {
+            server: './server/src/server.ts'
         },
         output: {
             filename: '[name].js',
@@ -25,7 +56,7 @@ module.exports = [
         },
         resolve: {
             mainFields: ['module', 'main'],
-            extensions: ['.ts', '.js'], // support ts-files and js-files
+            extensions: ['.ts', '.js'],
             alias: {},
             fallback: {
                 path: false,

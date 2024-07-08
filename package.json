@@ -1,27 +1,30 @@
 {
     "name": "pg-language-server",
     "displayName": "PG Lanbuage Server",
-    "description": "Code navigation, autocompletion, syntax checking, and linting for PG",
-    "author": "drgrice1",
+    "description": "Code navigation, autocompletion, syntax checking, and linting for WeBWorK PG problem files",
+    "author": "Glenn Rice <grice1@missouriwestern.edu>",
     "license": "MIT",
     "version": "0.0.1",
     "repository": {
         "type": "git",
         "url": "https://github.com/drgrice1/pg-language-server"
     },
-    "publisher": "drgrice1",
-    "categories": [],
+    "publisher": "grice1@missouriwestern.edu",
     "keywords": [
         "pg",
+        "WeBWorK",
         "perl",
+        "coc.nvim",
         "lsp",
         "languageserver"
     ],
     "engines": {
-        "vscode": "^1.43.0",
-        "coc.nvim": "^0.0.82"
+        "coc": "^0.0.82",
+        "vscode": "^1.53.0"
     },
+    "main": "dist/extension.js",
     "activationEvents": [
+        "workspaceContains:**/*.pg",
         "onLanguage:pg"
     ],
     "contributes": {
@@ -29,6 +32,11 @@
             "type": "object",
             "title": "PG Language Server",
             "properties": {
+                "coc-pg.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable coc-pg extension"
+                },
                 "pg.perlPath": {
                     "scope": "resource",
                     "type": "string",
@@ -350,16 +358,17 @@
         ]
     },
     "scripts": {
-        "format:prettier": "prettier --write \"**/*.{js,cjs,ts,md,json}\" --ignore-path .gitignore",
+        "format:prettier": "prettier --write \"**/*.{js,cjs,ts,md,json}\"",
         "lint:eslint": "eslint ./ --fix",
         "compile": "tsc -b",
         "watch": "tsc -b -w",
-        "package": "export NODE_OPTIONS=--openssl-legacy-provider; webpack --mode production --devtool hidden-source-map"
+        "build": "export NODE_OPTIONS=--openssl-legacy-provider; webpack --mode production --devtool hidden-source-map"
     },
     "devDependencies": {
         "@eslint/js": "^9.6.0",
         "@types/node": "^20.14.10",
         "@types/webpack-env": "^1.18.5",
+        "coc.nvim": "^0.0.83-next.18",
         "eslint": "^9.6.0",
         "eslint-config-prettier": "^9.1.0",
         "globals": "^15.8.0",
@@ -377,12 +386,17 @@
         "webpack": "^5.92.1",
         "webpack-cli": "^5.1.4"
     },
+    "overrides": {
+        "coc.nvim": {
+            "@types/node": ">=20.14.10"
+        }
+    },
     "pkg": {
-        "scripts": "dist/server.js",
+        "scripts": "server/dist/server.js",
         "assets": [
-            "src/**/*",
+            "server/src/**/*",
             "node_modules/vscode-oniguruma/release/onig.wasm",
-            "perl.tmLanguage.json"
+            "server/perl.tmLanguage.json"
         ],
         "targets": [
             "node20-linux-x64",

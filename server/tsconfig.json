@@ -1,13 +1,14 @@
 {
     "compilerOptions": {
         "target": "es2022",
-        "lib": ["es2023"],
+        "lib": ["es2023", "dom"],
         "module": "commonjs",
+        "moduleResolution": "node",
         "sourceMap": true,
-        "outDir": "lib",
+        "strict": true,
+        "outDir": "../lib",
         "rootDir": "src"
     },
     "include": ["src"],
-    "exclude": ["node_modules"],
-    "references": [{ "path": "./coc-client" }, { "path": "./server" }]
+    "exclude": ["node_modules"]
 }
