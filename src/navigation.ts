@@ -1,6 +1,6 @@
 import { DefinitionParams, Location, WorkspaceFolder } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { PerlDocument, PerlElem, NavigatorSettings } from './types';
+import { PerlDocument, PerlElem, PGLanguageServerSettings } from './types';
 import { URI } from 'vscode-uri';
 import { realpathSync, realpath } from 'fs';
 import { getIncPaths, async_execFile, getSymbol, lookupSymbol, nLog, isFile } from './utils';
@@ -132,7 +132,7 @@ function badFile(uri: string): boolean {
 
 export async function getAvailableMods(
     workspaceFolders: WorkspaceFolder[] | null,
-    settings: NavigatorSettings
+    settings: PGLanguageServerSettings
 ): Promise<Map<string, string>> {
     let perlParams = settings.perlParams;
     perlParams = perlParams.concat(getIncPaths(workspaceFolders, settings));

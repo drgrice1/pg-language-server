@@ -1,0 +1,4 @@
+[submodule "src/perl/pg"]
+    path = src/perl/pg
+    url = https://github.com/openwebwork/pg.git
+    branch = PG-2.19

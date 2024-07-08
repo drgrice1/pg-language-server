@@ -4,7 +4,7 @@
 
 import { Diagnostic } from 'vscode-languageserver/node';
 
-export interface NavigatorSettings {
+export interface PGLanguageServerSettings {
     perlPath: string;
     perlParams: string[];
     enableWarnings: boolean;
@@ -14,11 +14,8 @@ export interface NavigatorSettings {
     perlcriticTheme: undefined | string;
     perlcriticExclude: undefined | string;
     perlcriticInclude: undefined | string;
-    perlimportsLintEnabled: boolean;
-    perlimportsTidyEnabled: boolean;
-    perlimportsProfile: string;
-    perltidyEnabled: boolean;
-    perltidyProfile: string;
+    pgPerltidyEnabled: boolean;
+    pgPerltidyProfile: string;
     perlCompileEnabled: boolean;
     perlEnv: undefined | { [key: string]: string };
     perlEnvAdd: boolean;
@@ -44,11 +41,6 @@ export interface PerlElem {
     lineEnd: number;
     value: string;
     source: ElemSource;
-}
-
-// Used for keeping track of what has been imported
-export interface PerlImport {
-    mod: string;
 }
 
 export interface PerlDocument {

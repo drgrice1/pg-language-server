@@ -3,14 +3,14 @@ import { URI } from 'vscode-uri';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { TextDocument, Position } from 'vscode-languageserver-textdocument';
-import { PerlDocument, PerlElem, NavigatorSettings, PerlSymbolKind, ElemSource } from './types';
+import { PerlDocument, PerlElem, PGLanguageServerSettings, PerlSymbolKind, ElemSource } from './types';
 import * as path from 'path';
 import { promises } from 'fs';
 
 export const async_execFile = promisify(execFile);
 
 // TODO: This behaviour should be temporary. Review and update treatment of multi-root workspaces
-export function getIncPaths(workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): string[] {
+export function getIncPaths(workspaceFolders: WorkspaceFolder[] | null, settings: PGLanguageServerSettings): string[] {
     let includePaths: string[] = [];
 
     settings.includePaths.forEach((path) => {
@@ -256,19 +256,11 @@ export function lookupSymbol(
     return [];
 }
 
-export function nLog(message: string, settings: NavigatorSettings) {
+export function nLog(message: string, settings: PGLanguageServerSettings) {
     // TODO: Remove resource level settings and just use a global logging setting?
     if (settings.logging) {
         console.error(message);
     }
-}
-
-export function getPerlimportsProfile(settings: NavigatorSettings): string[] {
-    const profileCmd: string[] = [];
-    if (settings.perlimportsProfile) {
-        profileCmd.push('--config-file', settings.perlimportsProfile);
-    }
-    return profileCmd;
 }
 
 export async function isFile(file: string): Promise<boolean> {

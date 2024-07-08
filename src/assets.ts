@@ -21,8 +21,7 @@ async function extractAssetsIfNecessary(): Promise<string> {
             'src/perl/lib_bs22/SourceStash.pm',
             'src/perl/lib_bs22/pltags.pm',
             'src/perl/defaultCriticProfile',
-            'src/perl/tidyWrapper.pl',
-            'src/perl/perlimportsWrapper.pl'
+            'src/perl/pgTidyWrapper.pl'
         ];
 
         assets.forEach((asset) => {

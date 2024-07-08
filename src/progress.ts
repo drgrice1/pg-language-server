@@ -1,12 +1,12 @@
 import { Connection } from 'vscode-languageserver/node';
-import { NavigatorSettings } from './types';
+import { PGLanguageServerSettings } from './types';
 import type { WorkDoneProgressBegin, WorkDoneProgressEnd } from 'vscode-languageserver-protocol';
 import { WorkDoneProgress } from 'vscode-languageserver-protocol';
 
 export async function startProgress(
     connection: Connection,
     title: string,
-    settings: NavigatorSettings
+    settings: PGLanguageServerSettings
 ): Promise<string | null> {
     if (!settings.enableProgress) return null;
 

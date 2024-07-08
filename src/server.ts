@@ -1,41 +1,42 @@
 /* Perl Navigator server. See licenses.txt file for licensing and copyright information */
 
+import type {
+    Diagnostic,
+    InitializeParams,
+    InitializeResult,
+    WorkspaceFolder
+    //Location,
+    //CompletionItem,
+    //CompletionList
+    //TextDocumentPositionParams,
+} from 'vscode-languageserver/node';
 import {
     createConnection,
     TextDocuments,
-    Diagnostic,
     ProposedFeatures,
-    InitializeParams,
     DidChangeConfigurationNotification,
     TextDocumentSyncKind,
-    InitializeResult,
-    Location,
-    WorkspaceFolder,
-    CompletionItem,
-    CompletionList,
-    TextDocumentPositionParams,
     TextEdit
 } from 'vscode-languageserver/node';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+//import type { PublishDiagnosticsParams } from 'vscode-languageserver-protocol';
+import { URI } from 'vscode-uri';
 import { basename } from 'path';
 import { homedir } from 'os';
-import { TextDocument } from 'vscode-languageserver-textdocument';
-import { PublishDiagnosticsParams } from 'vscode-languageserver-protocol';
+import { LRUCache } from 'lru-cache';
 
-import { URI } from 'vscode-uri';
-import { perlcompile, perlcritic, perlimports } from './diagnostics';
+//import { perlcompile, perlcritic } from './diagnostics';
 import { cleanupTemporaryAssetPath } from './assets';
-import { getDefinition, getAvailableMods } from './navigation';
-import { getSymbols, getWorkspaceSymbols } from './symbols';
-import { NavigatorSettings, PerlDocument, PerlElem } from './types';
-import { getHover } from './hover';
-import { getCompletions, getCompletionDoc } from './completion';
+//import { getDefinition, getAvailableMods } from './navigation';
+import { getSymbols /*, getWorkspaceSymbols */ } from './symbols';
+import type { PGLanguageServerSettings, PerlDocument /*, PerlElem */ } from './types';
+//import { getHover } from './hover';
+//import { getCompletions, getCompletionDoc } from './completion';
 import { formatDoc, formatRange } from './formatting';
 import { nLog } from './utils';
-import { startProgress, endProgress } from './progress';
-import { getSignature } from './signatures';
+//import { startProgress, endProgress } from './progress';
+//import { getSignature } from './signatures';
 import { getPerlAssetsPath } from './assets';
-
-import { LRUCache } from 'lru-cache';
 
 // It the editor doesn't request node-ipc, use stdio instead. Make sure this runs before createConnection
 if (process.argv.length <= 2) {
@@ -56,7 +57,7 @@ connection.onInitialize(async (params: InitializeParams) => {
     const capabilities = params.capabilities;
 
     // Does the client support the `workspace/configuration` request?
-    // If not, we fall back using global settings.
+    // If not, fall back using global settings.
     hasConfigurationCapability = !!(capabilities.workspace && !!capabilities.workspace.configuration);
     hasWorkspaceFolderCapability = !!(capabilities.workspace && !!capabilities.workspace.workspaceFolders);
 
@@ -64,6 +65,7 @@ connection.onInitialize(async (params: InitializeParams) => {
         capabilities: {
             textDocumentSync: TextDocumentSyncKind.Incremental,
 
+            /*
             completionProvider: {
                 resolveProvider: true,
                 triggerCharacters: ['$', '@', '%', '-', '>', ':']
@@ -73,12 +75,15 @@ connection.onInitialize(async (params: InitializeParams) => {
             documentSymbolProvider: true, // Outline view and breadcrumbs
             workspaceSymbolProvider: true,
             hoverProvider: true,
+            */
             documentFormattingProvider: true,
-            documentRangeFormattingProvider: true,
+            documentRangeFormattingProvider: true
+            /*
             signatureHelpProvider: {
                 // Triggers open signature help, switch to next param, and then close help
                 triggerCharacters: ['(', ',', ')']
             }
+            */
         }
     };
     if (hasWorkspaceFolderCapability) {
@@ -102,21 +107,18 @@ connection.onInitialized(() => {
 // The global settings, used when the `workspace/configuration` request is not supported by the client.
 // Does not happen with the vscode client could happen with other clients.
 // The "real" default settings are in the top-level package.json
-const defaultSettings: NavigatorSettings = {
+const defaultSettings: PGLanguageServerSettings = {
     perlPath: 'perl',
     perlParams: [],
     enableWarnings: true,
-    perlimportsProfile: '',
-    perltidyProfile: '',
+    pgPerltidyProfile: '',
     perlcriticProfile: '',
     perlcriticEnabled: true,
     perlcriticSeverity: undefined,
     perlcriticTheme: undefined,
     perlcriticExclude: undefined,
     perlcriticInclude: undefined,
-    perlimportsLintEnabled: false,
-    perlimportsTidyEnabled: false,
-    perltidyEnabled: true,
+    pgPerltidyEnabled: true,
     perlCompileEnabled: true,
     perlEnv: undefined,
     perlEnvAdd: true,
@@ -131,10 +133,10 @@ const defaultSettings: NavigatorSettings = {
     enableProgress: false
 };
 
-let globalSettings: NavigatorSettings = defaultSettings;
+let globalSettings: PGLanguageServerSettings = defaultSettings;
 
 // Cache the settings of all open documents
-const documentSettings: Map<string, NavigatorSettings> = new Map();
+const documentSettings: Map<string, PGLanguageServerSettings> = new Map();
 
 // Store recent critic diags to prevent blinking of diagnostics
 const documentDiags: Map<string, Diagnostic[]> = new Map();
@@ -152,6 +154,7 @@ const navSymbols = new LRUCache({
 
 const timers: Map<string, NodeJS.Timeout> = new Map();
 
+/*
 // Keep track of modules available for import. Building this is a slow operations and varies based on workspace
 // settings, not documents
 const availableMods: Map<string, Map<string, string>> = new Map();
@@ -182,21 +185,18 @@ async function dispatchForMods(textDocument: TextDocument) {
     availableMods.set('default', newMods);
     return;
 }
+*/
 
 async function getWorkspaceFoldersSafe(): Promise<WorkspaceFolder[]> {
     try {
         const workspaceFolders = await connection.workspace.getWorkspaceFolders();
-        if (!workspaceFolders) {
-            return [];
-        } else {
-            return workspaceFolders;
-        }
+        return workspaceFolders ?? [];
     } catch {
         return [];
     }
 }
 
-function expandTildePaths(paths: string, settings: NavigatorSettings): string {
+function expandTildePaths(paths: string, settings: PGLanguageServerSettings): string {
     const path = paths;
     // Consider that this not a Windows feature,
     // so, Windows "%USERPROFILE%" currently is ignored (and rarely used).
@@ -209,7 +209,7 @@ function expandTildePaths(paths: string, settings: NavigatorSettings): string {
     }
 }
 
-async function getDocumentSettings(resource: string): Promise<NavigatorSettings> {
+async function getDocumentSettings(resource: string): Promise<PGLanguageServerSettings> {
     if (!hasConfigurationCapability) {
         return globalSettings;
     }
@@ -217,7 +217,7 @@ async function getDocumentSettings(resource: string): Promise<NavigatorSettings>
     if (!result) {
         result = await connection.workspace.getConfiguration({
             scopeUri: resource,
-            section: 'perlnavigator'
+            section: 'pg'
         });
         if (!result) return globalSettings;
         const resolvedSettings = { ...globalSettings, ...result };
@@ -230,14 +230,8 @@ async function getDocumentSettings(resource: string): Promise<NavigatorSettings>
         if (resolvedSettings.perlPath) {
             resolvedSettings.perlPath = expandTildePaths(resolvedSettings.perlPath, resolvedSettings);
         }
-        if (resolvedSettings.perlimportsProfile) {
-            resolvedSettings.perlimportsProfile = expandTildePaths(
-                resolvedSettings.perlimportsProfile,
-                resolvedSettings
-            );
-        }
-        if (resolvedSettings.perltidyProfile) {
-            resolvedSettings.perltidyProfile = expandTildePaths(resolvedSettings.perltidyProfile, resolvedSettings);
+        if (resolvedSettings.pgPerltidyProfile) {
+            resolvedSettings.pgPerltidyProfile = expandTildePaths(resolvedSettings.pgPerltidyProfile, resolvedSettings);
         }
         if (resolvedSettings.perlcriticProfile) {
             resolvedSettings.perlcriticProfile = expandTildePaths(resolvedSettings.perlcriticProfile, resolvedSettings);
@@ -268,7 +262,7 @@ documents.onDidClose((e) => {
 
 documents.onDidOpen((change) => {
     validatePerlDocument(change.document);
-    buildModCache(change.document);
+    //buildModCache(change.document);
 });
 
 documents.onDidSave((change) => {
@@ -286,11 +280,12 @@ documents.onDidChangeContent((change) => {
 });
 
 async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
-    const fileName = basename(URI.parse(textDocument.uri).fsPath);
-
     const settings = await getDocumentSettings(textDocument.uri);
-    nLog('Found settings', settings);
 
+    const fileName = basename(URI.parse(textDocument.uri).fsPath);
+    nLog(`Filename is ${fileName}`, settings);
+
+    /*
     const progressToken = navSymbols.has(textDocument.uri)
         ? null
         : await startProgress(connection, `Initializing ${fileName}`, settings);
@@ -301,7 +296,6 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
 
     const pCompile = perlcompile(textDocument, workspaceFolders, settings); // Start compilation
     const pCritic = perlcritic(textDocument, workspaceFolders, settings); // Start perlcritic
-    const pImports = perlimports(textDocument, workspaceFolders, settings); // Start perlimports
 
     const perlOut = await pCompile;
     nLog('Compilation Time: ' + (Date.now() - start) / 1000 + ' seconds', settings);
@@ -333,11 +327,6 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
         nLog('Perl Critic Time: ' + (Date.now() - start) / 1000 + ' seconds', settings);
     }
 
-    if (settings.perlimportsLintEnabled) {
-        newDiags = newDiags.concat(diagImports);
-        nLog(`perlimports Time: ${(Date.now() - start) / 1000} seconds`, settings);
-    }
-
     documentDiags.set(textDocument.uri, newDiags); // May need to clear out old ones if a user changed their settings.
 
     let compDiags = documentCompDiags.get(textDocument.uri);
@@ -349,8 +338,10 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
     }
     endProgress(connection, progressToken);
     return;
+    */
 }
 
+/*
 function sendDiags(params: PublishDiagnosticsParams): void {
     // Before sending new diagnostics, check if the file is still open.
     if (documents.get(params.uri)) {
@@ -359,6 +350,7 @@ function sendDiags(params: PublishDiagnosticsParams): void {
         connection.sendDiagnostics({ uri: params.uri, diagnostics: [] });
     }
 }
+*/
 
 connection.onDidChangeConfiguration(async (change) => {
     if (hasConfigurationCapability) {
@@ -370,7 +362,7 @@ connection.onDidChangeConfiguration(async (change) => {
 
     if (change?.settings?.perlnavigator) {
         // Despite what it looks like, this fires on all settings changes, not just Navigator
-        await rebuildModCache();
+        //await rebuildModCache();
         for (const doc of documents.all()) {
             // sequential changes
             await validatePerlDocument(doc);
@@ -378,6 +370,7 @@ connection.onDidChangeConfiguration(async (change) => {
     }
 });
 
+/*
 // This handler provides the initial list of the completion items.
 connection.onCompletion((params: TextDocumentPositionParams): CompletionList | undefined => {
     const document = documents.get(params.textDocument.uri);
@@ -409,7 +402,9 @@ connection.onCompletionResolve(async (item: CompletionItem): Promise<CompletionI
     }
     return item;
 });
+*/
 
+/*
 connection.onHover(async (params) => {
     const document = documents.get(params.textDocument.uri);
     const perlDoc = navSymbols.get(params.textDocument.uri);
@@ -431,6 +426,7 @@ connection.onDefinition(async (params) => {
     const locOut: Location | Location[] | undefined = await getDefinition(params, perlDoc, document, mods);
     return locOut;
 });
+*/
 
 connection.onDocumentSymbol(async (params) => {
     const document = documents.get(params.textDocument.uri);
@@ -439,18 +435,21 @@ connection.onDocumentSymbol(async (params) => {
     return getSymbols(document, params.textDocument.uri);
 });
 
+/*
 connection.onWorkspaceSymbol((params) => {
     const defaultMods = availableMods.get('default');
     if (!defaultMods) return;
     return getWorkspaceSymbols(params, defaultMods);
 });
+*/
 
 connection.onDocumentFormatting(async (params) => {
     const document = documents.get(params.textDocument.uri);
     const settings = await getDocumentSettings(params.textDocument.uri);
+    if (!document || !settings) return;
+
     const workspaceFolders = await getWorkspaceFoldersSafe();
 
-    if (!document || !settings) return;
     const editOut: TextEdit[] | undefined = await formatDoc(params, document, settings, workspaceFolders, connection);
     return editOut;
 });
@@ -458,13 +457,15 @@ connection.onDocumentFormatting(async (params) => {
 connection.onDocumentRangeFormatting(async (params) => {
     const document = documents.get(params.textDocument.uri);
     const settings = await getDocumentSettings(params.textDocument.uri);
+    if (!document || !settings) return;
+
     const workspaceFolders = await getWorkspaceFoldersSafe();
 
-    if (!document || !settings) return;
     const editOut: TextEdit[] | undefined = await formatRange(params, document, settings, workspaceFolders, connection);
     return editOut;
 });
 
+/*
 connection.onSignatureHelp(async (params) => {
     const document = documents.get(params.textDocument.uri);
     const perlDoc = navSymbols.get(params.textDocument.uri);
@@ -474,6 +475,7 @@ connection.onSignatureHelp(async (params) => {
     const signature = await getSignature(params, perlDoc, document, mods);
     return signature;
 });
+*/
 
 connection.onShutdown(() => {
     try {

@@ -1,24 +1,23 @@
-import {
+import type {
+    Connection,
     DocumentFormattingParams,
     TextEdit,
     DocumentRangeFormattingParams,
-    Position,
-    Range,
     WorkspaceFolder
 } from 'vscode-languageserver/node';
-import { TextDocument } from 'vscode-languageserver-textdocument';
-import { NavigatorSettings } from './types';
-import { async_execFile, getPerlimportsProfile, nLog } from './utils';
+import { Position, Range } from 'vscode-languageserver/node';
+import type { TextDocument } from 'vscode-languageserver-textdocument';
 import { join } from 'path';
 import { URI } from 'vscode-uri';
+import type { PGLanguageServerSettings } from './types';
+import { async_execFile, nLog } from './utils';
 import { getPerlAssetsPath } from './assets';
 import { startProgress, endProgress } from './progress';
-import { Connection } from 'vscode-languageserver/node';
 
 export async function formatDoc(
     _params: DocumentFormattingParams,
     txtDoc: TextDocument,
-    settings: NavigatorSettings,
+    settings: PGLanguageServerSettings,
     workspaceFolders: WorkspaceFolder[] | null,
     connection: Connection
 ): Promise<TextEdit[] | undefined> {
@@ -34,7 +33,7 @@ export async function formatDoc(
 export async function formatRange(
     params: DocumentRangeFormattingParams,
     txtDoc: TextDocument,
-    settings: NavigatorSettings,
+    settings: PGLanguageServerSettings,
     workspaceFolders: WorkspaceFolder[] | null,
     connection: Connection
 ): Promise<TextEdit[] | undefined> {
@@ -52,7 +51,7 @@ export async function formatRange(
 async function maybeReturnEdits(
     range: Range,
     txtDoc: TextDocument,
-    settings: NavigatorSettings,
+    settings: PGLanguageServerSettings,
     workspaceFolders: WorkspaceFolder[] | null,
     connection: Connection
 ): Promise<TextEdit[] | undefined> {
@@ -62,66 +61,32 @@ async function maybeReturnEdits(
     }
 
     const progressToken = await startProgress(connection, 'Formatting doc', settings);
-    let newSource: string = '';
-    const fixedImports = await perlimports(txtDoc, text, settings);
-    if (fixedImports) {
-        newSource = fixedImports;
-    }
-    const tidedSource = await perltidy(fixedImports || text, settings, workspaceFolders);
-    if (tidedSource) {
-        newSource = tidedSource;
-    }
+    const tidiedSource = await pgTidy(text, settings, workspaceFolders);
     endProgress(connection, progressToken);
 
-    if (!newSource) {
-        // If we failed on both tidy and imports
-        return;
-    }
+    // pg-perltidy.pl failed
+    if (!tidiedSource) return;
 
-    const edits: TextEdit = {
-        range: range,
-        newText: newSource
-    };
-    return [edits];
+    return [
+        {
+            range: range,
+            newText: tidiedSource
+        }
+    ];
 }
 
-async function perlimports(doc: TextDocument, code: string, settings: NavigatorSettings): Promise<string | undefined> {
-    if (!settings.perlimportsTidyEnabled) return;
-    const importsPath = join(await getPerlAssetsPath(), 'perlimportsWrapper.pl');
-    let cliParams: string[] = [importsPath].concat(getPerlimportsProfile(settings));
-    cliParams = cliParams.concat(['--filename', URI.parse(doc.uri).fsPath]);
-    nLog('Now starting perlimports with: ' + cliParams.join(' '), settings);
-
-    try {
-        const process = async_execFile(settings.perlPath, settings.perlParams.concat(cliParams), {
-            timeout: 25000,
-            maxBuffer: 20 * 1024 * 1024
-        });
-        process?.child?.stdin?.on('error', (error: string) => {
-            nLog('perlImports Error Caught: ', settings);
-            nLog(error, settings);
-        });
-        process?.child?.stdin?.write(code);
-        process?.child?.stdin?.end();
-        const out = await process;
-        return out.stdout;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
-        nLog('Attempted to run perlimports tidy ' + error.stdout, settings);
-        return;
-    }
-}
-
-async function perltidy(
+async function pgTidy(
     code: string,
-    settings: NavigatorSettings,
+    settings: PGLanguageServerSettings,
     workspaceFolders: WorkspaceFolder[] | null
 ): Promise<string | undefined> {
-    if (!settings.perltidyEnabled) return;
-    const tidy_path = join(await getPerlAssetsPath(), 'tidyWrapper.pl');
-    const tidyParams: string[] = [tidy_path].concat(getTidyProfile(workspaceFolders, settings));
+    if (!settings.pgPerltidyEnabled) return;
 
-    nLog('Now starting perltidy with: ' + tidyParams.join(' '), settings);
+    const tidyParams: string[] = [
+        join(await getPerlAssetsPath(), 'pgTidyWrapper.pl'),
+        ...getTidyProfile(workspaceFolders, settings)
+    ];
+    nLog('Now starting pg-perltidy with: ' + tidyParams.join(' '), settings);
 
     let output: string | Buffer;
     try {
@@ -130,7 +95,7 @@ async function perltidy(
             maxBuffer: 20 * 1024 * 1024
         });
         process?.child?.stdin?.on('error', (error: string) => {
-            nLog('PerlTidy Error Caught: ', settings);
+            nLog('pg-perltidy error caught: ', settings);
             nLog(error, settings);
         });
         process?.child?.stdin?.write(code);
@@ -138,12 +103,12 @@ async function perltidy(
         const out = await process;
         output = out.stdout;
     } catch (error: unknown) {
-        nLog('Perltidy failed with unknown error', settings);
+        nLog('pg-perltidy failed with unknown error', settings);
         nLog(error as string, settings);
         return;
     }
 
-    const pieces = output.split('ee4ffa34-a14f-4609-b2e4-bf23565f3262');
+    const pieces = output.split('87ec3595-4186-45df-b647-13c11e67b138');
     if (pieces.length > 1) {
         return pieces[1];
     } else {
@@ -151,10 +116,10 @@ async function perltidy(
     }
 }
 
-function getTidyProfile(workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): string[] {
+function getTidyProfile(workspaceFolders: WorkspaceFolder[] | null, settings: PGLanguageServerSettings): string[] {
     const profileCmd: string[] = [];
-    if (settings.perltidyProfile) {
-        const profile = settings.perltidyProfile;
+    if (settings.pgPerltidyProfile) {
+        const profile = settings.pgPerltidyProfile;
         if (profile.indexOf('$workspaceFolder') != -1) {
             if (workspaceFolders) {
                 // TODO: Fix this. Only uses the first workspace folder
@@ -163,7 +128,8 @@ function getTidyProfile(workspaceFolders: WorkspaceFolder[] | null, settings: Na
                 profileCmd.push(profile.replaceAll('$workspaceFolder', workspaceUri));
             } else {
                 nLog(
-                    "You specified $workspaceFolder in your perltidy path, but didn't include any workspace folders. Ignoring profile.",
+                    'You specified $workspaceFolder in your perltidy path, ' +
+                        "but didn't include any workspace folders. Ignoring profile.",
                     settings
                 );
             }
