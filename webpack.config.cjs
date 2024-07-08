@@ -19,7 +19,7 @@ module.exports = [
         },
         output: {
             filename: '[name].js',
-            path: path.join(__dirname, 'dist'),
+            path: path.resolve(__dirname, 'dist'),
             libraryTarget: 'var',
             library: 'serverExportVar'
         },
@@ -50,7 +50,7 @@ module.exports = [
             ]
         },
         externals: {
-            vscode: 'commonjs vscode' // ignored because it doesn't exist
+            vscode: 'commonjs vscode'
         },
         performance: {
             hints: false

@@ -1,6 +1,7 @@
 import { Connection } from 'vscode-languageserver/node';
 import { NavigatorSettings } from './types';
-import { WorkDoneProgressBegin, WorkDoneProgressEnd, WorkDoneProgress } from 'vscode-languageserver-protocol';
+import type { WorkDoneProgressBegin, WorkDoneProgressEnd } from 'vscode-languageserver-protocol';
+import { WorkDoneProgress } from 'vscode-languageserver-protocol';
 
 export async function startProgress(
     connection: Connection,
