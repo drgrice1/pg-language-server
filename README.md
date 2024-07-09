@@ -40,25 +40,36 @@ through `pg.perlcritic.severity5`. Allowable options are error, warning, info, a
 Set `pg.pgPerltidyProfile` if you would like customized formatting. You can use `$workspaceFolder` as a place holder.
 Otherwise, the default PG `.pg-perlcricic` profile will be used.
 
-### Building from source
+### Build From Source
 
 To build from source execute the following commands:
 
 ```sh
 git clone https://github.com/drgrice1/pg-language-server
 cd pg-language-server
+git submodule init
+git submodule update
 npm ci
-npm run compile
+npm run build
 ```
 
-### Vim (via coc.nvim)
+### Install Runtime Dependencies
 
-The configuration can be added directly to coc-settings (`:CocConfig`) like the following:
+In order for the `pg-perldity.pl` script to work the following Perl dependencies are needed. Note that the
+`pg-perltidy.pl` script is part of the PG repository that was cloned when the git submodules were initialized above.
+
+- Perl::Tidy
+- Mojolicious
+
+### Vim Installation (via coc.nvim)
+
+The configuration can be added directly to the `coc-settings.json` file (open with `:CocConfig` in vim) like the
+following:
 
 ```json
 {
  "languageserver": {
-  "pglanguageserver": {
+  "pg": {
    "command": "node",
    "args": ["/path/to/pg-language-server/server/dist/server.js", "--stdio"],
    "filetypes": ["pg"]
@@ -67,13 +78,16 @@ The configuration can be added directly to coc-settings (`:CocConfig`) like the 
 }
 ```
 
-Alternately, the `coc.nvim` client extension can be used, simplifying overall configuration. A simple configuration to
-enable the PG language server via the `coc.nvim` extension (`:CocInstall coc-pg`), looks like:
+Then add `autocmd BufRead,BufNewFile *.pg setlocal filetype=pg` to your `.vimrc` file.
+
+Alternately, the `coc.nvim` client extension can be used, simplifying overall configuration. To enable the `coc.nvim`
+extension add `set runtimepath^=/path/to/pg-language-server` to your `.vimrc` file. The extension can be configured by
+adding settings to the `coc-settings.json` file (open with `:CocConfig` in vim) as in the following example.
 
 ```json
 {
  "coc-pg.enable": true,
- "pg.pgPerltidyProfile": "/path/to/pg-language-server/server/dist/server.js"
+ "pg.pgPerltidyProfile": "$workspaceFolder/.perltidyrc"
 }
 ```
 
