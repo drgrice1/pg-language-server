@@ -44,7 +44,8 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
     if (type == TagKind.UseStatement) {
         // Explictly loaded module. Helpful for focusing autocomplete results
         perlDoc.imported.set(name, startLine);
-        // if(/\bDBI$/.exec(name)) perlDoc.imported.set(name + "::db", true); // TODO: Build mapping of common constructors to types
+        // TODO: Build mapping of common constructors to types
+        // if(/\bDBI$/.exec(name)) perlDoc.imported.set(name + "::db", true);
         return; // Don't store it as an element
     }
 

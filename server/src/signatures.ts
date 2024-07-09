@@ -54,7 +54,8 @@ function getFunction(position: Position, txtDoc: TextDocument): string[] {
 
     if (symbol.match(/^->\w+$/)) {
         // If you have Foo::Bar->new(...)->func, the extracted symbol will be ->func
-        // We can special case this to Foo::Bar->func. The regex allows arguments to new(), including params with matched ()
+        // We can special case this to Foo::Bar->func. The regex allows arguments to new(),
+        // including params with matched ()
         const match = prefix.match(/(\w(?:\w|::\w)*)->new\((?:\([^()]*\)|[^()])*\)$/);
 
         if (match) symbol = match[1] + symbol;
@@ -69,7 +70,8 @@ function buildSignature(elem: PerlElem, currentSig: string, symbol: string): Sig
     params = [...params]; // Clone to ensure we don't modify the original
     const activeParameter = (currentSig.match(/,/g) || []).length;
     if (symbol.indexOf('->') != -1 && elem.type != PerlSymbolKind.LocalMethod) {
-        // Subroutine vs method is not relevant, only matters if you called it as a method (except Corinna, for which $self is implicit)
+        // Subroutine vs method is not relevant, only matters if you called it as a method (except Corinna,
+        // for which $self is implicit)
         params.shift();
         // function_name = function_name.replace(/::(\w+)$/, '->$1');
     }

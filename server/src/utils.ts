@@ -46,7 +46,8 @@ export function getIncPaths(workspaceFolders: WorkspaceFolder[] | null, settings
 
 export function getSymbol(position: Position, txtDoc: TextDocument) {
     // Gets symbol from text at position.
-    // Ignore :: going left, but stop at :: when going to the right. (e.g Foo::bar::baz should be clickable on each spot)
+    // Ignore :: going left, but stop at :: when going to the right.
+    // (e.g Foo::bar::baz should be clickable on each spot)
     // Todo: Only allow -> once.
     // Used for navigation and hover.
 
@@ -67,7 +68,8 @@ export function getSymbol(position: Position, txtDoc: TextDocument) {
 
     if (right < text.length && (['$', '%', '@'].includes(text[right]) || rightAllow(text[right]))) {
         // Handles an edge case where the cursor is on the side of a symbol.
-        // Note that $foo| should find $foo (where | represents cursor), but $foo|$bar should find $bar, and |mysub should find mysub
+        // Note that $foo| should find $foo (where | represents cursor),
+        // but $foo|$bar should find $bar, and |mysub should find mysub
         right += 1;
         left += 1;
     }
@@ -109,7 +111,8 @@ export function getSymbol(position: Position, txtDoc: TextDocument) {
     let match;
     if (symbol.match(/^->\w+$/)) {
         // If you have Foo::Bar->new(...)->func, the extracted symbol will be ->func
-        // We can special case this to Foo::Bar->func. The regex allows arguments to new(), including params with matched ()
+        // We can special case this to Foo::Bar->func. The regex allows arguments to new(),
+        // including params with matched ()
         const match = prefix.match(/(\w(?:\w|::\w)*)->new\((?:\([^()]*\)|[^()])*\)$/);
 
         if (match) symbol = match[1] + symbol;
@@ -125,7 +128,8 @@ function findRecent(found: PerlElem[], line: number) {
     let best = found[0];
     for (let i = 0; i < found.length; i++) {
         // TODO: is this flawed because not all lookups are in the same file?
-        // Find the most recently declared variable. Modules and Packages are both declared at line 0, so Package is tiebreaker (better navigation; modules can be faked by Moose)
+        // Find the most recently declared variable. Modules and Packages are both declared at line 0,
+        // so Package is tiebreaker (better navigation; modules can be faked by Moose)
         if (
             (found[i].line > best.line && found[i].line <= line) ||
             (found[i].line == best.line && found[i].type == PerlSymbolKind.Package)
@@ -171,7 +175,8 @@ export function lookupSymbol(
 
     const superClass = /^(\$\w+)->SUPER\b/.exec(symbol);
     if (superClass) {
-        // If looking up the superclass of $self->SUPER, we need to find the package in which $self is defined, and then find the parent
+        // If looking up the superclass of $self->SUPER, we need to find the package
+        // in which $self is defined, and then find the parent
         const child = perlDoc.elems.get(superClass[1]);
         if (child?.length) {
             const recentChild = findRecent(child, line);
@@ -209,7 +214,8 @@ export function lookupSymbol(
         // Launching to the wrong explicitly stated module is a bad experience, and common with "require'd" modules
         const method = qSymbol.split('::').pop();
         if (method) {
-            // Perhaps the method is within our current scope, explictly imported, or an inherited method (dumper by Inquisitor)
+            // Perhaps the method is within our current scope, explictly imported,
+            // or an inherited method (dumper by Inquisitor)
             found = perlDoc.elems.get(method);
             if (found?.length) return [found[0]];
 
@@ -217,7 +223,8 @@ export function lookupSymbol(
             const foundAuto = perlDoc.autoloads.get(method);
             if (foundAuto) return [foundAuto];
 
-            // Haven't found the method yet, let's check if anything could be a possible match since you don't know the object type
+            // Haven't found the method yet, let's check if anything could be a
+            // possible match since you don't know the object type
             const foundElems: PerlElem[] = [];
             perlDoc.elems.forEach((elements: PerlElem[], elemName: string) => {
                 const element = elements[0]; // All Elements are with same name are normally the same.
@@ -231,7 +238,8 @@ export function lookupSymbol(
     }
 
     if (symbol.match(/^(\w(?:\w|::\w)*)$/)) {
-        // Running out of options here. Perhaps it's a Package, and the file is in the symbol table under its individual functions.
+        // Running out of options here. Perhaps it's a Package, and the
+        // file is in the symbol table under its individual functions.
 
         for (const potentialElem of perlDoc.elems.values()) {
             const element = potentialElem[0]; // All Elements are with same name are normally the same.

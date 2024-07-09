@@ -63,7 +63,8 @@ async function resolveElemForNav(perlDoc: PerlDocument, elem: PerlElem, symbol: 
     elem = refined || elem;
     if (!badFile(elem.uri)) {
         if (perlDoc.uri == elem.uri && symbol.includes('->')) {
-            // Corinna methods don't have line numbers. Let's hunt for them. If you dont find anything better, just return the original element.
+            // Corinna methods don't have line numbers. Let's hunt for them.
+            // If you dont find anything better, just return the original element.
             const method = symbol.split('->').pop();
             if (method) {
                 // Shouldn't this always be defined? Double check
@@ -73,7 +74,8 @@ async function resolveElemForNav(perlDoc: PerlDocument, elem: PerlElem, symbol: 
                     if (elem.line == 0 && elem.type == 'x') {
                         if (found[0].uri == perlDoc.uri) return found[0];
                     } else if (elem.line > 0 && elem.type == 't') {
-                        // Solve the off-by-one error at least for these. Eventually, you could consult a tagger for this step.
+                        // Solve the off-by-one error at least for these.
+                        // Eventually, you could consult a tagger for this step.
 
                         for (const potentialElem of found) {
                             if (Math.abs(potentialElem.line - elem.line) <= 1) {
@@ -102,7 +104,8 @@ async function resolveElemForNav(perlDoc: PerlDocument, elem: PerlElem, symbol: 
             }
         }
 
-        // Finding the module with the stored mod didn't work. Let's try navigating to the package itself instead of Foo::Bar->method().
+        // Finding the module with the stored mod didn't work.
+        // Let's try navigating to the package itself instead of Foo::Bar->method().
         // Many Moose methods end up here.
         // Not very helpful, since the user can simply click on the module manually if they want
         // const base_module = symbol.match(/^([\w:]+)->\w+$/);

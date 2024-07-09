@@ -48,8 +48,9 @@ export async function getPod(
 
     let markdown = '';
 
-    // Quick search for leading comments of a very specific form with comment blocks the preceed a sub (and aren't simply get/set without docs)
-    // These regexes are painful, but I didn't want to mix this with the line-by-line POD parsing which would overcomplicate that piece
+    // Quick search for leading comments of a very specific form with comment blocks the preceed a sub (and aren't
+    // simply get/set without docs). These regexes are painful, but I didn't want to mix this with the line-by-line POD
+    // parsing which would overcomplicate that piece
     let match, match2;
     if (
         searchItem &&
@@ -554,7 +555,8 @@ const processVerbatim = (line: string, state: ConversionState): ConversionState 
         markdown += line.replace(/^(?:\s{4}|\t)/, '  ') + '\n';
     }
     // } else if(/^\s+/.test(line)){
-    //     // Verbatim blocks in lists are tricky. Let's just do one line at a time for now so we don't need to keep track of indentation
+    //     // Verbatim blocks in lists are tricky.
+    //     Let's just do one line at a time for now so we don't need to keep track of indentation
     //     markdown = "```\n" + line + "```\n";
     //     state.isLineVerbatim = true;
     // }

@@ -26,7 +26,8 @@ export async function perlcompile(
     const perlEnvAdd = settings.perlEnvAdd;
     const filePath = URI.parse(textDocument.uri).fsPath;
 
-    if (settings.enableWarnings) perlParams = perlParams.concat(['-Mwarnings', '-M-warnings=redefine']); // Force enable some warnings.
+    // Force enable some warnings.
+    if (settings.enableWarnings) perlParams = perlParams.concat(['-Mwarnings', '-M-warnings=redefine']);
     perlParams = perlParams.concat(getIncPaths(workspaceFolders, settings));
     perlParams = perlParams.concat(await getInquisitor());
     nLog(
@@ -124,8 +125,13 @@ function getAdjustedPerlCode(textDocument: TextDocument, filePath: string): stri
     }
 
     code =
-        `local $0; use lib_bs22::SourceStash; BEGIN { $0 = '${filePath}'; if ($INC{'FindBin.pm'}) { FindBin->again(); }; $lib_bs22::SourceStash::filename = '${filePath}'; print "Setting file" . __FILE__; ${register_inc_path} }\n# line 0 "${filePath}"\ndie('Not needed, but die for safety');\n` +
-        code;
+        `local $0; use lib_bs22::SourceStash; BEGIN { $0 = '${
+            filePath
+        }'; if ($INC{'FindBin.pm'}) { FindBin->again(); }; $lib_bs22::SourceStash::filename = '${
+            filePath
+        }'; print "Setting file" . __FILE__; ${register_inc_path} }\n# line 0 "${
+            filePath
+        }"\ndie('Not needed, but die for safety');\n` + code;
     return code;
 }
 
@@ -255,7 +261,8 @@ function getCriticProfile(workspaceFolders: WorkspaceFolder[] | null, settings: 
                 profileCmd.push(profile.replaceAll('$workspaceFolder', workspaceUri));
             } else {
                 nLog(
-                    "You specified $workspaceFolder in your perlcritic path, but didn't include any workspace folders. Ignoring profile.",
+                    'You specified $workspaceFolder in your perlcritic path, ' +
+                        "but didn't include any workspace folders. Ignoring pr file.",
                     settings
                 );
             }

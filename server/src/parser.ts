@@ -135,7 +135,8 @@ function localVars(state: ParserState): boolean {
     } else if ((match = state.stmt.match(/^(?:(\w+)\s*:(?!:))?\s*(?:for|foreach)\s+my\s+(\$[\w]+)\b/))) {
         if (match[1]) MakeElem(match[1], PerlSymbolKind.Label, '', state);
         MakeElem(match[2], PerlSymbolKind.LocalVar, '', state);
-        // Lexical match variables if(my ($foo, $bar) ~= ). Optional to detect (my $newstring = $oldstring) =~ s/foo/bar/g;
+        // Lexical match variables if(my ($foo, $bar) ~= ).
+        // Optional to detect (my $newstring = $oldstring) =~ s/foo/bar/g;
     } else if ((match = state.stmt.match(/^(?:\}\s*elsif|if|unless|while|until|for)?\s*\(\s*my\b(.*)$/))) {
         // Remove any assignment piece
         const mod_stmt = state.stmt.replace(/\s*=.*/, '');
@@ -305,13 +306,15 @@ function fields(state: ParserState): boolean {
         let type;
         if (attr.match(/^\w/)) {
             type = PerlSymbolKind.Field;
-            // If you have a locally defined package/class Foo want to reference the attributes as Foo::attr or foo->attr, you need the full path.
-            // Subs don't need this since we find them at compile time. We also find "d" types from imported packages in Inquisitor.pm
+            // If you have a locally defined package/class Foo want to reference the attributes as Foo::attr or
+            // foo->attr, you need the full path.  Subs don't need this since we find them at compile time. We also find
+            // "d" types from imported packages in Inquisitor.pm
             MakeElem(state.package_name + '::' + attr, PerlSymbolKind.PathedField, '', state);
         } else {
             type = PerlSymbolKind.LocalVar;
         }
-        // TODO: Define new type. Class variables should probably be shown in the Outline view even though lexical variables are not
+        // TODO: Define new type. Class variables should probably be shown in the Outline view even though lexical
+        // variables are not
         MakeElem(attr, type, '', state);
     }
 
@@ -477,7 +480,8 @@ function MakeElem(
     if (type == TagKind.UseStatement) {
         // Explictly loaded module. Helpful for focusing autocomplete results
         state.perlDoc.imported.set(name, state.line_number);
-        // if(/\bDBI$/.exec(name)) perlDoc.imported.set(name + "::db", true); // TODO: Build mapping of common constructors to types
+        // TODO: Build mapping of common constructors to types
+        // if(/\bDBI$/.exec(name)) perlDoc.imported.set(name + "::db", true);
         return; // Don't store it as an element
     }
 
