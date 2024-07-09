@@ -9,5 +9,5 @@
     },
     "include": ["src"],
     "exclude": ["node_modules"],
-    "references": [{ "path": "./coc-client" }, { "path": "./server" }]
+    "references": [{ "path": "./coc-client" }, { "path": "./vscode-client" }, { "path": "./server" }]
 }

@@ -4,7 +4,7 @@ import tseslint from 'typescript-eslint';
 import eslintConfigPrettier from 'eslint-config-prettier';
 
 export default [
-    { ignores: ['dist/*', 'lib/*', 'server/src/perl/pg'] },
+    { ignores: ['**/dist/*', '**/lib/*', 'server/src/perl/pg/*'] },
     { files: ['**/*.{js,mjs,cjs,ts}'] },
     { languageOptions: { globals: globals.node } },
     pluginJs.configs.recommended,

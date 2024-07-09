@@ -262,11 +262,13 @@ documents.onDidClose((e) => {
 });
 
 documents.onDidOpen((change) => {
+    console.log(`changed ${change.document.uri}`);
     validatePerlDocument(change.document);
     //buildModCache(change.document);
 });
 
 documents.onDidSave((change) => {
+    console.log(`saved ${change.document.uri}`);
     validatePerlDocument(change.document);
 });
 
@@ -301,7 +303,7 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
     nLog('Compilation Time: ' + (Date.now() - start) / 1000 + ' seconds', settings);
     const oldCriticDiags = documentDiags.get(textDocument.uri);
     /*
-    if (!perlOut) {
+   if (!perlOut) {
         documentCompDiags.delete(textDocument.uri);
         endProgress(connection, progressToken);
         return;
@@ -356,10 +358,10 @@ connection.onDidChangeConfiguration(async (change) => {
         // Reset all cached document settings
         documentSettings.clear();
     } else {
-        globalSettings = { ...defaultSettings, ...change?.settings?.perlnavigator };
+        globalSettings = { ...defaultSettings, ...change?.settings?.pg };
     }
 
-    if (change?.settings?.perlnavigator) {
+    if (change?.settings?.pg) {
         // Despite what it looks like, this fires on all settings changes, not just Navigator
         //await rebuildModCache();
         for (const doc of documents.all()) {

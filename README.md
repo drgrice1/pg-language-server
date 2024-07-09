@@ -76,7 +76,7 @@ following:
  "languageserver": {
   "pg": {
    "command": "node",
-   "args": ["/path/to/pg-language-server/server/dist/server.js", "--stdio"],
+   "args": ["/path/to/pg-language-server/dist/server.js", "--stdio"],
    "filetypes": ["pg"]
   }
  }
@@ -86,8 +86,9 @@ following:
 Then add `autocmd BufRead,BufNewFile *.pg setlocal filetype=pg` to your `.vimrc` file.
 
 Alternately, the `coc.nvim` client extension can be used, simplifying overall configuration. To enable the `coc.nvim`
-extension add `set runtimepath^=/path/to/pg-language-server` to your `.vimrc` file. The extension can be configured by
-adding settings to the `coc-settings.json` file (open with `:CocConfig` in vim) as in the following example.
+extension add `set runtimepath^=/path/to/pg-language-server/coc-client` to your `.vimrc` file. The extension can be
+configured by adding settings to the `coc-settings.json` file (open with `:CocConfig` in vim) as in the following
+example.
 
 ```json
 {
@@ -98,7 +99,9 @@ adding settings to the `coc-settings.json` file (open with `:CocConfig` in vim) 
 
 ## Vscode Installation
 
-Hmm...
+Follow the build instructions and install the runtime dependencies. Then either create a link from your vscode
+extensions directory (`~/.vscode/extensions`) to the location of the `pg-language-server` clone, or move the clone into
+the vscode extensions directory.
 
 ## Licenses / Acknowledgments
 

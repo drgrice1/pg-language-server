@@ -1,6 +1,6 @@
 {
-    "name": "pg-language-server",
-    "displayName": "PG Lanbuage Server",
+    "name": "coc-pg",
+    "displayName": "coc.nvim Client for the PG Lanbuage Server",
     "description": "Code navigation, autocompletion, syntax checking, and linting for WeBWorK PG problem files",
     "author": "Glenn Rice <grice1@missouriwestern.edu>",
     "license": "MIT",
@@ -19,10 +19,9 @@
         "languageserver"
     ],
     "engines": {
-        "coc": "^0.0.82",
-        "vscode": "^1.53.0"
+        "coc": "^0.0.82"
     },
-    "main": "vscode-client/dist/extension.js",
+    "main": "dist/extension.js",
     "activationEvents": [
         "workspaceContains:**/*.pg",
         "onLanguage:pg"
@@ -32,6 +31,11 @@
             "type": "object",
             "title": "PG Language Server",
             "properties": {
+                "coc-pg.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable coc-pg extension"
+                },
                 "pg.perlPath": {
                     "scope": "resource",
                     "type": "string",
@@ -207,42 +211,6 @@
                     "description": "Traces the communication between VS Code and the language server."
                 }
             }
-        }
-    },
-    "scripts": {
-        "format:prettier": "prettier --write \"**/*.{js,cjs,ts,md,json}\"",
-        "lint:eslint": "eslint ./ --fix",
-        "compile": "tsc -b",
-        "watch": "tsc -b -w",
-        "build": "export NODE_OPTIONS=--openssl-legacy-provider; webpack --mode production --devtool hidden-source-map"
-    },
-    "devDependencies": {
-        "@eslint/js": "^9.6.0",
-        "@types/node": "^20.14.10",
-        "@types/vscode": "^1.91.0",
-        "@types/webpack-env": "^1.18.5",
-        "coc.nvim": "^0.0.83-next.18",
-        "eslint": "^9.6.0",
-        "eslint-config-prettier": "^9.1.0",
-        "globals": "^15.8.0",
-        "lru-cache": "^10.3.1",
-        "nanoid": "^5.0.7",
-        "prettier": "^3.3.2",
-        "ts-loader": "^9.5.1",
-        "typescript": "^5.5.3",
-        "typescript-eslint": "^8.0.0-alpha.39",
-        "vscode-languageclient": "^8.1.0",
-        "vscode-languageserver": "^8.1.0",
-        "vscode-languageserver-textdocument": "^1.0.10",
-        "vscode-oniguruma": "^2.0.1",
-        "vscode-textmate": "^9.0.0",
-        "vscode-uri": "^3.0.8",
-        "webpack": "^5.92.1",
-        "webpack-cli": "^5.1.4"
-    },
-    "overrides": {
-        "coc.nvim": {
-            "@types/node": ">=20.14.10"
         }
     }
 }

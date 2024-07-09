@@ -1,9 +1,9 @@
 {
     "compilerOptions": {
         "module": "commonjs",
-        "target": "es2019",
-        "lib": ["ES2019", "WebWorker"],
-        "outDir": "../lib",
+        "target": "es2022",
+        "lib": ["ES2023"],
+        "outDir": "lib",
         "rootDir": "src",
         "sourceMap": true
     },
