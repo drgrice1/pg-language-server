@@ -80,7 +80,7 @@ async function pgTidy(
     settings: PGLanguageServerSettings,
     workspaceFolders: WorkspaceFolder[] | null
 ): Promise<string | undefined> {
-    if (!settings.pgPerltidyEnabled) return;
+    if (!settings.perltidyEnabled) return;
 
     const tidyParams: string[] = [
         join(await getPerlAssetsPath(), 'pgTidyWrapper.pl'),
@@ -118,8 +118,8 @@ async function pgTidy(
 
 function getTidyProfile(workspaceFolders: WorkspaceFolder[] | null, settings: PGLanguageServerSettings): string[] {
     const profileCmd: string[] = [];
-    if (settings.pgPerltidyProfile) {
-        const profile = settings.pgPerltidyProfile;
+    if (settings.perltidyProfile) {
+        const profile = settings.perltidyProfile;
         if (profile.indexOf('$workspaceFolder') != -1) {
             if (workspaceFolders) {
                 // TODO: Fix this. Only uses the first workspace folder

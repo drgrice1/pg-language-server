@@ -14,8 +14,8 @@ export interface PGLanguageServerSettings {
     perlcriticTheme: undefined | string;
     perlcriticExclude: undefined | string;
     perlcriticInclude: undefined | string;
-    pgPerltidyEnabled: boolean;
-    pgPerltidyProfile: string;
+    perltidyEnabled: boolean;
+    perltidyProfile: string;
     perlCompileEnabled: boolean;
     perlEnv: undefined | { [key: string]: string };
     perlEnvAdd: boolean;

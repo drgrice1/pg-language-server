@@ -1,0 +1,17 @@
+severity = 4
+
+[-Subroutines::ProhibitSubroutinePrototypes]
+
+# Perlcritic does not know how to properly deal with async/await.
+[-Modules::RequireEndWithOne]
+
+# Disable this stupid rule.
+[-ValuesAndExpressions::ProhibitConstantPragma]
+
+# Perlcritic can't deal with default arguments in signatures.
+[-Subroutines::ProhibitManyArgs]
+
+[Community::DollarAB]
+extra_pair_functions = max courseCmp
+[Freenode::DollarAB]
+extra_pair_functions = max courseCmp

@@ -67,13 +67,13 @@
                     "default": true,
                     "description": "Enable warnings using -Mwarnings command switch"
                 },
-                "pg.pgPerltidyProfile": {
+                "pg.perltidyProfile": {
                     "scope": "resource",
                     "type": "string",
                     "default": "",
                     "description": "Path to perl tidy profile. You can use $workspaceFolder as a placeholder."
                 },
-                "pg.pgPerltidyEnabled": {
+                "pg.perltidyEnabled": {
                     "scope": "resource",
                     "type": "boolean",
                     "default": true,
@@ -117,7 +117,7 @@
                     "default": true,
                     "description": "Enable running perl -c on your code"
                 },
-                "pg.perlcritic.severity5": {
+                "pg.severity5": {
                     "scope": "resource",
                     "type": "string",
                     "enum": [
@@ -130,7 +130,7 @@
                     "default": "warning",
                     "description": "Editor Diagnostic severity level for Critic severity 5"
                 },
-                "pg.perlcritic.severity4": {
+                "pg.severity4": {
                     "scope": "resource",
                     "type": "string",
                     "enum": [
@@ -143,7 +143,7 @@
                     "default": "info",
                     "description": "Editor Diagnostic severity level for Critic severity 4"
                 },
-                "pg.perlcritic.severity3": {
+                "pg.severity3": {
                     "scope": "resource",
                     "type": "string",
                     "enum": [
@@ -156,7 +156,7 @@
                     "default": "hint",
                     "description": "Editor Diagnostic severity level for Critic severity 3"
                 },
-                "pg.perlcritic.severity2": {
+                "pg.severity2": {
                     "scope": "resource",
                     "type": "string",
                     "enum": [
@@ -169,7 +169,7 @@
                     "default": "hint",
                     "description": "Editor Diagnostic severity level for Critic severity 2"
                 },
-                "pg.perlcritic.severity1": {
+                "pg.severity1": {
                     "scope": "resource",
                     "type": "string",
                     "enum": [

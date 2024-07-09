@@ -1,7 +1,7 @@
 # PG Language Server
 
 Provides syntax checking, autocompletion, perlcritic, code navigation, and hover for PG problem files for the WeBWorK
-online homework system. See (openwebwork)[https://github/openwebwork].
+online homework system. See [openwebwork](https://github.com/openwebwork).
 
 Implemented as a Language Server using the Microsoft LSP libraries along with Perl doing the syntax checking and
 parsing.
@@ -9,13 +9,12 @@ parsing.
 ## Currently Implemented Features
 
 - Code formatting via pg-perltidy.pl
+- PG Perl Critic static code analysis/suggestions
 
 ## Features Yet to be Implemented
 
 - Syntax Checking
-- PG Perl Critic static code analysis/suggestions
 - Documentation on hover and autocomplete
-- Subroutine signatures
 - Code Navigation ("Go To Definition") anywhere, including macro files and pg library modules
 - Outline view
 - Smart context-aware autocompletion and navigation
@@ -30,15 +29,19 @@ have a multi-root workspace, each folder will be added to the path.
 
 ### Perl Critic Customization
 
-You should specify a Perl::Critic profile via `pg.perlcriticProfile`. You can use `$workspaceFolder` as a place holder.
-If `pg.perlcriticProfile` is not set, it will check for `~./perlcriticrc`. If that also does not exist, a default
-profile will be used. The profile with default severity 4 is recommended, but you can change `pg.perlcritic.severity1`
-through `pg.perlcritic.severity5`. Allowable options are error, warning, info, and hint.
+You can specify a Perl::Critic profile via `pg.perlcriticProfile`. You can use `$workspaceFolder` as a place holder in
+the value of this variable. If `pg.perlcriticProfile` is not set, then a `~./.pg-perlcriticrc` file will be used if
+found. If that also does not exist, the default pg perlcritic profile will be used. This default profile with perlcritic
+severity 4 is recommended, but you can change `pg.perlcriticSeverity` if desired. Allowable options are error, warning,
+info, and hint. The default diagnostic severity (used for coloring the squiggly underlines) is reasonable, but you can
+change `pg.severity1` through `pg.severity5`. Allowable options are error, warning, info, and hint.
 
 ### Perl Tidy Customization
 
-Set `pg.pgPerltidyProfile` if you would like customized formatting. You can use `$workspaceFolder` as a place holder.
-Otherwise, the default PG `.pg-perlcricic` profile will be used.
+Set `pg.perltidyProfile` if you would like customized formatting. You can use `$workspaceFolder` as a place holder in
+the value of this variable. Otherwise, the
+[`perltidy-pg.rc`](https://github.com/openwebwork/pg/blob/main/bin/perltidy-pg.rc) profile from the PG repository will
+be used.
 
 ### Build From Source
 
@@ -60,6 +63,8 @@ In order for the `pg-perldity.pl` script to work the following Perl dependencies
 
 - Perl::Tidy
 - Mojolicious
+- PPI
+- Perl::Critic
 
 ### Vim Installation (via coc.nvim)
 
@@ -87,7 +92,7 @@ adding settings to the `coc-settings.json` file (open with `:CocConfig` in vim) 
 ```json
 {
  "coc-pg.enable": true,
- "pg.pgPerltidyProfile": "$workspaceFolder/.perltidyrc"
+ "pg.perltidyProfile": "$workspaceFolder/.perltidyrc"
 }
 ```
 

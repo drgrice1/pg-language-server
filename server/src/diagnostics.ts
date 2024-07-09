@@ -157,7 +157,7 @@ function maybeAddCompDiag(
             end: { line: lineNum, character: 500 }
         },
         message: 'Syntax: ' + violation,
-        source: 'perlnavigator'
+        source: 'pg-language-server'
     });
 }
 
@@ -202,7 +202,7 @@ export async function perlcritic(
     settings: PGLanguageServerSettings
 ): Promise<Diagnostic[]> {
     if (!settings.perlcriticEnabled) return [];
-    const critic_path = join(await getPerlAssetsPath(), 'criticWrapper.pl');
+    const critic_path = join(await getPerlAssetsPath(), 'pgCriticWrapper.pl');
     let criticParams: string[] = [...settings.perlParams, critic_path].concat(
         getCriticProfile(workspaceFolders, settings)
     );
@@ -287,7 +287,7 @@ function maybeAddCriticDiag(violation: string, diagnostics: Diagnostic[], settin
             end: { line: line_num, character: col_num + 500 } // Arbitrarily large
         },
         message: 'Critic: ' + message,
-        source: 'perlnavigator'
+        source: 'pg-language-server'
     });
 }
 

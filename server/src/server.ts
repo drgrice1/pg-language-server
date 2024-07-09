@@ -19,12 +19,13 @@ import {
     TextEdit
 } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-//import type { PublishDiagnosticsParams } from 'vscode-languageserver-protocol';
+import type { PublishDiagnosticsParams } from 'vscode-languageserver-protocol';
 import { URI } from 'vscode-uri';
 import { basename } from 'path';
 import { homedir } from 'os';
 import { LRUCache } from 'lru-cache';
 
+import { perlcritic } from './diagnostics';
 //import { perlcompile, perlcritic } from './diagnostics';
 import { cleanupTemporaryAssetPath } from './assets';
 //import { getDefinition, getAvailableMods } from './navigation';
@@ -34,7 +35,7 @@ import type { PGLanguageServerSettings, PerlDocument /*, PerlElem */ } from './t
 //import { getCompletions, getCompletionDoc } from './completion';
 import { formatDoc, formatRange } from './formatting';
 import { nLog } from './utils';
-//import { startProgress, endProgress } from './progress';
+import { startProgress, endProgress } from './progress';
 //import { getSignature } from './signatures';
 import { getPerlAssetsPath } from './assets';
 
@@ -111,14 +112,14 @@ const defaultSettings: PGLanguageServerSettings = {
     perlPath: 'perl',
     perlParams: [],
     enableWarnings: true,
-    pgPerltidyProfile: '',
+    perltidyProfile: '',
     perlcriticProfile: '',
     perlcriticEnabled: true,
     perlcriticSeverity: undefined,
     perlcriticTheme: undefined,
     perlcriticExclude: undefined,
     perlcriticInclude: undefined,
-    pgPerltidyEnabled: true,
+    perltidyEnabled: true,
     perlCompileEnabled: true,
     perlEnv: undefined,
     perlEnvAdd: true,
@@ -230,8 +231,8 @@ async function getDocumentSettings(resource: string): Promise<PGLanguageServerSe
         if (resolvedSettings.perlPath) {
             resolvedSettings.perlPath = expandTildePaths(resolvedSettings.perlPath, resolvedSettings);
         }
-        if (resolvedSettings.pgPerltidyProfile) {
-            resolvedSettings.pgPerltidyProfile = expandTildePaths(resolvedSettings.pgPerltidyProfile, resolvedSettings);
+        if (resolvedSettings.perltidyProfile) {
+            resolvedSettings.perltidyProfile = expandTildePaths(resolvedSettings.perltidyProfile, resolvedSettings);
         }
         if (resolvedSettings.perlcriticProfile) {
             resolvedSettings.perlcriticProfile = expandTildePaths(resolvedSettings.perlcriticProfile, resolvedSettings);
@@ -285,7 +286,6 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
     const fileName = basename(URI.parse(textDocument.uri).fsPath);
     nLog(`Filename is ${fileName}`, settings);
 
-    /*
     const progressToken = navSymbols.has(textDocument.uri)
         ? null
         : await startProgress(connection, `Initializing ${fileName}`, settings);
@@ -294,12 +294,13 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
 
     const workspaceFolders = await getWorkspaceFoldersSafe();
 
-    const pCompile = perlcompile(textDocument, workspaceFolders, settings); // Start compilation
+    //const pCompile = perlcompile(textDocument, workspaceFolders, settings); // Start compilation
     const pCritic = perlcritic(textDocument, workspaceFolders, settings); // Start perlcritic
 
-    const perlOut = await pCompile;
+    //const perlOut = await pCompile;
     nLog('Compilation Time: ' + (Date.now() - start) / 1000 + ' seconds', settings);
     const oldCriticDiags = documentDiags.get(textDocument.uri);
+    /*
     if (!perlOut) {
         documentCompDiags.delete(textDocument.uri);
         endProgress(connection, progressToken);
@@ -314,12 +315,13 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
         mixOldAndNew = perlOut.diags.concat(oldCriticDiags);
     }
     sendDiags({ uri: textDocument.uri, diagnostics: mixOldAndNew });
+    */
+    if (oldCriticDiags) sendDiags({ uri: textDocument.uri, diagnostics: oldCriticDiags });
 
-    navSymbols.set(textDocument.uri, perlOut.perlDoc);
+    //navSymbols.set(textDocument.uri, perlOut.perlDoc);
 
     // Perl critic things
     const diagCritic = await pCritic;
-    const diagImports = await pImports;
     let newDiags: Diagnostic[] = [];
 
     if (settings.perlcriticEnabled) {
@@ -338,10 +340,8 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
     }
     endProgress(connection, progressToken);
     return;
-    */
 }
 
-/*
 function sendDiags(params: PublishDiagnosticsParams): void {
     // Before sending new diagnostics, check if the file is still open.
     if (documents.get(params.uri)) {
@@ -350,7 +350,6 @@ function sendDiags(params: PublishDiagnosticsParams): void {
         connection.sendDiagnostics({ uri: params.uri, diagnostics: [] });
     }
 }
-*/
 
 connection.onDidChangeConfiguration(async (change) => {
     if (hasConfigurationCapability) {

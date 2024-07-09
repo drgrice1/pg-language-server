@@ -12,7 +12,7 @@ async function extractAssetsIfNecessary(): Promise<string> {
         const assets: string[] = [
             'server/src/perl/lib_bs22/ModHunter.pl',
             'server/src/perl/Inquisitor.pm',
-            'server/src/perl/criticWrapper.pl',
+            'server/src/perl/pgCriticWrapper.pl',
             'server/src/perl/lib_bs22/Class/Inspector.pm',
             'server/src/perl/lib_bs22/Devel/Symdump.pm',
             'server/src/perl/lib_bs22/Devel/Symdump/Export.pm',
