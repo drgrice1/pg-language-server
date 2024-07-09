@@ -249,19 +249,5 @@
         "coc.nvim": {
             "@types/node": ">=20.14.10"
         }
-    },
-    "pkg": {
-        "scripts": "server/dist/server.js",
-        "assets": [
-            "server/src/**/*",
-            "node_modules/vscode-oniguruma/release/onig.wasm",
-            "server/perl.tmLanguage.json"
-        ],
-        "targets": [
-            "node20-linux-x64",
-            "node20-macos-x64",
-            "node20-win-x64"
-        ],
-        "outputPath": "dist"
     }
 }
