@@ -9,9 +9,7 @@ module.exports = [
     {
         context: __dirname,
         target: 'node',
-        entry: {
-            extension: './coc-client/src/extension.ts'
-        },
+        entry: { extension: './coc-client/src/extension.ts' },
         output: {
             filename: '[name].js',
             path: path.resolve(__dirname, 'dist'),
@@ -23,36 +21,19 @@ module.exports = [
             mainFields: ['browser', 'module', 'main'],
             mainFiles: ['extension']
         },
-        module: {
-            rules: [
-                {
-                    test: /\.ts$/,
-                    exclude: /node_modules/,
-                    use: [
-                        {
-                            loader: 'ts-loader'
-                        }
-                    ]
-                }
-            ]
-        },
-        externals: {
-            'coc.nvim': 'commonjs coc.nvim'
-        },
+        module: { rules: [{ test: /\.ts$/, exclude: /node_modules/, use: [{ loader: 'ts-loader' }] }] },
+        externals: { 'coc.nvim': 'commonjs coc.nvim' },
         devtool: 'source-map'
     },
     // language server configuration
     {
         context: __dirname,
         target: 'node',
-        entry: {
-            server: './server/src/server.ts'
-        },
+        entry: { server: './server/src/server.ts' },
         output: {
             filename: '[name].js',
             path: path.resolve(__dirname, 'dist'),
-            libraryTarget: 'var',
-            library: 'serverExportVar'
+            library: { name: 'serverExportVar', type: 'var' }
         },
         resolve: {
             mainFields: ['module', 'main'],
@@ -67,25 +48,9 @@ module.exports = [
                 util: false
             }
         },
-        module: {
-            rules: [
-                {
-                    test: /\.ts$/,
-                    exclude: /node_modules/,
-                    use: [
-                        {
-                            loader: 'ts-loader'
-                        }
-                    ]
-                }
-            ]
-        },
-        externals: {
-            vscode: 'commonjs vscode'
-        },
-        performance: {
-            hints: false
-        },
+        module: { rules: [{ test: /\.ts$/, exclude: /node_modules/, use: [{ loader: 'ts-loader' }] }] },
+        externals: { vscode: 'commonjs vscode' },
+        performance: { hints: false },
         devtool: 'source-map'
     }
 ];
