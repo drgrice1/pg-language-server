@@ -12,7 +12,7 @@ use PPI                ();
 use Perl::Critic       ();
 use open               qw(:std :utf8);
 
-my $sSource = do { local $/; <STDIN> };
+my $sSource = do { local $/; <STDIN> };    ## no critic (InputOutput::ProhibitExplicitStdin)
 
 my ($file, $profile, $severity, $theme, $exclude, $include);
 GetOptions(
