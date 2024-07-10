@@ -1,7 +1,7 @@
-import { PerlDocument, PerlElem, PerlSymbolKind, TagKind, ElemSource } from './types';
 import { URI } from 'vscode-uri';
+import { type PerlDocument, type PerlElem, PerlSymbolKind, TagKind, ElemSource } from './types';
 
-export function buildNav(stdout: string, _filePath: string, fileuri: string): PerlDocument {
+export const buildNav = (stdout: string, _filePath: string, fileuri: string): PerlDocument => {
     stdout = stdout.replaceAll('\r', ''); // Windows
 
     const perlDoc: PerlDocument = {
@@ -18,9 +18,9 @@ export function buildNav(stdout: string, _filePath: string, fileuri: string): Pe
     });
 
     return perlDoc;
-}
+};
 
-function parseElem(perlTag: string, perlDoc: PerlDocument): void {
+const parseElem = (perlTag: string, perlDoc: PerlDocument): void => {
     const items = perlTag.split('\t');
 
     if (items.length != 7) {
@@ -87,10 +87,10 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
     addVal(perlDoc.elems, name, newElem);
 
     return;
-}
+};
 
-function addVal(map: Map<string, unknown[]>, key: string, value: unknown) {
+const addVal = (map: Map<string, unknown[]>, key: string, value: unknown) => {
     const array = map.get(key) || [];
     array.push(value);
     map.set(key, array);
-}
+};

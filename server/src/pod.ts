@@ -1,13 +1,13 @@
-import * as fs from 'fs';
-import { PerlDocument, PerlElem, PerlSymbolKind } from './types';
 import { URI } from 'vscode-uri';
+import * as fs from 'fs';
+import { type PerlDocument, type PerlElem, PerlSymbolKind } from './types';
 import { isFile } from './utils';
 
-export async function getPod(
+export const getPod = async (
     elem: PerlElem,
     perlDoc: PerlDocument,
     modMap: Map<string, string>
-): Promise<string | undefined> {
+): Promise<string | undefined> => {
     // File may not exists. Return nothing if it doesn't
 
     const absolutePath = await resolvePathForDoc(elem, perlDoc, modMap);
@@ -116,13 +116,13 @@ export async function getPod(
     markdown += convertPODToMarkdown(podContent);
 
     return markdown;
-}
+};
 
-async function resolvePathForDoc(
+const resolvePathForDoc = async (
     elem: PerlElem,
     perlDoc: PerlDocument,
     modMap: Map<string, string>
-): Promise<string | undefined> {
+): Promise<string | undefined> => {
     const absolutePath = URI.parse(elem.uri).fsPath;
 
     const foundPath = await fsPathOrAlt(absolutePath);
@@ -156,9 +156,9 @@ async function resolvePathForDoc(
     if (await badFile(absolutePath)) {
         return;
     }
-}
+};
 
-async function fsPathOrAlt(fsPath: string | undefined): Promise<string | undefined> {
+const fsPathOrAlt = async (fsPath: string | undefined): Promise<string | undefined> => {
     if (!fsPath) {
         return;
     }
@@ -173,9 +173,9 @@ async function fsPathOrAlt(fsPath: string | undefined): Promise<string | undefin
         return fsPath;
     }
     return;
-}
+};
 
-async function badFile(fsPath: string): Promise<boolean> {
+const badFile = async (fsPath: string): Promise<boolean> => {
     if (!fsPath || fsPath.length <= 1) {
         return true;
     }
@@ -189,7 +189,7 @@ async function badFile(fsPath: string): Promise<boolean> {
     }
 
     return false;
-}
+};
 
 type ConversionState = {
     inList: boolean;
@@ -465,9 +465,8 @@ const processInlineElements = (line: string): string => {
     return line;
 };
 
-function escapeRegExp(str: string): string {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
-}
+// $& means the whole matched string
+const escapeRegExp = (str: string): string => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const escapeHTML = (str: string): string => {
     const map: { [key: string]: string } = {

@@ -1,11 +1,14 @@
-import { SymbolInformation, SymbolKind, Location, WorkspaceSymbolParams } from 'vscode-languageserver/node';
-
-import { TextDocument } from 'vscode-languageserver-textdocument';
-
-import { ParseType, PerlElem, PerlSymbolKind } from './types';
+import {
+    type SymbolInformation,
+    SymbolKind,
+    type Location,
+    type WorkspaceSymbolParams
+} from 'vscode-languageserver/node';
+import type { TextDocument } from 'vscode-languageserver-textdocument';
+import { ParseType, type PerlElem, PerlSymbolKind } from './types';
 import { parseDocument } from './parser';
 
-export async function getSymbols(textDocument: TextDocument, uri: string): Promise<SymbolInformation[]> {
+export const getSymbols = async (textDocument: TextDocument, uri: string): Promise<SymbolInformation[]> => {
     const perlDoc = await parseDocument(textDocument, ParseType.outline);
 
     const symbols: SymbolInformation[] = [];
@@ -65,12 +68,12 @@ export async function getSymbols(textDocument: TextDocument, uri: string): Promi
     });
 
     return symbols;
-}
+};
 
-export function getWorkspaceSymbols(
+export const getWorkspaceSymbols = (
     _params: WorkspaceSymbolParams,
     defaultMods: Map<string, string>
-): Promise<SymbolInformation[]> {
+): Promise<SymbolInformation[]> => {
     return new Promise((resolve) => {
         const symbols: SymbolInformation[] = [];
 
@@ -95,4 +98,4 @@ export function getWorkspaceSymbols(
         });
         resolve(symbols);
     });
-}
+};

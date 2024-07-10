@@ -1,13 +1,13 @@
-import { PerlDocument, PerlElem, PerlSymbolKind, ParseType, TagKind, ElemSource } from './types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
-import * as fs from 'fs';
-import * as path from 'path';
 import * as vsctm from 'vscode-textmate';
 import * as oniguruma from 'vscode-oniguruma';
+import * as fs from 'fs';
+import * as path from 'path';
+import { type PerlDocument, type PerlElem, PerlSymbolKind, ParseType, TagKind, ElemSource } from './types';
 
-function init_doc(textDocument: TextDocument): PerlDocument {
-    const perlDoc: PerlDocument = {
+const init_doc = (textDocument: TextDocument): PerlDocument => {
+    return {
         elems: new Map(),
         canonicalElems: new Map(),
         autoloads: new Map(),
@@ -15,9 +15,7 @@ function init_doc(textDocument: TextDocument): PerlDocument {
         parents: new Map(),
         uri: textDocument.uri
     };
-
-    return perlDoc;
-}
+};
 
 type ParserState = {
     stmt: string;
@@ -32,7 +30,7 @@ type ParserState = {
 
 type ParseFunc = (state: ParserState) => boolean;
 
-export async function parseFromUri(uri: string, parseType: ParseType): Promise<PerlDocument | undefined> {
+export const parseFromUri = async (uri: string, parseType: ParseType): Promise<PerlDocument | undefined> => {
     // File may not exists. Return nothing if it doesn't
     const absolutePath = URI.parse(uri).fsPath;
     let content;
@@ -45,16 +43,16 @@ export async function parseFromUri(uri: string, parseType: ParseType): Promise<P
     const document = TextDocument.create(uri, 'perl', 1, content);
 
     return await parseDocument(document, parseType);
-}
+};
 
-export async function parseDocument(textDocument: TextDocument, parseType: ParseType): Promise<PerlDocument> {
+export const parseDocument = async (textDocument: TextDocument, parseType: ParseType): Promise<PerlDocument> => {
     let parseFunctions: ParseFunc[] = [];
     switch (parseType) {
         case ParseType.outline:
-            parseFunctions = [subs, labels, constants, fields, imports, dancer];
+            parseFunctions = [subs, labels, constants, fields, imports];
             break;
         case ParseType.selfNavigation:
-            parseFunctions = [knownObj, localVars, subs, labels, constants, fields, imports, autoloads, dancer];
+            parseFunctions = [knownObj, localVars, subs, labels, constants, fields, imports, autoloads];
             break;
         case ParseType.refinement:
             parseFunctions = [subs, fields];
@@ -76,7 +74,7 @@ export async function parseDocument(textDocument: TextDocument, parseType: Parse
         parseType: parseType
     };
 
-    for (state.line_number = 0; state.line_number < state.codeArray.length; state.line_number++) {
+    for (state.line_number = 0; state.line_number < state.codeArray.length; ++state.line_number) {
         state.stmt = state.codeArray[state.line_number];
         // Nothing left? Never mind.
         if (!state.stmt) continue;
@@ -84,9 +82,9 @@ export async function parseDocument(textDocument: TextDocument, parseType: Parse
         parseFunctions.some((fn) => fn(state));
     }
     return perlDoc;
-}
+};
 
-function knownObj(state: ParserState): boolean {
+const knownObj = (state: ParserState): boolean => {
     let match;
 
     // TODO, allow specifying list of constructor names as config
@@ -105,9 +103,9 @@ function knownObj(state: ParserState): boolean {
     } else {
         return false;
     }
-}
+};
 
-function localVars(state: ParserState): boolean {
+const localVars = (state: ParserState): boolean => {
     // This is a variable declaration if one was started on the previous
     // line, or if this line starts with my or local
     let match;
@@ -150,9 +148,9 @@ function localVars(state: ParserState): boolean {
     }
 
     return true;
-}
+};
 
-function packages(state: ParserState): boolean {
+const packages = (state: ParserState): boolean => {
     // This is a package declaration if the line starts with package
     let match;
 
@@ -177,9 +175,9 @@ function packages(state: ParserState): boolean {
     }
 
     return true;
-}
+};
 
-function subs(state: ParserState): boolean {
+const subs = (state: ParserState): boolean => {
     let match;
     // This is a sub declaration if the line starts with sub
     if (
@@ -216,9 +214,9 @@ function subs(state: ParserState): boolean {
         return false;
     }
     return true;
-}
+};
 
-function look_ahead_signatures(state: ParserState): string[] {
+const look_ahead_signatures = (state: ParserState): string[] => {
     const sig_vars: string[] = [];
     let sig_continues = true;
 
@@ -261,9 +259,9 @@ function look_ahead_signatures(state: ParserState): string[] {
     }
 
     return sig_vars;
-}
+};
 
-function labels(state: ParserState): boolean {
+const labels = (state: ParserState): boolean => {
     let match;
     // Phaser block
     if ((match = state.stmt.match(/^(BEGIN|INIT|CHECK|UNITCHECK|END)\s*\{/))) {
@@ -284,9 +282,9 @@ function labels(state: ParserState): boolean {
     }
 
     return true;
-}
+};
 
-function constants(state: ParserState): boolean {
+const constants = (state: ParserState): boolean => {
     let match;
     // Constants. Important because they look like subs (and technically are), so I'll tags them as such
     if ((match = state.stmt.match(/^use\s+constant\s+(\w+)\b/))) {
@@ -296,9 +294,9 @@ function constants(state: ParserState): boolean {
     } else {
         return false;
     }
-}
+};
 
-function fields(state: ParserState): boolean {
+const fields = (state: ParserState): boolean => {
     let match;
     // Moo/Moose/Object::Pad/Moops/Corinna attributes
     if ((match = state.stmt.match(/^(?:has|field)(?:\s+|\()["']?([$@%]?\w+)\b/))) {
@@ -339,9 +337,9 @@ function fields(state: ParserState): boolean {
         return false;
     }
     return true;
-}
+};
 
-function imports(state: ParserState): boolean {
+const imports = (state: ParserState): boolean => {
     let match;
     if ((match = state.stmt.match(/^use\s+([\w:]+)\b/))) {
         // Keep track of explicit imports for filtering
@@ -351,9 +349,9 @@ function imports(state: ParserState): boolean {
     } else {
         return false;
     }
-}
+};
 
-function autoloads(state: ParserState): boolean {
+const autoloads = (state: ParserState): boolean => {
     let match;
     if ((match = state.stmt.match(/^\$self->\{\s*(['"]|)_(\w+)\1\s*\}\s*(?:\|\||\/\/)?=/))) {
         // Common paradigm is for autoloaders to basically just point to the class variable
@@ -363,67 +361,40 @@ function autoloads(state: ParserState): boolean {
     } else {
         return false;
     }
-}
+};
 
-function dancer(state: ParserState): boolean {
-    if (
-        !(
-            state.perlDoc.imported.has('Dancer') ||
-            state.perlDoc.imported.has('Dancer2') ||
-            state.perlDoc.imported.has('Mojolicious::Lite')
-        )
-    ) {
-        return false;
-    }
+const translateLine = (line: string): string => {
+    return line
+        .replace(/\r$/, '')
+        .replace(/^\s*END_TEXT[\s;]*$/, 'END_TEXT')
+        .replace(/^\s*END_PGML[\s;]*$/, 'END_PGML')
+        .replace(/^\s*END_PGML_SOLUTION[\s;]*$/, 'END_PGML_SOLUTION')
+        .replace(/^\s*END_PGML_HINT[\s;]*$/, 'END_PGML_HINT')
+        .replace(/^\s*END_SOLUTION[\s;]*$/, 'END_SOLUTION')
+        .replace(/^\s*END_HINT[\s;]*$/, 'END_HINT')
+        .replace(/^\s*BEGIN_TEXT[\s;]*$/, "STATEMENT(EV3P(<<'END_TEXT'));")
+        .replace(/^\s*BEGIN_PGML[\s;]*$/, "STATEMENT(PGML::Format2(<<'END_PGML'));")
+        .replace(/^\s*BEGIN_PGML_SOLUTION[\s;]*$/, "SOLUTION(PGML::Format2(<<'END_PGML_SOLUTION'));")
+        .replace(/^\s*BEGIN_PGML_HINT[\s;]*$/, "HINT(PGML::Format2(<<'END_PGML_HINT'));")
+        .replace(/^\s*BEGIN_SOLUTION[\s;]*$/, "SOLUTION(EV3P(<<'END_SOLUTION'));")
+        .replace(/^\s*BEGIN_HINT[\s;]*$/, "HINT(EV3P(<<'END_HINT'));")
+        .replace(/^\s*(.*)\s*->\s*BEGIN_TIKZ[\s;]*$/, '$1->tex(<<END_TIKZ);')
+        .replace(/^\s*END_TIKZ[\s;]*$/, 'END_TIKZ')
+        .replace(/^\s*(.*)\s*->\s*BEGIN_LATEX_IMAGE[\s;]*$/, '$1->tex(<<END_LATEX_IMAGE);')
+        .replace(/^\s*END_LATEX_IMAGE[\s;]*$/, 'END_LATEX_IMAGE')
+        .replace(/END_DOCUMENT.*/, 'END_DOCUMENT();')
+        .replaceAll('\\', '\\\\')
+        .replaceAll('~~', '\\');
+};
 
-    //const rFilter = /qr\{[^\}]+\}/ ;
-    let match;
-    if ((match = state.stmt.match(/^(?:any|before_route)\s+\[([^\]]+)\]\s+(?:=>\s*)?(['"])([^"']+)\2\s*=>\s*sub/))) {
-        // Multiple request routing paths
-        let requests = match[1];
-        let route = match[3];
-        // TODO: Put this back
-        requests = requests.replace(/['"\s\n]+/g, '');
-        route = `${requests} ${route}`;
-        const endLine = SubEndLine(state);
-        MakeElem(route, PerlSymbolKind.HttpRoute, '', state, endLine);
-
-        // TODO: I think this is a bug with [^\2] not working
-        // any ['get', 'post'] => '/login' => sub {
-    } else if (
-        (match = state.stmt.match(
-            /^(get|any|post|put|patch|delete|del|options|ajax|before_route)\s+(?:[\s\w,[\]'"]+=>\s*)?(['"])([^'"]+)\2\s*=>\s*sub/
-        ))
-    ) {
-        // Routing paths
-        const route = match[1] + ' ' + match[3];
-        const endLine = SubEndLine(state);
-        MakeElem(route, PerlSymbolKind.HttpRoute, '', state, endLine);
-    } else if (
-        (match = state.stmt.match(
-            /^(get|any|post|put|patch|delete|del|options|ajax|before_route)\s+(qr\{[^}]+\})\s+\s*=>\s*sub/
-        ))
-    ) {
-        //  Regexp routing paths
-        const route = match[1] + ' ' + match[2];
-        const endLine = SubEndLine(state);
-        MakeElem(route, PerlSymbolKind.HttpRoute, '', state, endLine);
-    } else if ((match = state.stmt.match(/^(?:hook)\s+(['"]|)(\w+)\1\s*=>\s*sub/))) {
-        // Hooks
-        const hook = match[2];
-        const endLine = SubEndLine(state);
-        MakeElem(hook, PerlSymbolKind.HttpRoute, '', state, endLine);
-    } else {
-        return false;
-    }
-    return true; //  Must've matched
-}
-
-async function cleanCode(textDocument: TextDocument, perlDoc: PerlDocument, parseType: ParseType): Promise<string[]> {
+const cleanCode = async (
+    textDocument: TextDocument,
+    perlDoc: PerlDocument,
+    parseType: ParseType
+): Promise<string[]> => {
     const code = textDocument.getText();
 
-    const codeArray = code.split('\n');
-    // const offset = textDocument.offsetAt(textDocument.positionAt(0));
+    const codeArray = code.split('\n').map(translateLine);
     let codeClean = [];
 
     const commentState: ParserState = {
@@ -437,7 +408,7 @@ async function cleanCode(textDocument: TextDocument, perlDoc: PerlDocument, pars
         parseType: parseType
     };
 
-    for (commentState.line_number = 0; commentState.line_number < codeArray.length; commentState.line_number++) {
+    for (commentState.line_number = 0; commentState.line_number < codeArray.length; ++commentState.line_number) {
         commentState.stmt = codeArray[commentState.line_number];
 
         let match;
@@ -455,27 +426,23 @@ async function cleanCode(textDocument: TextDocument, perlDoc: PerlDocument, pars
         codeClean.push(mod_stmt);
     }
 
-    if (parseType == ParseType.outline) {
-        // If only doing shallow parsing, we don't need to strip {} or find start-end points of subs
-        codeClean = await stripCommentsAndQuotes(codeClean);
-    }
+    // If only doing shallow parsing, we don't need to strip {} or find start-end points of subs
+    if (parseType == ParseType.outline) codeClean = await stripCommentsAndQuotes(codeClean);
 
     return codeClean;
-}
+};
 
-function MakeElem(
+const MakeElem = (
     name: string,
     type: PerlSymbolKind | TagKind,
     typeDetail: string,
     state: ParserState,
     lineEnd: number = 0,
     signature: string[] = []
-): void {
+): void => {
     if (!name) return; // Don't store empty names (shouldn't happen)
 
-    if (lineEnd == 0) {
-        lineEnd = state.line_number;
-    }
+    if (lineEnd == 0) lineEnd = state.line_number;
 
     if (type == TagKind.UseStatement) {
         // Explictly loaded module. Helpful for focusing autocomplete results
@@ -507,18 +474,14 @@ function MakeElem(
         return; // Don't store it as an element
     }
 
-    if (signature?.length > 0) {
-        newElem.signature = signature;
-    }
+    if (signature?.length > 0) newElem.signature = signature;
 
     if (typeDetail.length > 0) {
         // TODO: The canonicalElems don't need to be PerlElems, they might be just a string.
         // We overwrite, so the last typed element is the canonical one. No reason for this.
         state.perlDoc.canonicalElems.set(name, newElem);
-        if (type == '1') {
-            // This object is only intended as the canonicalLookup, not for anything else.
-            return;
-        }
+        // This object is only intended as the canonicalLookup, not for anything else.
+        if (type == '1') return;
     }
 
     const array = state.perlDoc.elems.get(name) || [];
@@ -526,9 +489,9 @@ function MakeElem(
     state.perlDoc.elems.set(name, array);
 
     return;
-}
+};
 
-function SubEndLine(state: ParserState, rFilter: RegExp | null = null): number {
+const SubEndLine = (state: ParserState, rFilter: RegExp | null = null): number => {
     let pos = 0;
     let found = false;
     if (state.parseType != ParseType.outline) {
@@ -564,9 +527,9 @@ function SubEndLine(state: ParserState, rFilter: RegExp | null = null): number {
         }
     }
     return state.line_number;
-}
+};
 
-function PackageEndLine(state: ParserState) {
+const PackageEndLine = (state: ParserState): number => {
     if (state.parseType != ParseType.outline) {
         return state.line_number;
     }
@@ -619,7 +582,7 @@ function PackageEndLine(state: ParserState) {
 
     // If we didn't find an end, run until end of file
     return state.codeArray.length;
-}
+};
 
 const wasmBin = fs.readFileSync(path.join(__dirname, './../node_modules/vscode-oniguruma/release/onig.wasm')).buffer;
 const vscodeOnigurumaLib = oniguruma.loadWASM(wasmBin).then(() => {
@@ -642,7 +605,7 @@ const registry = new vsctm.Registry({
     }
 });
 
-async function stripCommentsAndQuotes(code: string[]): Promise<string[]> {
+const stripCommentsAndQuotes = async (code: string[]): Promise<string[]> => {
     const grammar = await registry.loadGrammar('source.perl');
     if (!grammar) {
         throw new Error("Couldn't load Textmate grammar");
@@ -688,4 +651,4 @@ async function stripCommentsAndQuotes(code: string[]): Promise<string[]> {
     }
 
     return codeStripped;
-}
+};

@@ -34,19 +34,19 @@
                 "coc-pg.enabled": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Enable coc-pg extension"
+                    "description": "Enable the coc-pg extension."
                 },
                 "pg.perlPath": {
                     "scope": "resource",
                     "type": "string",
                     "default": "perl",
-                    "description": "Full path to the perl executable"
+                    "description": "Full path to the perl executable."
                 },
                 "pg.perlParams": {
                     "scope": "resource",
                     "type": "array",
                     "default": [],
-                    "description": "Pass miscellaneous command line arguments to pass to the perl executable"
+                    "description": "Pass miscellaneous command line arguments to pass to the perl executable."
                 },
                 "pg.perlEnv": {
                     "scope": "resource",
@@ -63,8 +63,8 @@
                 "pg.enableWarnings": {
                     "scope": "resource",
                     "type": "boolean",
-                    "default": true,
-                    "description": "Enable warnings using -Mwarnings command switch"
+                    "default": false,
+                    "description": "Enable warnings using -Mwarnings command switch.  Most likely you don't want this."
                 },
                 "pg.perltidyProfile": {
                     "scope": "resource",
@@ -93,28 +93,28 @@
                 "pg.perlcriticSeverity": {
                     "scope": "resource",
                     "type": "number",
-                    "description": "Override severity level for perl critic (normally in profile)"
+                    "description": "Override severity level for perl critic (normally in profile)."
                 },
                 "pg.perlcriticTheme": {
                     "scope": "resource",
                     "type": "string",
-                    "description": "Override theme for perl critic (normally in profile)"
+                    "description": "Override theme for perl critic (normally in profile)."
                 },
                 "pg.perlcriticExclude": {
                     "scope": "resource",
                     "type": "string",
-                    "description": "Regex pattern with policies to exclude for perl critic (normally in profile)"
+                    "description": "Regex pattern with policies to exclude for perl critic (normally in profile)."
                 },
                 "pg.perlcriticInclude": {
                     "scope": "resource",
                     "type": "string",
-                    "description": "Regex pattern with policies to include for perl critic (normally in profile)"
+                    "description": "Regex pattern with policies to include for perl critic (normally in profile)."
                 },
                 "pg.perlCompileEnabled": {
                     "scope": "resource",
                     "type": "boolean",
                     "default": true,
-                    "description": "Enable running perl -c on your code"
+                    "description": "Enable running perl -c on your code."
                 },
                 "pg.severity5": {
                     "scope": "resource",
@@ -127,7 +127,7 @@
                         "none"
                     ],
                     "default": "warning",
-                    "description": "Editor Diagnostic severity level for Critic severity 5"
+                    "description": "Editor Diagnostic severity level for Critic severity 5."
                 },
                 "pg.severity4": {
                     "scope": "resource",
@@ -140,7 +140,7 @@
                         "none"
                     ],
                     "default": "info",
-                    "description": "Editor Diagnostic severity level for Critic severity 4"
+                    "description": "Editor Diagnostic severity level for Critic severity 4."
                 },
                 "pg.severity3": {
                     "scope": "resource",
@@ -153,7 +153,7 @@
                         "none"
                     ],
                     "default": "hint",
-                    "description": "Editor Diagnostic severity level for Critic severity 3"
+                    "description": "Editor Diagnostic severity level for Critic severity 3."
                 },
                 "pg.severity2": {
                     "scope": "resource",
@@ -166,7 +166,7 @@
                         "none"
                     ],
                     "default": "hint",
-                    "description": "Editor Diagnostic severity level for Critic severity 2"
+                    "description": "Editor Diagnostic severity level for Critic severity 2."
                 },
                 "pg.severity1": {
                     "scope": "resource",
@@ -179,7 +179,7 @@
                         "none"
                     ],
                     "default": "hint",
-                    "description": "Editor Diagnostic severity level for Critic severity 1"
+                    "description": "Editor Diagnostic severity level for Critic severity 1."
                 },
                 "pg.includePaths": {
                     "scope": "resource",
@@ -191,13 +191,13 @@
                     "scope": "resource",
                     "type": "boolean",
                     "default": true,
-                    "description": "Boolean to indicate if $project/lib should be added to the path by default"
+                    "description": "Boolean to indicate if $project/lib should be added to the path by default."
                 },
                 "pg.logging": {
                     "scope": "resource",
                     "type": "boolean",
                     "default": true,
-                    "description": "Log to stdout from the navigator. Viewable in the Perl Navigator LSP log"
+                    "description": "Log to stdout from the navigator. Viewable in the Perl Navigator LSP log."
                 },
                 "pg.trace.server": {
                     "scope": "window",

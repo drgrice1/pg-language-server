@@ -1,8 +1,8 @@
-// Settings for perlnavigator,
+// Settings for the pg language server,
 // defaults for configurable editors stored in package.json
 // defaults for non-configurable editors in server.ts
 
-import { Diagnostic } from 'vscode-languageserver/node';
+import type { Diagnostic } from 'vscode-languageserver/node';
 
 export interface PGLanguageServerSettings {
     perlPath: string;

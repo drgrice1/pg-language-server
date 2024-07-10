@@ -1,14 +1,14 @@
-import { TextDocumentPositionParams } from 'vscode-languageserver/node';
-import { ElemSource, ParseType, PerlDocument, PerlElem, PerlSymbolKind } from './types';
-import { parseFromUri } from './parser';
-import * as fs from 'fs';
+import type { TextDocumentPositionParams } from 'vscode-languageserver/node';
 import { URI } from 'vscode-uri';
+import * as fs from 'fs';
+import { ElemSource, ParseType, type PerlDocument, type PerlElem, PerlSymbolKind } from './types';
+import { parseFromUri } from './parser';
 
-export async function refineElementIfSub(
+export const refineElementIfSub = async (
     elem: PerlElem,
     params: TextDocumentPositionParams,
     perlDoc: PerlDocument
-): Promise<PerlElem | undefined> {
+): Promise<PerlElem | undefined> => {
     if (
         ![
             PerlSymbolKind.LocalSub,
@@ -27,9 +27,9 @@ export async function refineElementIfSub(
     }
 
     return await refineElement(elem, perlDoc);
-}
+};
 
-export async function refineElement(elem: PerlElem, perlDoc: PerlDocument): Promise<PerlElem> {
+export const refineElement = async (elem: PerlElem, perlDoc: PerlDocument): Promise<PerlElem> => {
     // Return back the original if you can't refine
     let refined: PerlElem = elem;
     if (elem.source == ElemSource.parser || elem.source == ElemSource.modHunter) {
@@ -58,9 +58,9 @@ export async function refineElement(elem: PerlElem, perlDoc: PerlDocument): Prom
         }
     }
     return refined;
-}
+};
 
-async function getUriFromElement(elem: PerlElem, perlDoc: PerlDocument): Promise<string | undefined> {
+const getUriFromElement = async (elem: PerlElem, perlDoc: PerlDocument): Promise<string | undefined> => {
     if (await isFile(elem.uri)) return elem.uri;
 
     if (!elem.package) return;
@@ -73,9 +73,9 @@ async function getUriFromElement(elem: PerlElem, perlDoc: PerlDocument): Promise
             return potentialElem.uri;
         }
     }
-}
+};
 
-async function isFile(uri: string): Promise<boolean> {
+const isFile = async (uri: string): Promise<boolean> => {
     const file = URI.parse(uri).fsPath;
     if (!file || file.length < 1) {
         return false;
@@ -87,4 +87,4 @@ async function isFile(uri: string): Promise<boolean> {
         // File or directory doesn't exist
         return false;
     }
-}
+};

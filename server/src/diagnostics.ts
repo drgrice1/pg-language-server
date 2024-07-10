@@ -1,20 +1,19 @@
-import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver/node';
-import { ParseType, PGLanguageServerSettings, CompilationResults, PerlDocument } from './types';
-import { WorkspaceFolder } from 'vscode-languageserver-protocol';
-import { join } from 'path';
+import { type Diagnostic, DiagnosticSeverity } from 'vscode-languageserver/node';
+import type { WorkspaceFolder } from 'vscode-languageserver-protocol';
+import type { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
+import { join } from 'path';
+import { ParseType, type PGLanguageServerSettings, type CompilationResults, type PerlDocument } from './types';
 import { getIncPaths, async_execFile, nLog } from './utils';
 import { buildNav } from './parseTags';
 import { getPerlAssetsPath } from './assets';
 import { parseDocument } from './parser';
 
-import { TextDocument } from 'vscode-languageserver-textdocument';
-
-export async function perlcompile(
+export const perlcompile = async (
     textDocument: TextDocument,
     workspaceFolders: WorkspaceFolder[] | null,
     settings: PGLanguageServerSettings
-): Promise<CompilationResults | void> {
+): Promise<CompilationResults | void> => {
     const parsingPromise = parseDocument(textDocument, ParseType.selfNavigation);
 
     if (!settings.perlCompileEnabled) {
@@ -22,8 +21,6 @@ export async function perlcompile(
         return { diags: [], perlDoc: parsedDoc };
     }
     let perlParams: string[] = [...settings.perlParams, '-c'];
-    const perlEnv = settings.perlEnv;
-    const perlEnvAdd = settings.perlEnvAdd;
     const filePath = URI.parse(textDocument.uri).fsPath;
 
     // Force enable some warnings.
@@ -51,11 +48,11 @@ export async function perlcompile(
             maxBuffer: number;
             env?: { [key: string]: string | undefined };
         } = { timeout: 10000, maxBuffer: 20 * 1024 * 1024 };
-        if (perlEnv) {
-            if (perlEnvAdd) {
-                options.env = { ...process.env, ...perlEnv };
+        if (settings.perlEnv) {
+            if (settings.perlEnvAdd) {
+                options.env = { ...process.env, ...settings.perlEnv };
             } else {
-                options.env = perlEnv;
+                options.env = settings.perlEnv;
             }
         }
         const perlProcess = async_execFile(settings.perlPath, perlParams, options);
@@ -97,15 +94,39 @@ export async function perlcompile(
         JSON.parse(str)
     );
     return { diags: uniq_diagnostics, perlDoc: mergedDoc };
-}
+};
 
-async function getInquisitor(): Promise<string[]> {
+const getInquisitor = async (): Promise<string[]> => {
     const inq_path = await getPerlAssetsPath();
     const inq: string[] = ['-I', inq_path, '-MInquisitor'];
     return inq;
-}
+};
 
-function getAdjustedPerlCode(textDocument: TextDocument, filePath: string): string {
+const translateCode = (code: string): string => {
+    return code
+        .replaceAll(/\r\n/g, '\n')
+        .replaceAll(/\n\s*END_TEXT[\s;]*\n/g, '\nEND_TEXT\n')
+        .replaceAll(/\n\s*END_PGML[\s;]*\n/g, '\nEND_PGML\n')
+        .replaceAll(/\n\s*END_PGML_SOLUTION[\s;]*\n/g, '\nEND_PGML_SOLUTION\n')
+        .replaceAll(/\n\s*END_PGML_HINT[\s;]*\n/g, '\nEND_PGML_HINT\n')
+        .replaceAll(/\n\s*END_SOLUTION[\s;]*\n/g, '\nEND_SOLUTION\n')
+        .replaceAll(/\n\s*END_HINT[\s;]*\n/g, '\nEND_HINT\n')
+        .replaceAll(/\n\s*BEGIN_TEXT[\s;]*\n/g, "\nSTATEMENT(EV3P(<<'END_TEXT'));\n")
+        .replaceAll(/\n\s*BEGIN_PGML[\s;]*\n/g, "\nSTATEMENT(PGML::Format2(<<'END_PGML'));\n")
+        .replaceAll(/\n\s*BEGIN_PGML_SOLUTION[\s;]*\n/g, "\nSOLUTION(PGML::Format2(<<'END_PGML_SOLUTION'));\n")
+        .replaceAll(/\n\s*BEGIN_PGML_HINT[\s;]*\n/g, "\nHINT(PGML::Format2(<<'END_PGML_HINT'));\n")
+        .replaceAll(/\n\s*BEGIN_SOLUTION[\s;]*\n/g, "\nSOLUTION(EV3P(<<'END_SOLUTION'));\n")
+        .replaceAll(/\n\s*BEGIN_HINT[\s;]*\n/g, "\nHINT(EV3P(<<'END_HINT'));\n")
+        .replaceAll(/\n\s*(.*)\s*->\s*BEGIN_TIKZ[\s;]*\n/g, '\n$1->tex(<<END_TIKZ);\n')
+        .replaceAll(/\n\s*END_TIKZ[\s;]*\n/g, '\nEND_TIKZ\n')
+        .replaceAll(/\n\s*(.*)\s*->\s*BEGIN_LATEX_IMAGE[\s;]*\n/g, '\n$1->tex(<<END_LATEX_IMAGE);\n')
+        .replaceAll(/\n\s*END_LATEX_IMAGE[\s;]*\n/g, '\nEND_LATEX_IMAGE\n')
+        .replaceAll(/END_DOCUMENT.*/g, 'END_DOCUMENT();')
+        .replaceAll('\\', '\\\\')
+        .replaceAll('~~', '\\');
+};
+
+const getAdjustedPerlCode = (textDocument: TextDocument, filePath: string): string => {
     let code = textDocument.getText();
 
     // module name regex stolen from https://metacpan.org/pod/Module::Runtime#$module_name_rx
@@ -131,17 +152,17 @@ function getAdjustedPerlCode(textDocument: TextDocument, filePath: string): stri
             filePath
         }'; print "Setting file" . __FILE__; ${register_inc_path} }\n# line 0 "${
             filePath
-        }"\ndie('Not needed, but die for safety');\n` + code;
+        }"\ndie 'Not needed, but die for safety';\n` + translateCode(code);
     return code;
-}
+};
 
-function maybeAddCompDiag(
+const maybeAddCompDiag = (
     violation: string,
     severity: DiagnosticSeverity,
     diagnostics: Diagnostic[],
     filePath: string,
     perlDoc: PerlDocument
-): void {
+): void => {
     violation = violation.replaceAll('\r', ''); // Clean up for Windows
     violation = violation.replace(/, <STDIN> line 1\.$/g, ''); // Remove our stdin nonsense
 
@@ -165,13 +186,13 @@ function maybeAddCompDiag(
         message: 'Syntax: ' + violation,
         source: 'pg-language-server'
     });
-}
+};
 
-function localizeErrors(
+const localizeErrors = (
     violation: string,
     filePath: string,
     perlDoc: PerlDocument
-): { violation: string; lineNum: number } | void {
+): { violation: string; lineNum: number } | void => {
     if (violation.indexOf('Too late to run CHECK block') != -1) return;
 
     let match = /^(.+)at\s+(.+?)\s+line\s+(\d+)/i.exec(violation);
@@ -200,13 +221,13 @@ function localizeErrors(
         return { violation, lineNum };
     }
     return;
-}
+};
 
-export async function perlcritic(
+export const perlcritic = async (
     textDocument: TextDocument,
     workspaceFolders: WorkspaceFolder[] | null,
     settings: PGLanguageServerSettings
-): Promise<Diagnostic[]> {
+): Promise<Diagnostic[]> => {
     if (!settings.perlcriticEnabled) return [];
     const critic_path = join(await getPerlAssetsPath(), 'pgCriticWrapper.pl');
     let criticParams: string[] = [...settings.perlParams, critic_path].concat(
@@ -247,9 +268,9 @@ export async function perlcritic(
     });
 
     return diagnostics;
-}
+};
 
-function getCriticProfile(workspaceFolders: WorkspaceFolder[] | null, settings: PGLanguageServerSettings): string[] {
+const getCriticProfile = (workspaceFolders: WorkspaceFolder[] | null, settings: PGLanguageServerSettings): string[] => {
     const profileCmd: string[] = [];
     if (settings.perlcriticProfile) {
         const profile = settings.perlcriticProfile;
@@ -272,9 +293,9 @@ function getCriticProfile(workspaceFolders: WorkspaceFolder[] | null, settings: 
         }
     }
     return profileCmd;
-}
+};
 
-function maybeAddCriticDiag(violation: string, diagnostics: Diagnostic[], settings: PGLanguageServerSettings): void {
+const maybeAddCriticDiag = (violation: string, diagnostics: Diagnostic[], settings: PGLanguageServerSettings): void => {
     // Severity ~|~ Line ~|~ Column ~|~ Description ~|~ Policy ~||~ Newline
     const tokens = violation.replace('~||~', '').replaceAll('\r', '').split('~|~');
     if (tokens.length != 5) {
@@ -296,12 +317,12 @@ function maybeAddCriticDiag(violation: string, diagnostics: Diagnostic[], settin
         message: 'Critic: ' + message,
         source: 'pg-language-server'
     });
-}
+};
 
-function getCriticDiagnosticSeverity(
+const getCriticDiagnosticSeverity = (
     severity_num: string,
     settings: PGLanguageServerSettings
-): DiagnosticSeverity | undefined {
+): DiagnosticSeverity | undefined => {
     // Unknown severity gets max (should never happen)
     const severity_config =
         severity_num == '1'
@@ -326,9 +347,9 @@ function getCriticDiagnosticSeverity(
         default:
             return DiagnosticSeverity.Error;
     }
-}
+};
 
-function mergeDocs(doc1: PerlDocument, doc2: PerlDocument) {
+const mergeDocs = (doc1: PerlDocument, doc2: PerlDocument): PerlDocument => {
     // TODO: Redo this code. Instead of merging sources, you should keep track of where symbols came from
 
     doc1.autoloads = new Map([...doc1.autoloads, ...doc2.autoloads]);
@@ -341,4 +362,4 @@ function mergeDocs(doc1: PerlDocument, doc2: PerlDocument) {
     doc1.uri = doc2.uri;
 
     return doc1;
-}
+};

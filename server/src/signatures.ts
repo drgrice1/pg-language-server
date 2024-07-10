@@ -1,20 +1,20 @@
-import {
+import type {
     TextDocumentPositionParams,
     SignatureHelp,
     SignatureInformation,
     ParameterInformation
 } from 'vscode-languageserver/node';
-import { TextDocument, Position } from 'vscode-languageserver-textdocument';
-import { PerlDocument, PerlElem, PerlSymbolKind } from './types';
+import type { TextDocument, Position } from 'vscode-languageserver-textdocument';
+import { type PerlDocument, type PerlElem, PerlSymbolKind } from './types';
 import { lookupSymbol } from './utils';
 import { refineElementIfSub } from './refinement';
 
-export async function getSignature(
+export const getSignature = async (
     params: TextDocumentPositionParams,
     perlDoc: PerlDocument,
     txtDoc: TextDocument,
     modMap: Map<string, string>
-): Promise<SignatureHelp | undefined> {
+): Promise<SignatureHelp | undefined> => {
     const position = params.position;
     const [symbol, currentSig] = getFunction(position, txtDoc);
     if (!symbol) return;
@@ -26,9 +26,9 @@ export async function getSignature(
     if (!refined) return;
     // const elem_count = perlDoc.elems.size; // Currently unused.
     return buildSignature(refined, currentSig, symbol);
-}
+};
 
-function getFunction(position: Position, txtDoc: TextDocument): string[] {
+const getFunction = (position: Position, txtDoc: TextDocument): string[] => {
     const start = { line: position.line, character: 0 };
     const end = { line: position.line + 1, character: 0 };
     const text = txtDoc.getText({ start, end });
@@ -62,9 +62,9 @@ function getFunction(position: Position, txtDoc: TextDocument): string[] {
     }
 
     return [symbol, currSig];
-}
+};
 
-function buildSignature(elem: PerlElem, currentSig: string, symbol: string): SignatureHelp | undefined {
+const buildSignature = (elem: PerlElem, currentSig: string, symbol: string): SignatureHelp | undefined => {
     let params = elem.signature;
     if (!params) return;
     params = [...params]; // Clone to ensure we don't modify the original
@@ -73,7 +73,6 @@ function buildSignature(elem: PerlElem, currentSig: string, symbol: string): Sig
         // Subroutine vs method is not relevant, only matters if you called it as a method (except Corinna,
         // for which $self is implicit)
         params.shift();
-        // function_name = function_name.replace(/::(\w+)$/, '->$1');
     }
     if (params.length == 0) return;
     const paramLabels: ParameterInformation[] = [];
@@ -88,4 +87,4 @@ function buildSignature(elem: PerlElem, currentSig: string, symbol: string): Sig
         activeParameter: activeParameter
     };
     return sig;
-}
+};

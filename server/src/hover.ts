@@ -1,18 +1,19 @@
-import { TextDocumentPositionParams, Hover, MarkupContent, MarkupKind } from 'vscode-languageserver/node';
-import { TextDocument } from 'vscode-languageserver-textdocument';
-import { PerlDocument, PerlElem, PerlSymbolKind } from './types';
+import type { TextDocumentPositionParams, Hover, MarkupContent } from 'vscode-languageserver/node';
+import { MarkupKind } from 'vscode-languageserver/node';
+import type { TextDocument } from 'vscode-languageserver-textdocument';
+import { type PerlDocument, type PerlElem, PerlSymbolKind } from './types';
 import { getSymbol, lookupSymbol } from './utils';
 import { refineElementIfSub } from './refinement';
 import { getPod } from './pod';
 
 import { URI } from 'vscode-uri';
 
-export async function getHover(
+export const getHover = async (
     params: TextDocumentPositionParams,
     perlDoc: PerlDocument,
     txtDoc: TextDocument,
     modMap: Map<string, string>
-): Promise<Hover | undefined> {
+): Promise<Hover | undefined> => {
     const position = params.position;
     const symbol = getSymbol(position, txtDoc);
 
@@ -50,9 +51,9 @@ export async function getHover(
     const documentation: Hover = { contents: hoverContent };
 
     return documentation;
-}
+};
 
-function buildHoverDoc(symbol: string, elem: PerlElem, refined: PerlElem | undefined) {
+const buildHoverDoc = (symbol: string, elem: PerlElem, refined: PerlElem | undefined): string | undefined => {
     let sig = '';
     let name = elem.name;
     // Early return.
@@ -136,4 +137,4 @@ function buildHoverDoc(symbol: string, elem: PerlElem, refined: PerlElem | undef
             break;
     }
     return desc;
-}
+};

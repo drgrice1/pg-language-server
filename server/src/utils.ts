@@ -1,16 +1,20 @@
-import { WorkspaceFolder } from 'vscode-languageserver-protocol';
+import type { WorkspaceFolder } from 'vscode-languageserver-protocol';
+import type { TextDocument, Position } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
-import { TextDocument, Position } from 'vscode-languageserver-textdocument';
-import { PerlDocument, PerlElem, PGLanguageServerSettings, PerlSymbolKind, ElemSource } from './types';
-import * as path from 'path';
+import { join } from 'path';
 import { promises } from 'fs';
+import type { PerlDocument, PerlElem, PGLanguageServerSettings } from './types';
+import { PerlSymbolKind, ElemSource } from './types';
 
 export const async_execFile = promisify(execFile);
 
 // TODO: This behaviour should be temporary. Review and update treatment of multi-root workspaces
-export function getIncPaths(workspaceFolders: WorkspaceFolder[] | null, settings: PGLanguageServerSettings): string[] {
+export const getIncPaths = (
+    workspaceFolders: WorkspaceFolder[] | null,
+    settings: PGLanguageServerSettings
+): string[] => {
     let includePaths: string[] = [];
 
     settings.includePaths.forEach((path) => {
@@ -22,7 +26,7 @@ export function getIncPaths(workspaceFolders: WorkspaceFolder[] | null, settings
                 });
             } else {
                 nLog(
-                    "You used $workspaceFolder in your config, but didn't add any workspace folders. Skipping " + path,
+                    `You used $workspaceFolder in your config, but didn't add any workspace folders. Skipping ${path}`,
                     settings
                 );
             }
@@ -36,15 +40,15 @@ export function getIncPaths(workspaceFolders: WorkspaceFolder[] | null, settings
         if (workspaceFolders) {
             workspaceFolders.forEach((workspaceFolder) => {
                 const rootPath = URI.parse(workspaceFolder.uri).fsPath;
-                includePaths = includePaths.concat(['-I', path.join(rootPath, 'lib')]);
+                includePaths = includePaths.concat(['-I', join(rootPath, 'lib')]);
             });
         }
     }
 
     return includePaths;
-}
+};
 
-export function getSymbol(position: Position, txtDoc: TextDocument) {
+export const getSymbol = (position: Position, txtDoc: TextDocument): string => {
     // Gets symbol from text at position.
     // Ignore :: going left, but stop at :: when going to the right.
     // (e.g Foo::bar::baz should be clickable on each spot)
@@ -122,9 +126,9 @@ export function getSymbol(position: Position, txtDoc: TextDocument) {
     }
 
     return symbol;
-}
+};
 
-function findRecent(found: PerlElem[], line: number) {
+const findRecent = (found: PerlElem[], line: number): PerlElem => {
     let best = found[0];
     for (let i = 0; i < found.length; i++) {
         // TODO: is this flawed because not all lookups are in the same file?
@@ -138,14 +142,14 @@ function findRecent(found: PerlElem[], line: number) {
         }
     }
     return best;
-}
+};
 
-export function lookupSymbol(
+export const lookupSymbol = (
     perlDoc: PerlDocument,
     modMap: Map<string, string>,
     symbol: string,
     line: number
-): PerlElem[] {
+): PerlElem[] => {
     let found = perlDoc.elems.get(symbol);
     if (found?.length) {
         // Simple lookup worked. If we have multiple (e.g. 2 lexical variables), find the nearest earlier declaration.
@@ -156,19 +160,19 @@ export function lookupSymbol(
     const foundMod = modMap.get(symbol);
     if (foundMod) {
         // Ideally we would've found the module in the PerlDoc, but perhaps it was "required" instead of "use'd"
-        const modUri = URI.parse(foundMod).toString();
-        const modElem: PerlElem = {
-            name: symbol,
-            type: PerlSymbolKind.Module,
-            typeDetail: '',
-            uri: modUri,
-            package: symbol,
-            line: 0,
-            lineEnd: 0,
-            value: '',
-            source: ElemSource.modHunter
-        };
-        return [modElem];
+        return [
+            {
+                name: symbol,
+                type: PerlSymbolKind.Module,
+                typeDetail: '',
+                uri: URI.parse(foundMod).toString(),
+                package: symbol,
+                line: 0,
+                lineEnd: 0,
+                value: '',
+                source: ElemSource.modHunter
+            }
+        ];
     }
 
     let qSymbol = symbol;
@@ -244,34 +248,35 @@ export function lookupSymbol(
         for (const potentialElem of perlDoc.elems.values()) {
             const element = potentialElem[0]; // All Elements are with same name are normally the same.
             if (element.package && element.package == symbol) {
-                const packElem: PerlElem = {
-                    name: symbol,
-                    type: PerlSymbolKind.Package,
-                    typeDetail: '',
-                    uri: element.uri,
-                    package: symbol,
-                    line: 0,
-                    lineEnd: 0,
-                    value: '',
-                    source: ElemSource.packageInference
-                };
                 // Just return the first one. The others would likely be the same
-                return [packElem];
+                return [
+                    {
+                        name: symbol,
+                        type: PerlSymbolKind.Package,
+                        typeDetail: '',
+                        uri: element.uri,
+                        package: symbol,
+                        line: 0,
+                        lineEnd: 0,
+                        value: '',
+                        source: ElemSource.packageInference
+                    }
+                ];
             }
         }
     }
 
     return [];
-}
+};
 
-export function nLog(message: string, settings: PGLanguageServerSettings) {
+export const nLog = (message: string, settings: PGLanguageServerSettings): void => {
     // TODO: Remove resource level settings and just use a global logging setting?
     if (settings.logging) {
         console.error(message);
     }
-}
+};
 
-export async function isFile(file: string): Promise<boolean> {
+export const isFile = async (file: string): Promise<boolean> => {
     try {
         const stats = await promises.stat(file);
         return stats.isFile();
@@ -279,4 +284,4 @@ export async function isFile(file: string): Promise<boolean> {
         // File or directory doesn't exist
         return false;
     }
-}
+};

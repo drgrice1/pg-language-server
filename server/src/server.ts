@@ -21,12 +21,12 @@ import {
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import type { PublishDiagnosticsParams } from 'vscode-languageserver-protocol';
 import { URI } from 'vscode-uri';
+
 import { basename } from 'path';
 import { homedir } from 'os';
 import { LRUCache } from 'lru-cache';
 
-import { perlcritic } from './diagnostics';
-//import { perlcompile, perlcritic } from './diagnostics';
+import { perlcompile, perlcritic } from './diagnostics';
 import { cleanupTemporaryAssetPath } from './assets';
 //import { getDefinition, getAvailableMods } from './navigation';
 import { getSymbols /*, getWorkspaceSymbols */ } from './symbols';
@@ -111,7 +111,7 @@ connection.onInitialized(() => {
 const defaultSettings: PGLanguageServerSettings = {
     perlPath: 'perl',
     perlParams: [],
-    enableWarnings: true,
+    enableWarnings: false,
     perltidyProfile: '',
     perlcriticProfile: '',
     perlcriticEnabled: true,
@@ -145,7 +145,7 @@ const documentDiags: Map<string, Diagnostic[]> = new Map();
 // Store recent compilation diags to prevent old diagnostics from resurfacing
 const documentCompDiags: Map<string, Diagnostic[]> = new Map();
 
-// My ballpark estimate is that 350k symbols will be about 35MB. Huge map, but a reasonable limit.
+// A ballpark estimate is that 350k symbols will be about 35MB. A huge map, but a reasonable limit.
 const navSymbols = new LRUCache({
     maxSize: 350000,
     sizeCalculation(value: PerlDocument) {
@@ -161,43 +161,43 @@ const timers: Map<string, NodeJS.Timeout> = new Map();
 const availableMods: Map<string, Map<string, string>> = new Map();
 let modCacheBuilt: boolean = false;
 
-async function rebuildModCache() {
+const rebuildModCache = async (): Promise<void> => {
     const allDocs = documents.all();
     if (allDocs.length > 0) {
         modCacheBuilt = true;
         dispatchForMods(allDocs[allDocs.length - 1]); // Rebuild with recent file
     }
     return;
-}
+};
 
-async function buildModCache(textDocument: TextDocument) {
+const buildModCache = async (textDocument: TextDocument): Promise<void> => {
     if (!modCacheBuilt) {
         modCacheBuilt = true; // Set true first to prevent other files from building concurrently.
         dispatchForMods(textDocument);
     }
     return;
-}
+};
 
-async function dispatchForMods(textDocument: TextDocument) {
+const dispatchForMods = async (textDocument: TextDocument): Promise<void> => {
     // BIG TODO: Resolution of workspace settings? How to do? Maybe build a hash of all include paths.
     const settings = await getDocumentSettings(textDocument.uri);
     const workspaceFolders = await getWorkspaceFoldersSafe();
     const newMods = await getAvailableMods(workspaceFolders, settings);
     availableMods.set('default', newMods);
     return;
-}
+};
 */
 
-async function getWorkspaceFoldersSafe(): Promise<WorkspaceFolder[]> {
+const getWorkspaceFoldersSafe = async (): Promise<WorkspaceFolder[]> => {
     try {
         const workspaceFolders = await connection.workspace.getWorkspaceFolders();
         return workspaceFolders ?? [];
     } catch {
         return [];
     }
-}
+};
 
-function expandTildePaths(paths: string, settings: PGLanguageServerSettings): string {
+const expandTildePaths = (paths: string, settings: PGLanguageServerSettings): string => {
     const path = paths;
     // Consider that this not a Windows feature,
     // so, Windows "%USERPROFILE%" currently is ignored (and rarely used).
@@ -208,9 +208,9 @@ function expandTildePaths(paths: string, settings: PGLanguageServerSettings): st
     } else {
         return path;
     }
-}
+};
 
-async function getDocumentSettings(resource: string): Promise<PGLanguageServerSettings> {
+const getDocumentSettings = async (resource: string): Promise<PGLanguageServerSettings> => {
     if (!hasConfigurationCapability) {
         return globalSettings;
     }
@@ -250,7 +250,7 @@ async function getDocumentSettings(resource: string): Promise<PGLanguageServerSe
         return resolvedSettings;
     }
     return result;
-}
+};
 
 // Only keep settings for open documents
 documents.onDidClose((e) => {
@@ -262,13 +262,11 @@ documents.onDidClose((e) => {
 });
 
 documents.onDidOpen((change) => {
-    console.log(`changed ${change.document.uri}`);
     validatePerlDocument(change.document);
     //buildModCache(change.document);
 });
 
 documents.onDidSave((change) => {
-    console.log(`saved ${change.document.uri}`);
     validatePerlDocument(change.document);
 });
 
@@ -276,13 +274,13 @@ documents.onDidChangeContent((change) => {
     // VSCode sends a firehose of change events. Only check after it's been quiet for 1 second.
     const timer = timers.get(change.document.uri);
     if (timer) clearTimeout(timer);
-    const newTimer = setTimeout(function () {
-        validatePerlDocument(change.document);
-    }, 1000);
-    timers.set(change.document.uri, newTimer);
+    timers.set(
+        change.document.uri,
+        setTimeout(() => validatePerlDocument(change.document), 1000)
+    );
 });
 
-async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
+const validatePerlDocument = async (textDocument: TextDocument): Promise<void> => {
     const settings = await getDocumentSettings(textDocument.uri);
 
     const fileName = basename(URI.parse(textDocument.uri).fsPath);
@@ -296,14 +294,13 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
 
     const workspaceFolders = await getWorkspaceFoldersSafe();
 
-    //const pCompile = perlcompile(textDocument, workspaceFolders, settings); // Start compilation
+    const pCompile = perlcompile(textDocument, workspaceFolders, settings); // Start compilation
     const pCritic = perlcritic(textDocument, workspaceFolders, settings); // Start perlcritic
 
-    //const perlOut = await pCompile;
+    const perlOut = await pCompile;
     nLog('Compilation Time: ' + (Date.now() - start) / 1000 + ' seconds', settings);
     const oldCriticDiags = documentDiags.get(textDocument.uri);
-    /*
-   if (!perlOut) {
+    if (!perlOut) {
         documentCompDiags.delete(textDocument.uri);
         endProgress(connection, progressToken);
         return;
@@ -317,10 +314,8 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
         mixOldAndNew = perlOut.diags.concat(oldCriticDiags);
     }
     sendDiags({ uri: textDocument.uri, diagnostics: mixOldAndNew });
-    */
-    if (oldCriticDiags) sendDiags({ uri: textDocument.uri, diagnostics: oldCriticDiags });
 
-    //navSymbols.set(textDocument.uri, perlOut.perlDoc);
+    navSymbols.set(textDocument.uri, perlOut.perlDoc);
 
     // Perl critic things
     const diagCritic = await pCritic;
@@ -342,16 +337,16 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
     }
     endProgress(connection, progressToken);
     return;
-}
+};
 
-function sendDiags(params: PublishDiagnosticsParams): void {
+const sendDiags = (params: PublishDiagnosticsParams): void => {
     // Before sending new diagnostics, check if the file is still open.
     if (documents.get(params.uri)) {
         connection.sendDiagnostics(params);
     } else {
         connection.sendDiagnostics({ uri: params.uri, diagnostics: [] });
     }
-}
+};
 
 connection.onDidChangeConfiguration(async (change) => {
     if (hasConfigurationCapability) {
@@ -409,14 +404,12 @@ connection.onCompletionResolve(async (item: CompletionItem): Promise<CompletionI
 connection.onHover(async (params) => {
     const document = documents.get(params.textDocument.uri);
     const perlDoc = navSymbols.get(params.textDocument.uri);
-    let mods = availableMods.get('default');
-    if (!mods) mods = new Map();
-
     if (!document || !perlDoc) return;
-
-    return await getHover(params, perlDoc, document, mods);
+    return await getHover(params, perlDoc, document, availableMods.get('default') ?? new Map<string, string>());
 });
+*/
 
+/*
 connection.onDefinition(async (params) => {
     const document = documents.get(params.textDocument.uri);
     const perlDoc = navSymbols.get(params.textDocument.uri);
@@ -486,9 +479,9 @@ connection.onShutdown(() => {
     }
 });
 
-process.on('unhandledRejection', function (reason, p) {
-    console.error('Caught an unhandled Rejection at: Promise ', p, ' reason: ', reason);
-});
+process.on('unhandledRejection', (reason, p) =>
+    console.error('Caught an unhandled Rejection at: Promise ', p, ' reason: ', reason)
+);
 
 // Make the text document manager listen on the connection
 // for open, change and close text document events

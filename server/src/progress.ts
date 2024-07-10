@@ -1,30 +1,23 @@
-import { Connection } from 'vscode-languageserver/node';
-import { PGLanguageServerSettings } from './types';
-import type { WorkDoneProgressBegin, WorkDoneProgressEnd } from 'vscode-languageserver-protocol';
-import { WorkDoneProgress } from 'vscode-languageserver-protocol';
+import type { Connection } from 'vscode-languageserver/node';
+import type { PGLanguageServerSettings } from './types';
+import { type WorkDoneProgressBegin, type WorkDoneProgressEnd, WorkDoneProgress } from 'vscode-languageserver-protocol';
 
-export async function startProgress(
+export const startProgress = async (
     connection: Connection,
     title: string,
     settings: PGLanguageServerSettings
-): Promise<string | null> {
+): Promise<string | null> => {
     if (!settings.enableProgress) return null;
-
     const progressToken = (await import('nanoid/non-secure')).nanoid();
-
     await connection.sendRequest('window/workDoneProgress/create', { token: progressToken });
-
     const beginReport: WorkDoneProgressBegin = { title, cancellable: false, kind: 'begin' };
-
     connection.sendProgress(WorkDoneProgress.type, progressToken, beginReport);
-
     return progressToken;
-}
+};
 
-export function endProgress(connection: Connection, progressToken: string | null) {
+export const endProgress = (connection: Connection, progressToken: string | null) => {
     if (!progressToken) return;
-
     const endReport = <WorkDoneProgressEnd>{ kind: 'end' };
     connection.sendProgress(WorkDoneProgress.type, progressToken, endReport);
     return;
-}
+};

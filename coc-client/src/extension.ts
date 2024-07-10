@@ -1,5 +1,4 @@
-import type { ExtensionContext } from 'coc.nvim';
-import { workspace, services, LanguageClient, TransportKind } from 'coc.nvim';
+import { type ExtensionContext, workspace, services, LanguageClient, TransportKind } from 'coc.nvim';
 import { join } from 'path';
 
 export const activate = async (context: ExtensionContext): Promise<void> => {

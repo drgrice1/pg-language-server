@@ -6,11 +6,11 @@ import { dirname, join } from 'path';
 let haveExtractedAssets = false;
 let pkgAssetPath: string;
 
-async function extractAssetsIfNecessary(): Promise<string> {
+const extractAssetsIfNecessary = async (): Promise<string> => {
     if (!haveExtractedAssets) {
         pkgAssetPath = mkdtempSync(join(tmpdir(), 'pg-language-server'));
         const assets: string[] = [
-            'server/src/perl/lib_bs22/ModHunter.pl',
+            'server/src/perl/ModHunter.pl',
             'server/src/perl/Inquisitor.pm',
             'server/src/perl/pgCriticWrapper.pl',
             'server/src/perl/lib_bs22/Class/Inspector.pm',
@@ -36,9 +36,9 @@ async function extractAssetsIfNecessary(): Promise<string> {
         return new Promise((resolve) => setTimeout(() => resolve(pkgAssetPath), 50));
     }
     return pkgAssetPath;
-}
+};
 
-async function getAssetsPath(): Promise<string> {
+const getAssetsPath = async (): Promise<string> => {
     const anyProcess = process;
     // @ts-expect-error Typescript does not recognize pkg as a property of a NodeJS.Process.
     if (anyProcess.pkg) {
@@ -51,15 +51,13 @@ async function getAssetsPath(): Promise<string> {
     }
 
     return dirname(__dirname);
-}
+};
 
-export async function getPerlAssetsPath(): Promise<string> {
-    return join(await getAssetsPath(), 'server', 'src', 'perl');
-}
+export const getPerlAssetsPath = async (): Promise<string> => join(await getAssetsPath(), 'server', 'src', 'perl');
 
-export function cleanupTemporaryAssetPath() {
+export const cleanupTemporaryAssetPath = (): void => {
     if (haveExtractedAssets) {
         rmSync(pkgAssetPath, { recursive: true }); // Create all parent folders
         haveExtractedAssets = false;
     }
-}
+};

@@ -10,11 +10,12 @@ parsing.
 
 - Code formatting via pg-perltidy.pl
 - PG Perl Critic static code analysis/suggestions
+- Syntax Checking
 
 ## Features Yet to be Implemented
 
-- Syntax Checking
 - Documentation on hover and autocomplete
+- Subroutine signatures
 - Code Navigation ("Go To Definition") anywhere, including macro files and pg library modules
 - Outline view
 - Smart context-aware autocompletion and navigation
@@ -24,7 +25,7 @@ parsing.
 
 If you have a nonstandard install of Perl, please set the setting `pg.perlPath`. The subfolder `./lib` will be added to
 your path automatically. You can also add additional include paths that will be added to the perl search path (@INC) via
-`pg.includePaths`. You can use $workspaceFolder in includePaths which will be replaced by the full folder path. If you
+`pg.includePaths`. You can use `$workspaceFolder` in includePaths which will be replaced by the full folder path. If you
 have a multi-root workspace, each folder will be added to the path.
 
 ### Perl Critic Customization

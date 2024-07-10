@@ -1,19 +1,19 @@
-import { DefinitionParams, Location, WorkspaceFolder } from 'vscode-languageserver/node';
-import { TextDocument } from 'vscode-languageserver-textdocument';
-import { PerlDocument, PerlElem, PGLanguageServerSettings } from './types';
+import type { DefinitionParams, Location, WorkspaceFolder } from 'vscode-languageserver/node';
+import type { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
 import { realpathSync, realpath } from 'fs';
-import { getIncPaths, async_execFile, getSymbol, lookupSymbol, nLog, isFile } from './utils';
 import { join } from 'path';
+import type { PerlDocument, PerlElem, PGLanguageServerSettings } from './types';
+import { getIncPaths, async_execFile, getSymbol, lookupSymbol, nLog, isFile } from './utils';
 import { getPerlAssetsPath } from './assets';
 import { refineElement } from './refinement';
 
-export async function getDefinition(
+export const getDefinition = async (
     params: DefinitionParams,
     perlDoc: PerlDocument,
     txtDoc: TextDocument,
     modMap: Map<string, string>
-): Promise<Location[] | undefined> {
+): Promise<Location[] | undefined> => {
     const position = params.position;
     const symbol = getSymbol(position, txtDoc);
 
@@ -56,9 +56,13 @@ export async function getDefinition(
     }
     // const count = locationsFound
     return locationsFound;
-}
+};
 
-async function resolveElemForNav(perlDoc: PerlDocument, elem: PerlElem, symbol: string): Promise<PerlElem | undefined> {
+const resolveElemForNav = async (
+    perlDoc: PerlDocument,
+    elem: PerlElem,
+    symbol: string
+): Promise<PerlElem | undefined> => {
     const refined = await refineElement(elem, perlDoc);
     elem = refined || elem;
     if (!badFile(elem.uri)) {
@@ -117,30 +121,25 @@ async function resolveElemForNav(perlDoc: PerlDocument, elem: PerlElem, symbol: 
         // }
     }
     return;
-}
+};
 
-function badFile(uri: string): boolean {
-    if (!uri) {
-        return true;
-    }
+const badFile = (uri: string): boolean => {
+    if (!uri) return true;
+
     const fsPath = URI.parse(uri).fsPath;
 
-    if (!fsPath || fsPath.length <= 1) {
-        // Single forward slashes seem to sneak in here.
-        return true;
-    }
+    // Single forward slashes seem to sneak in here.
+    if (!fsPath || fsPath.length <= 1) return true;
 
     return /(?:Sub[\\/]Defer\.pm|Moo[\\/]Object\.pm|Moose[\\/]Object\.pm|\w+\.c|Inspectorito\.pm)$/.test(fsPath);
-}
+};
 
-export async function getAvailableMods(
+export const getAvailableMods = async (
     workspaceFolders: WorkspaceFolder[] | null,
     settings: PGLanguageServerSettings
-): Promise<Map<string, string>> {
-    let perlParams = settings.perlParams;
-    perlParams = perlParams.concat(getIncPaths(workspaceFolders, settings));
-    const modHunterPath = join(await getPerlAssetsPath(), 'lib_bs22', 'ModHunter.pl');
-    perlParams.push(modHunterPath);
+): Promise<Map<string, string>> => {
+    const perlParams = settings.perlParams.concat(getIncPaths(workspaceFolders, settings));
+    perlParams.push(join(await getPerlAssetsPath(), 'ModHunter.pl'));
     nLog('Starting to look for perl modules with ' + perlParams.join(' '), settings);
 
     const mods: Map<string, string> = new Map();
@@ -163,12 +162,10 @@ export async function getAvailableMods(
     output.split('\n').forEach((mod) => {
         const items = mod.split('\t');
 
-        if (items.length != 5 || items[1] != 'M' || !items[2] || !items[3]) {
-            return;
-        }
-        // Load file
+        if (items.length != 5 || items[1] != 'M' || !items[2] || !items[3]) return;
 
-        realpath(items[3], function (err, path) {
+        // Load file
+        realpath(items[3], (err, path) => {
             if (err) {
                 // Skip if error
             } else {
@@ -179,4 +176,4 @@ export async function getAvailableMods(
         });
     });
     return mods;
-}
+};
