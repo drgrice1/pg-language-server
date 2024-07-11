@@ -183,12 +183,6 @@
                     "default": [],
                     "description": "Array of paths added to @INC. You can use $workspaceFolder as a placeholder."
                 },
-                "pg.includeLib": {
-                    "scope": "resource",
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Boolean to indicate if $project/lib should be added to the path by default."
-                },
                 "pg.logging": {
                     "scope": "resource",
                     "type": "boolean",

@@ -25,7 +25,6 @@ export interface PGLanguageServerSettings {
     severity2: string;
     severity1: string;
     includePaths: string[];
-    includeLib: boolean;
     logging: boolean;
 }
 

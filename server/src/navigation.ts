@@ -135,10 +135,10 @@ const badFile = (uri: string): boolean => {
 };
 
 export const getAvailableMods = async (
-    workspaceFolders: WorkspaceFolder[] | null,
+    workspaceFolder: WorkspaceFolder | undefined,
     settings: PGLanguageServerSettings
 ): Promise<Map<string, string>> => {
-    const perlParams = settings.perlParams.concat(getIncPaths(workspaceFolders, settings));
+    const perlParams = settings.perlParams.concat(getIncPaths(workspaceFolder, settings));
     perlParams.push(join(await getPerlAssetsPath(), 'ModHunter.pl'));
     nLog('Starting to look for perl modules with ' + perlParams.join(' '), settings);
 

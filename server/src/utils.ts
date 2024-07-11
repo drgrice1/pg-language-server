@@ -3,27 +3,23 @@ import type { TextDocument, Position } from 'vscode-languageserver-textdocument'
 import { URI } from 'vscode-uri';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
-import { join } from 'path';
 import { promises } from 'fs';
 import type { PerlDocument, PerlElem, PGLanguageServerSettings } from './types';
 import { PerlSymbolKind, ElemSource } from './types';
 
 export const async_execFile = promisify(execFile);
 
-// TODO: This behaviour should be temporary. Review and update treatment of multi-root workspaces
 export const getIncPaths = (
-    workspaceFolders: WorkspaceFolder[] | null,
+    workspaceFolder: WorkspaceFolder | undefined,
     settings: PGLanguageServerSettings
 ): string[] => {
     let includePaths: string[] = [];
 
     settings.includePaths.forEach((path) => {
         if (path.indexOf('$workspaceFolder') != -1) {
-            if (workspaceFolders) {
-                workspaceFolders.forEach((workspaceFolder) => {
-                    const incPath = URI.parse(workspaceFolder.uri).fsPath;
-                    includePaths = includePaths.concat(['-I', path.replaceAll('$workspaceFolder', incPath)]);
-                });
+            if (workspaceFolder) {
+                const incPath = URI.parse(workspaceFolder.uri).fsPath;
+                includePaths = includePaths.concat(['-I', path.replaceAll('$workspaceFolder', incPath)]);
             } else {
                 nLog(
                     `You used $workspaceFolder in your config, but didn't add any workspace folders. Skipping ${path}`,
@@ -34,16 +30,6 @@ export const getIncPaths = (
             includePaths = includePaths.concat(['-I', path]);
         }
     });
-
-    if (settings.includeLib) {
-        // Add project root / lib for each workspace folder.
-        if (workspaceFolders) {
-            workspaceFolders.forEach((workspaceFolder) => {
-                const rootPath = URI.parse(workspaceFolder.uri).fsPath;
-                includePaths = includePaths.concat(['-I', join(rootPath, 'lib')]);
-            });
-        }
-    }
 
     return includePaths;
 };

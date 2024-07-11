@@ -11,7 +11,7 @@ import { parseDocument } from './parser';
 
 export const perlcompile = async (
     textDocument: TextDocument,
-    workspaceFolders: WorkspaceFolder[] | null,
+    workspaceFolder: WorkspaceFolder | undefined,
     settings: PGLanguageServerSettings
 ): Promise<CompilationResults | void> => {
     const parsingPromise = parseDocument(textDocument, ParseType.selfNavigation);
@@ -23,9 +23,9 @@ export const perlcompile = async (
     let perlParams: string[] = [...settings.perlParams, '-c'];
     const filePath = URI.parse(textDocument.uri).fsPath;
 
-    // Force enable some warnings.
+    // Force enable some warnings if configured to do so.
     if (settings.enableWarnings) perlParams = perlParams.concat(['-Mwarnings', '-M-warnings=redefine']);
-    perlParams = perlParams.concat(getIncPaths(workspaceFolders, settings));
+    perlParams = perlParams.concat(getIncPaths(workspaceFolder, settings));
     perlParams = perlParams.concat(await getInquisitor());
     nLog(
         'Starting perl compilation check with the equivalent of: ' +
@@ -56,12 +56,12 @@ export const perlcompile = async (
             }
         }
         const perlProcess = async_execFile(settings.perlPath, perlParams, options);
-        perlProcess?.child?.stdin?.on('error', (error: string) => {
+        perlProcess.child.stdin?.on('error', (error: string) => {
             nLog('Perl Compilation Error Caught: ', settings);
             nLog(error, settings);
         });
-        perlProcess?.child?.stdin?.write(code);
-        perlProcess?.child?.stdin?.end();
+        perlProcess.child.stdin?.write(code);
+        perlProcess.child.stdin?.end();
         const out = await perlProcess;
 
         output = out.stderr.toString();
@@ -225,13 +225,13 @@ const localizeErrors = (
 
 export const perlcritic = async (
     textDocument: TextDocument,
-    workspaceFolders: WorkspaceFolder[] | null,
+    workspaceFolder: WorkspaceFolder | undefined,
     settings: PGLanguageServerSettings
 ): Promise<Diagnostic[]> => {
     if (!settings.perlcriticEnabled) return [];
     const critic_path = join(await getPerlAssetsPath(), 'pgCriticWrapper.pl');
     let criticParams: string[] = [...settings.perlParams, critic_path].concat(
-        getCriticProfile(workspaceFolders, settings)
+        getCriticProfile(workspaceFolder, settings)
     );
     criticParams = criticParams.concat(['--file', URI.parse(textDocument.uri).fsPath]);
 
@@ -248,12 +248,12 @@ export const perlcritic = async (
     let output: string;
     try {
         const process = async_execFile(settings.perlPath, criticParams, { timeout: 25000 });
-        process?.child?.stdin?.on('error', (error: string) => {
+        process.child.stdin?.on('error', (error: string) => {
             nLog('Perl Critic Error Caught: ', settings);
             nLog(error, settings);
         });
-        process?.child?.stdin?.write(code);
-        process?.child?.stdin?.end();
+        process.child.stdin?.write(code);
+        process.child.stdin?.end();
         const out = await process;
         output = out.stdout;
     } catch (error: unknown) {
@@ -270,14 +270,16 @@ export const perlcritic = async (
     return diagnostics;
 };
 
-const getCriticProfile = (workspaceFolders: WorkspaceFolder[] | null, settings: PGLanguageServerSettings): string[] => {
+const getCriticProfile = (
+    workspaceFolder: WorkspaceFolder | undefined,
+    settings: PGLanguageServerSettings
+): string[] => {
     const profileCmd: string[] = [];
     if (settings.perlcriticProfile) {
         const profile = settings.perlcriticProfile;
         if (profile.indexOf('$workspaceFolder') != -1) {
-            if (workspaceFolders) {
-                // TODO: Fix this too. Only uses the first workspace folder
-                const workspaceUri = URI.parse(workspaceFolders[0].uri).fsPath;
+            if (workspaceFolder) {
+                const workspaceUri = URI.parse(workspaceFolder.uri).fsPath;
                 profileCmd.push('--profile');
                 profileCmd.push(profile.replaceAll('$workspaceFolder', workspaceUri));
             } else {

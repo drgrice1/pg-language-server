@@ -129,7 +129,6 @@ const defaultSettings: PGLanguageServerSettings = {
     severity2: 'hint',
     severity1: 'hint',
     includePaths: [],
-    includeLib: true,
     logging: true
 };
 
@@ -180,26 +179,33 @@ const buildModCache = async (textDocument: TextDocument): Promise<void> => {
 const dispatchForMods = async (textDocument: TextDocument): Promise<void> => {
     // BIG TODO: Resolution of workspace settings? How to do? Maybe build a hash of all include paths.
     const settings = await getDocumentSettings(textDocument.uri);
-    const workspaceFolders = await getWorkspaceFoldersSafe();
-    const newMods = await getAvailableMods(workspaceFolders, settings);
+    const workspaceFolder = await getCurrentWorkspaceFolder(textDocument);
+    const newMods = await getAvailableMods(workspaceFolder, settings);
     availableMods.set('default', newMods);
     return;
 };
 */
 
-const getWorkspaceFoldersSafe = async (): Promise<WorkspaceFolder[]> => {
+const getCurrentWorkspaceFolder = async (currentDocument: TextDocument): Promise<WorkspaceFolder | undefined> => {
     try {
         const workspaceFolders = await connection.workspace.getWorkspaceFolders();
-        return workspaceFolders ?? [];
+        if (!workspaceFolders) return;
+        workspaceFolders.sort((a, b) => b.uri.length - a.uri.length);
+        const currentFolder = workspaceFolders.find((f) =>
+            process.platform === 'win32' || process.platform === 'darwin'
+                ? currentDocument.uri.toLowerCase().startsWith(f.uri)
+                : currentDocument.uri.startsWith(f.uri)
+        );
+        return currentFolder;
     } catch {
-        return [];
+        return;
     }
 };
 
 const expandTildePaths = (paths: string, settings: PGLanguageServerSettings): string => {
     const path = paths;
-    // Consider that this not a Windows feature,
-    // so, Windows "%USERPROFILE%" currently is ignored (and rarely used).
+    // Consider that this is not a Windows feature,
+    // So, Windows "%USERPROFILE%" currently is ignored (and rarely used).
     if (path.startsWith('~/')) {
         const newPath = homedir() + path.slice(1);
         nLog("Expanding tilde path '" + path + "' to '" + newPath + "'", settings);
@@ -294,10 +300,10 @@ const validatePerlDocument = async (textDocument: TextDocument): Promise<void> =
 
     const start = Date.now();
 
-    const workspaceFolders = await getWorkspaceFoldersSafe();
+    const workspaceFolder = await getCurrentWorkspaceFolder(textDocument);
 
-    const pCompile = perlcompile(textDocument, workspaceFolders, settings);
-    const pCritic = perlcritic(textDocument, workspaceFolders, settings);
+    const pCompile = perlcompile(textDocument, workspaceFolder, settings);
+    const pCritic = perlcritic(textDocument, workspaceFolder, settings);
 
     const perlOut = await pCompile;
     nLog('Compilation Time: ' + (Date.now() - start) / 1000 + ' seconds', settings);
@@ -444,9 +450,13 @@ connection.onDocumentFormatting(async (params) => {
     const settings = await getDocumentSettings(params.textDocument.uri);
     if (!document || !settings) return;
 
-    const workspaceFolders = await getWorkspaceFoldersSafe();
-
-    const editOut: TextEdit[] | undefined = await formatDoc(params, document, settings, workspaceFolders, connection);
+    const editOut: TextEdit[] | undefined = await formatDoc(
+        params,
+        document,
+        settings,
+        await getCurrentWorkspaceFolder(document),
+        connection
+    );
     return editOut;
 });
 
@@ -455,9 +465,13 @@ connection.onDocumentRangeFormatting(async (params) => {
     const settings = await getDocumentSettings(params.textDocument.uri);
     if (!document || !settings) return;
 
-    const workspaceFolders = await getWorkspaceFoldersSafe();
-
-    const editOut: TextEdit[] | undefined = await formatRange(params, document, settings, workspaceFolders, connection);
+    const editOut: TextEdit[] | undefined = await formatRange(
+        params,
+        document,
+        settings,
+        await getCurrentWorkspaceFolder(document),
+        connection
+    );
     return editOut;
 });
 

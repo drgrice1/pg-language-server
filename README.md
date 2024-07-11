@@ -23,10 +23,9 @@ parsing.
 
 ### Perl paths
 
-If you have a nonstandard install of Perl, please set the setting `pg.perlPath`. The subfolder `./lib` will be added to
-your path automatically. You can also add additional include paths that will be added to the perl search path (@INC) via
-`pg.includePaths`. You can use `$workspaceFolder` in includePaths which will be replaced by the full folder path. If you
-have a multi-root workspace, each folder will be added to the path.
+If you have a nonstandard install of Perl, please set the setting `pg.perlPath`. You can also add additional include
+paths that will be added to the perl search path (@INC) via `pg.includePaths`. You can use `$workspaceFolder` in
+`pg.includePaths` which will be replaced by the full folder path.
 
 ### Perl Critic Customization
 

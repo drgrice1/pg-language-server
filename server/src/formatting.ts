@@ -18,14 +18,14 @@ export const formatDoc = async (
     _params: DocumentFormattingParams,
     txtDoc: TextDocument,
     settings: PGLanguageServerSettings,
-    workspaceFolders: WorkspaceFolder[] | null,
+    workspaceFolder: WorkspaceFolder | undefined,
     connection: Connection
 ): Promise<TextEdit[] | undefined> => {
     return await maybeReturnEdits(
         Range.create(Position.create(0, 0), Position.create(txtDoc.lineCount, 0)),
         txtDoc,
         settings,
-        workspaceFolders,
+        workspaceFolder,
         connection
     );
 };
@@ -34,7 +34,7 @@ export const formatRange = async (
     params: DocumentRangeFormattingParams,
     txtDoc: TextDocument,
     settings: PGLanguageServerSettings,
-    workspaceFolders: WorkspaceFolder[] | null,
+    workspaceFolder: WorkspaceFolder | undefined,
     connection: Connection
 ): Promise<TextEdit[] | undefined> => {
     const offset = params.range.end.character > 0 ? 1 : 0;
@@ -43,7 +43,7 @@ export const formatRange = async (
         Range.create(Position.create(params.range.start.line, 0), Position.create(params.range.end.line + offset, 0)),
         txtDoc,
         settings,
-        workspaceFolders,
+        workspaceFolder,
         connection
     );
 };
@@ -52,14 +52,14 @@ const maybeReturnEdits = async (
     range: Range,
     txtDoc: TextDocument,
     settings: PGLanguageServerSettings,
-    workspaceFolders: WorkspaceFolder[] | null,
+    workspaceFolder: WorkspaceFolder | undefined,
     connection: Connection
 ): Promise<TextEdit[] | undefined> => {
     const text = txtDoc.getText(range);
     if (!text) return;
 
     const progressToken = await startProgress(connection, 'Formatting doc');
-    const tidiedSource = await pgTidy(text, settings, workspaceFolders);
+    const tidiedSource = await pgTidy(text, settings, workspaceFolder);
     endProgress(connection, progressToken);
 
     // pg-perltidy.pl failed
@@ -71,13 +71,13 @@ const maybeReturnEdits = async (
 const pgTidy = async (
     code: string,
     settings: PGLanguageServerSettings,
-    workspaceFolders: WorkspaceFolder[] | null
+    workspaceFolder: WorkspaceFolder | undefined
 ): Promise<string | undefined> => {
     if (!settings.perltidyEnabled) return;
 
     const tidyParams: string[] = [
         join(await getPerlAssetsPath(), 'pgTidyWrapper.pl'),
-        ...getTidyProfile(workspaceFolders, settings)
+        ...getTidyProfile(workspaceFolder, settings)
     ];
     nLog('Now starting pg-perltidy with: ' + tidyParams.join(' '), settings);
 
@@ -105,20 +105,19 @@ const pgTidy = async (
     if (pieces.length > 1) return pieces[1];
 };
 
-const getTidyProfile = (workspaceFolders: WorkspaceFolder[] | null, settings: PGLanguageServerSettings): string[] => {
+const getTidyProfile = (workspaceFolder: WorkspaceFolder | undefined, settings: PGLanguageServerSettings): string[] => {
     const profileCmd: string[] = [];
     if (settings.perltidyProfile) {
         const profile = settings.perltidyProfile;
         if (profile.indexOf('$workspaceFolder') != -1) {
-            if (workspaceFolders) {
-                // TODO: Fix this. Only uses the first workspace folder
-                const workspaceUri = URI.parse(workspaceFolders[0].uri).fsPath;
+            if (workspaceFolder) {
+                const workspaceUri = URI.parse(workspaceFolder.uri).fsPath;
                 profileCmd.push('--profile');
                 profileCmd.push(profile.replaceAll('$workspaceFolder', workspaceUri));
             } else {
                 nLog(
                     'You specified $workspaceFolder in your perltidy path, ' +
-                        "but didn't include any workspace folders. Ignoring profile.",
+                        "but didn't include a workspace folder. Ignoring profile.",
                     settings
                 );
             }
