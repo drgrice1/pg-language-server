@@ -12,8 +12,6 @@ use PPI                ();
 use Perl::Critic       ();
 use open               qw(:std :utf8);
 
-my $sSource = do { local $/; <STDIN> };    ## no critic (InputOutput::ProhibitExplicitStdin)
-
 my ($file, $profile, $severity, $theme, $exclude, $include);
 GetOptions(
     "file=s"     => \$file,
@@ -24,13 +22,14 @@ GetOptions(
     "include=s"  => \$include,
 );
 
+my $sSource = do { local $/; <> };
 die "Did not pass any source via stdin" if !defined $sSource;
 
 $profile = resolve_profile($profile);
 
 # Do not check for readability of the source $file since we never actually read it.
 # Only checking the name for policy violations.
-print "Perlcritic on $file and using profile $profile\n";
+print "Running perlcritic on $file and using profile $profile\n";
 
 $sSource = preprocess_code($sSource);
 $sSource =~ s/([^\x00-\x7F])/AsciiReplacementChar($1)/ge;
@@ -54,9 +53,11 @@ Perl::Critic::Violation::set_format("%s~|~%l~|~%c~|~%m~|~%p~||~");
 
 my @violations = $critic->critique($doc);
 
-print "Perl Critic violations:\n";
-foreach my $viol (@violations) {
-    print "$viol\n";
+if (@violations) {
+    print "Perl Critic violations:\n";
+    for my $viol (@violations) {
+        print "$viol\n";
+    }
 }
 
 # FIXME: This probably needs to be done differently than the PG translator to preserve spacing.

@@ -14,13 +14,13 @@ import { async_execFile, nLog } from './utils';
 import { getPerlAssetsPath } from './assets';
 import { startProgress, endProgress } from './progress';
 
-export async function formatDoc(
+export const formatDoc = async (
     _params: DocumentFormattingParams,
     txtDoc: TextDocument,
     settings: PGLanguageServerSettings,
     workspaceFolders: WorkspaceFolder[] | null,
     connection: Connection
-): Promise<TextEdit[] | undefined> {
+): Promise<TextEdit[] | undefined> => {
     return await maybeReturnEdits(
         Range.create(Position.create(0, 0), Position.create(txtDoc.lineCount, 0)),
         txtDoc,
@@ -28,15 +28,15 @@ export async function formatDoc(
         workspaceFolders,
         connection
     );
-}
+};
 
-export async function formatRange(
+export const formatRange = async (
     params: DocumentRangeFormattingParams,
     txtDoc: TextDocument,
     settings: PGLanguageServerSettings,
     workspaceFolders: WorkspaceFolder[] | null,
     connection: Connection
-): Promise<TextEdit[] | undefined> {
+): Promise<TextEdit[] | undefined> => {
     const offset = params.range.end.character > 0 ? 1 : 0;
 
     return await maybeReturnEdits(
@@ -46,40 +46,33 @@ export async function formatRange(
         workspaceFolders,
         connection
     );
-}
+};
 
-async function maybeReturnEdits(
+const maybeReturnEdits = async (
     range: Range,
     txtDoc: TextDocument,
     settings: PGLanguageServerSettings,
     workspaceFolders: WorkspaceFolder[] | null,
     connection: Connection
-): Promise<TextEdit[] | undefined> {
+): Promise<TextEdit[] | undefined> => {
     const text = txtDoc.getText(range);
-    if (!text) {
-        return;
-    }
+    if (!text) return;
 
-    const progressToken = await startProgress(connection, 'Formatting doc', settings);
+    const progressToken = await startProgress(connection, 'Formatting doc');
     const tidiedSource = await pgTidy(text, settings, workspaceFolders);
     endProgress(connection, progressToken);
 
     // pg-perltidy.pl failed
     if (!tidiedSource) return;
 
-    return [
-        {
-            range: range,
-            newText: tidiedSource
-        }
-    ];
-}
+    return [{ range: range, newText: tidiedSource }];
+};
 
-async function pgTidy(
+const pgTidy = async (
     code: string,
     settings: PGLanguageServerSettings,
     workspaceFolders: WorkspaceFolder[] | null
-): Promise<string | undefined> {
+): Promise<string | undefined> => {
     if (!settings.perltidyEnabled) return;
 
     const tidyParams: string[] = [
@@ -94,12 +87,12 @@ async function pgTidy(
             timeout: 25000,
             maxBuffer: 20 * 1024 * 1024
         });
-        process?.child?.stdin?.on('error', (error: string) => {
+        process.child.stdin?.on('error', (error: string) => {
             nLog('pg-perltidy error caught: ', settings);
             nLog(error, settings);
         });
-        process?.child?.stdin?.write(code);
-        process?.child?.stdin?.end();
+        process.child.stdin?.write(code);
+        process.child.stdin?.end();
         const out = await process;
         output = out.stdout;
     } catch (error: unknown) {
@@ -109,14 +102,10 @@ async function pgTidy(
     }
 
     const pieces = output.split('87ec3595-4186-45df-b647-13c11e67b138');
-    if (pieces.length > 1) {
-        return pieces[1];
-    } else {
-        return;
-    }
-}
+    if (pieces.length > 1) return pieces[1];
+};
 
-function getTidyProfile(workspaceFolders: WorkspaceFolder[] | null, settings: PGLanguageServerSettings): string[] {
+const getTidyProfile = (workspaceFolders: WorkspaceFolder[] | null, settings: PGLanguageServerSettings): string[] => {
     const profileCmd: string[] = [];
     if (settings.perltidyProfile) {
         const profile = settings.perltidyProfile;
@@ -139,4 +128,4 @@ function getTidyProfile(workspaceFolders: WorkspaceFolder[] | null, settings: PG
         }
     }
     return profileCmd;
-}
+};

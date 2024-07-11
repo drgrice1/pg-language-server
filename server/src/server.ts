@@ -130,8 +130,7 @@ const defaultSettings: PGLanguageServerSettings = {
     severity1: 'hint',
     includePaths: [],
     includeLib: true,
-    logging: true,
-    enableProgress: false
+    logging: true
 };
 
 let globalSettings: PGLanguageServerSettings = defaultSettings;
@@ -286,16 +285,19 @@ const validatePerlDocument = async (textDocument: TextDocument): Promise<void> =
     const fileName = basename(URI.parse(textDocument.uri).fsPath);
     nLog(`Filename is ${fileName}`, settings);
 
-    const progressToken = navSymbols.has(textDocument.uri)
-        ? null
-        : await startProgress(connection, `Initializing ${fileName}`, settings);
+    const progressToken = await startProgress(
+        connection,
+        navSymbols.has(textDocument.uri)
+            ? `Updating diagnostics for ${fileName}`
+            : `Initializing diagnostics for ${fileName}`
+    );
 
     const start = Date.now();
 
     const workspaceFolders = await getWorkspaceFoldersSafe();
 
-    const pCompile = perlcompile(textDocument, workspaceFolders, settings); // Start compilation
-    const pCritic = perlcritic(textDocument, workspaceFolders, settings); // Start perlcritic
+    const pCompile = perlcompile(textDocument, workspaceFolders, settings);
+    const pCritic = perlcritic(textDocument, workspaceFolders, settings);
 
     const perlOut = await pCompile;
     nLog('Compilation Time: ' + (Date.now() - start) / 1000 + ' seconds', settings);

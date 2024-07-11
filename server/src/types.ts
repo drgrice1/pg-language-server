@@ -27,7 +27,6 @@ export interface PGLanguageServerSettings {
     includePaths: string[];
     includeLib: boolean;
     logging: boolean;
-    enableProgress: boolean;
 }
 
 export interface PerlElem {

@@ -262,10 +262,10 @@ export const perlcritic = async (
         return diagnostics;
     }
 
-    nLog('Critic output: ' + output, settings);
-    output.split('\n').forEach((violation) => {
+    nLog(output.replace(/\n$/, ''), settings);
+    for (const violation of output.split('\n')) {
         maybeAddCriticDiag(violation, diagnostics, settings);
-    });
+    }
 
     return diagnostics;
 };
@@ -298,16 +298,14 @@ const getCriticProfile = (workspaceFolders: WorkspaceFolder[] | null, settings: 
 const maybeAddCriticDiag = (violation: string, diagnostics: Diagnostic[], settings: PGLanguageServerSettings): void => {
     // Severity ~|~ Line ~|~ Column ~|~ Description ~|~ Policy ~||~ Newline
     const tokens = violation.replace('~||~', '').replaceAll('\r', '').split('~|~');
-    if (tokens.length != 5) {
-        return;
-    }
+    if (tokens.length != 5) return;
+
     const line_num = +tokens[1] - 1;
     const col_num = +tokens[2] - 1;
     const message = tokens[3] + ' (' + tokens[4] + ', Severity: ' + tokens[0] + ')';
     const severity = getCriticDiagnosticSeverity(tokens[0], settings);
-    if (!severity) {
-        return;
-    }
+    if (!severity) return;
+
     diagnostics.push({
         severity: severity,
         range: {
