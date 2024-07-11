@@ -29,7 +29,7 @@ import { LRUCache } from 'lru-cache';
 import { perlcompile, perlcritic } from './diagnostics';
 import { cleanupTemporaryAssetPath } from './assets';
 //import { getDefinition, getAvailableMods } from './navigation';
-import { getSymbols /*, getWorkspaceSymbols */ } from './symbols';
+//import { getSymbols , getWorkspaceSymbols } from './symbols';
 import type { PGLanguageServerSettings, PerlDocument /*, PerlElem */ } from './types';
 //import { getHover } from './hover';
 //import { getCompletions, getCompletionDoc } from './completion';
@@ -88,11 +88,7 @@ connection.onInitialize(async (params: InitializeParams) => {
         }
     };
     if (hasWorkspaceFolderCapability) {
-        result.capabilities.workspace = {
-            workspaceFolders: {
-                supported: true
-            }
-        };
+        result.capabilities.workspace = { workspaceFolders: { supported: true } };
     }
     await getPerlAssetsPath(); // Ensures assets are unpacked. Should this be in onInitialized?
     return result;
@@ -364,8 +360,8 @@ connection.onDidChangeConfiguration(async (change) => {
         globalSettings = { ...defaultSettings, ...change?.settings?.pg };
     }
 
+    // Despite what it looks like, this fires on all settings changes, not just pg language server settings.
     if (change?.settings?.pg) {
-        // Despite what it looks like, this fires on all settings changes, not just Navigator
         //await rebuildModCache();
         for (const doc of documents.all()) {
             // sequential changes
@@ -430,12 +426,15 @@ connection.onDefinition(async (params) => {
 });
 */
 
+/*
 connection.onDocumentSymbol(async (params) => {
+    console.log('document symbol');
     const document = documents.get(params.textDocument.uri);
-    // We might  need to async wait for the document to be processed, but I suspect the order is fine
+    // It may be neccessary to async wait for the document to be processed, but I suspect the order is fine.
     if (!document) return;
     return getSymbols(document, params.textDocument.uri);
 });
+*/
 
 /*
 connection.onWorkspaceSymbol((params) => {

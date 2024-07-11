@@ -1,5 +1,10 @@
+## no critic
 package lib_bs22::SourceStash;
+## use critic
+
 use strict;
+## no critic (TestingAndDebugging::RequireUseWarnings)
+
 use Filter::Simple;
 
 our $source = '';

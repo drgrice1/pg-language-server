@@ -1,10 +1,14 @@
+## no critic
+## use critic
 package Devel::Symdump::Export;
-require Devel::Symdump;
-require Exporter;
-use Carp qw( confess );
+use parent qw(Exporter);
+
 use strict;
+## no critic (TestingAndDebugging::RequireUseWarnings)
 use vars qw(@ISA @EXPORT_OK $AUTOLOAD);
-@ISA = ('Exporter');
+
+require Devel::Symdump;
+use Carp qw( confess );
 
 @EXPORT_OK = ('packages', 'scalars', 'arrays', 'hashes', 'functions', 'filehandles', 'dirhandles', 'ios', 'unknowns');
 my %OK;
@@ -15,7 +19,7 @@ push @EXPORT_OK, "symdump";
 # undocumented feature symdump() -- does it save enough typing?
 sub symdump {
     my @packages = @_;
-    Devel::Symdump->new(@packages)->as_string;
+    return Devel::Symdump->new(@packages)->as_string;
 }
 
 AUTOLOAD {

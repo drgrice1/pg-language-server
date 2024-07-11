@@ -4,7 +4,7 @@ import { join } from 'path';
 export const activate = async (context: ExtensionContext): Promise<void> => {
     if (!workspace.getConfiguration('coc-pg').get<boolean>('enable', true)) return;
 
-    const serverModule = context.asAbsolutePath(join('..', 'lib', 'server.js'));
+    const serverModule = context.asAbsolutePath(join('..', 'dist', 'server.js'));
 
     const client = new LanguageClient(
         'PGLanguageServer',

@@ -1,4 +1,5 @@
 package pltags;
+use parent qw(Exporter);
 
 # pltags - create a tags file for Perl code
 
@@ -8,22 +9,18 @@ package pltags;
 
 # Complain about undeclared variables
 use strict;
-no warnings;
+no warnings;    ## no critic (TestingAndDebugging::ProhibitNoWarnings)
 use utf8;
-use Text::Balanced ();
+## no critic (TestingAndDebugging::RequireUseWarnings)
 
-use Exporter;
-our @ISA       = qw(Exporter);
 our @EXPORT_OK = qw(build_pltags);
 
 # Global variables
-my $VERSION = "2.4";    # pltags version
+my $VERSION = '2.4';    # pltags version
 
 sub new {
     my $class = shift;
-    my $self  = {};
-    bless $self, $class;
-    return $self;
+    return bless {}, $class;
 }
 
 sub _init_file {
@@ -33,7 +30,7 @@ sub _init_file {
     $self->{packages} = [];      # List of discovered packages
     $self->{file}     = $file;
 
-    $self->{package_name} = "";
+    $self->{package_name} = '';
     $self->{offset}       = $offset;
 
     my $line_number = -$offset;
@@ -45,17 +42,17 @@ sub _init_file {
 
     # Loop through file
     for (my $i = 0; $i < $n; $i++) {
-        $line_number++;
+        ++$line_number;
 
         my $line = $code[$i];
 
-        $line = "" if $line_number < 0;
+        $line = '' if $line_number < 0;
 
         # Skip pod. Applied before stripping leading whitespace
-        $line = ""
+        $line = ''
             if ($line =~ /^=(?:pod|head|head1|head2|head3|head4|over|item|back|begin|end|for|encoding)/ .. $line =~
                 /^=cut/);
-        last if ($line =~ /^(__END__|__DATA__)\s*$/);
+        last if $line =~ /^(__END__|__DATA__)\s*$/;
 
         # Statement will be line with comments, whitespace and POD trimmed
         my $stmt;
@@ -79,23 +76,18 @@ sub build_pltags {
     my $n             = scalar(@$codeClean);
 
     for (my $i = 0; $i < $n; $i++) {
-        $line_number++;
+        ++$line_number;
 
         my $stmt = $codeClean->[$i];
 
         # Nothing left? Never mind.
-        next unless ($stmt);
+        next unless $stmt;
+
         if ($stmt =~ /^package\s+([\w:]+)/) {
             push(@{ $self->{packages} }, $1);
-        }
-
-        # This is a class decoration for Object::Pad, Corinna, or Moops
-        elsif ($stmt =~ /^class\s+([\w:]+)/) {
+        } elsif ($stmt =~ /^class\s+([\w:]+)/) {    # This is a class decoration for Object::Pad, Corinna, or Moops
             push(@{ $self->{packages} }, $1);
-        }
-
-        # This is a role decoration for Object::Pad, Corinna, or Moops
-        elsif ($stmt =~ /^role\s+([\w:]+)/) {
+        } elsif ($stmt =~ /^role\s+([\w:]+)/) {     # This is a role decoration for Object::Pad, Corinna, or Moops
             push(@{ $self->{packages} }, $1);
         }
     }

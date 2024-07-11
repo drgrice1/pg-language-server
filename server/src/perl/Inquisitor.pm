@@ -3,9 +3,10 @@ package Inquisitor;
 # Be careful not to import anything. We don't want to pollute the users namespace.
 use strict;
 use attributes;
-no warnings;
+no warnings;    ## no critic (TestingAndDebugging::ProhibitNoWarnings)
+## no critic (TestingAndDebugging::RequireUseWarnings)
 
-my @preloaded;    # Check what's loaded before we pollute the namespace
+my @preloaded;  # Check what's loaded before we pollute the namespace
 
 my @checkPreloaded = qw(
     List::Util
@@ -31,15 +32,15 @@ my @checkPreloaded = qw(
 
 # Mark warnings to detect difference between warnings and errors.
 # Inspired by https://github.com/skaji/syntax-check-perl
-$SIG{__WARN__} = sub { warn '=PerlWarning=', @_ };
+$SIG{__WARN__} = sub { warn '=PerlWarning=', @_ };    ## no critic (Variables::RequireLocalizedPunctuationVars)
 
 # These modules can cause issues because they wipe the symbol table before we get a chance to inspect it.
 # Prevent them from loading.
 # I hope this doesn't cause any issues, perhaps VERSION numbers or import statements would help here
-$INC{'namespace/clean.pm'}     = '';
-$INC{'namespace/autoclean.pm'} = '';
+$INC{'namespace/clean.pm'}     = '';    ## no critic (Variables::RequireLocalizedPunctuationVars)
+$INC{'namespace/autoclean.pm'} = '';    ## no critic (Variables::RequireLocalizedPunctuationVars)
 {
-    no strict 'refs';
+    no strict 'refs';                   ## no critic (TestingAndDebugging::ProhibitNoStrict)
     *{'namespace::autoclean::VERSION'} = sub {'0.29'};
     *{'namespace::clean::VERSION'}     = sub {'0.27'};
 }
@@ -69,7 +70,7 @@ sub run {
         my $packages = run_pltags($sourceFilePath);
         print "Done with pltags. Now dumping same-file packages\n";
 
-        foreach my $package (@$packages) {
+        for my $package (@$packages) {
             # This is finding packages in the file we're inspecting,
             # and then dumping them into a single namespace in the file.
             if ($package) {
@@ -83,6 +84,7 @@ sub run {
         my $error = $@ || 'Unknown failure';
         print "PN:inquistor failed with error: $error\n";
     };
+    return;
 }
 
 sub load_dependencies {
@@ -98,6 +100,7 @@ sub load_dependencies {
     require SubUtilPP;
     require Inspectorito;
     require Devel::Symdump;
+    return;
 }
 
 sub load_test_file {
@@ -109,7 +112,7 @@ sub load_test_file {
     $source =
         "local \$0; BEGIN { \$0 = '${filePath}'; if (\$INC{'FindBin.pm'}) { FindBin->again(); };  }\n"
         . "# line 0 \"${filePath}\"\nCORE::die('END_EARLY');\n$source";
-    eval $source;    ## no critic
+    eval $source;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
     if ($@ eq "END_EARLY.\n") {
         return;
@@ -123,7 +126,7 @@ sub maybe_print_sub_info {
     $subType = 't' if !$subType;
     my $UNKNOWN = "";
 
-    if (defined &$sFullPath or $codeRef) {
+    if (defined &$sFullPath || $codeRef) {
         $codeRef ||= \&$sFullPath;
 
         my $meta = B::svref_2object($codeRef);
@@ -137,12 +140,12 @@ sub maybe_print_sub_info {
         $pack    = $1 if ($subname =~ m/^(.+)::.*?$/);
 
         # Subname is a fully qualified name. If it's the normal name, just ignore it.
-        $subname = '' if (($pack and $sSkipPackage and $pack eq $sSkipPackage) or ($pack eq 'main'));
+        $subname = '' if (($pack && $sSkipPackage && $pack eq $sSkipPackage) || ($pack eq 'main'));
 
-        return 0 if $file =~ /([\0-\x1F])/ or $pack =~ /([\0-\x1F])/;
+        return 0 if $file =~ /([\0-\x1F])/ || $pack =~ /([\0-\x1F])/;
         return 0 if $file =~ /(Moo.pm|Exporter.pm)$/;    # Objects pollute the namespace, many things have exporter
 
-        if (($file and $file ne $0) or ($pack and $pack ne $sSkipPackage)) {
+        if (($file && $file ne $0) || ($pack && $pack ne $sSkipPackage)) {
             # pltags will find everything in $0 / currentpackage, so only include new information.
             # Note: the above IF is breaking $self-> for Object::Pad for things that exist in current package.
             # Basically `field $writerField: writer;` is generating `set_writerField` which is then skipped.
@@ -156,12 +159,14 @@ sub maybe_print_sub_info {
 sub tag_parents {
     my $package = shift;
 
-    no strict 'refs';
+    no strict 'refs';    ## no critic
     my @parents         = @{"${package}::ISA"};
     my $primaryGuardian = $parents[0];
     if ($primaryGuardian) {
         print_tag("$package", '2', $primaryGuardian, '', '', '', '');
     }
+
+    return;
 }
 
 sub resolve_file {
@@ -172,12 +177,12 @@ sub resolve_file {
 
     # Very few things are tagged method, but we can clean up autocomplete if it is.
     # Can something be both an attribute and a attribute? Also, i and t both become x?
-    $subType = 'x' if (grep /^method$/, attributes::get($codeRef));
+    $subType = 'x' if grep {/^method$/} attributes::get($codeRef);
 
     if ($meta->START->isa('B::COP')) {
         $file = $meta->START->file;
         $line = $meta->START->line - 1;
-    } elsif ($meta->GV->isa('B::GV') and $meta->GV->FILE =~ /Class[\\\/](?:XS)?Accessor\.pm$/) {
+    } elsif ($meta->GV->isa('B::GV') && $meta->GV->FILE =~ /Class[\\\/](?:XS)?Accessor\.pm$/) {
         # If something comes from XSAccessor or Accessor, it's an attribute (e.g. Moo, ClassAccessor),
         # but we don't know where in the Moo class it's defined.
         $subType = 'd';
@@ -207,8 +212,9 @@ sub print_tag {
     #TODO: strip tabs and newlines from all of these? especially value
     return if $value =~ /[\0-\x1F]/;
     $file = '' if $file =~ /^\(eval/;
-    $line = 0  if ($line ne '' and $line < 0);
+    $line = 0  if $line ne '' && $line < 0;
     print "$symbol\t$type\t$typeDetails\t$file\t$pack\t$line\t$value\n";
+    return;
 }
 
 sub run_pltags {
@@ -221,7 +227,7 @@ sub run_pltags {
     my ($tags, $packages) =
         $plTagger->build_pltags($source, $offset, $file);    # $0 should be the script getting compiled, not this module
 
-    foreach my $newTag (@$tags) {
+    for my $newTag (@$tags) {
         print $newTag . "\n";
     }
     return $packages;
@@ -229,10 +235,10 @@ sub run_pltags {
 
 sub dump_vars_to_main {
     my ($package) = @_;
-    no strict 'refs';                                        ## no critic
+    no strict 'refs';                                        ## no critic (TestingAndDebugging::ProhibitNoStrict)
     my $fullPackage = "${package}::";
 
-    foreach my $thing (sort keys %$fullPackage) {
+    for my $thing (sort keys %$fullPackage) {
         next if $thing =~ /^_</;                             # Remove all filenames
         next if $thing =~ /([\0-\x1F])/;                     # Perl built-ins come with non-printable control characters
 
@@ -255,28 +261,31 @@ sub dump_vars_to_main {
             print_tag("%$thing", "h", '', '', '', '', '');
         }
     }
+    return;
 }
 
 sub dump_inherited_to_main {
     my ($package) = @_;
 
     my $methods = Inspectorito->local_methods($package);
-    foreach my $name (@$methods) {
+    for my $name (@$methods) {
         next if $name =~ /^(F_|O_|L_)/;    # The unhelpful C compiled things
         if (my $codeRef = UNIVERSAL::can($package, $name)) {
             my $iRes = maybe_print_sub_info("${package}::${name}", $name, $codeRef, $package, 'i');
         }
     }
+    return;
 }
 
 sub populate_preloaded {
     # Populate preloaded modules before we pollute the symbol table.
-    foreach my $mod (@checkPreloaded) {
+    for my $mod (@checkPreloaded) {
         # Ideally we'd use Module::Loaded, but it only became core in Perl 5.9
         my $file = $mod . ".pm";
         $file =~ s/::/\//g;
         push(@preloaded, $mod) if $INC{$file};
     }
+    return;
 }
 
 sub dump_subs_from_packages {
@@ -291,9 +300,9 @@ sub dump_subs_from_packages {
     my $modLimit       = 150;
     my $nameSpaceLimit = 10000;    # Applied to Foo in Foo::Bar
     my $totalLimit     = 30000;
-INSPECTOR: foreach my $mod (@$modpacks) {
+INSPECTOR: for my $mod (@$modpacks) {
         my $pkgCount = 0;
-        next INSPECTOR if ($mod =~ $baseRegex and $baseCount{$1} > $nameSpaceLimit);
+        next INSPECTOR if $mod =~ $baseRegex && $baseCount{$1} > $nameSpaceLimit;
         my $methods = Inspectorito->local_methods($mod);
         next INSPECTOR if !defined($methods);
         #my $methods = ClassInspector->functions( $mod ); # Less memory, but less accurate?
@@ -305,7 +314,7 @@ INSPECTOR: foreach my $mod (@$modpacks) {
                 || $a cmp $b
         } @$methods;    # Normal stuff up front. Order doesn't really matter, but sort anyway for readability
 
-        foreach my $name (@$methods) {
+        for my $name (@$methods) {
             next if $name =~ /^(F_|O_|L_)/;    # The unhelpful C compiled things
             if (my $codeRef = UNIVERSAL::can($mod, $name)) {
                 # TODO: Differentiate functions vs methods. Methods come from here, but so do functions.
@@ -355,8 +364,8 @@ sub filter_modpacks {
         ;    # TODO: Allow keeping some of these
     my $private = qr/::_\w+/;
 
-    foreach (@preloaded) { $filter{$_} = 0 }
-    my @filtered = grep { !$filter{$_} and $_ !~ $filter_regex and $_ !~ $private } @$modpacks;
+    for (@preloaded) { $filter{$_} = 0 }
+    my @filtered = grep { !$filter{$_} && $_ !~ $filter_regex && $_ !~ $private } @$modpacks;
 
     # Sort by depth and then alphabetically. The assumption is that more nested things are less important.
     # Also, consistent sorting makes debugging easier.
@@ -379,7 +388,7 @@ sub filter_modpacks {
 sub dump_loaded_mods {
     my @modules = my $displays = {};
 
-    foreach my $module (keys %INC) {
+    for my $module (keys %INC) {
         my $display_mod = $module;
         $display_mod =~ s/[\/\\]/::/g;
         $display_mod =~ s/(?:\.pm|\.pl)$//g;
@@ -390,7 +399,7 @@ sub dump_loaded_mods {
 
     my $filtered_modules = filter_modpacks([ keys %$displays ]);
 
-    foreach my $key_to_print (@$filtered_modules) {
+    for my $key_to_print (@$filtered_modules) {
         my $path = $displays->{$key_to_print};
         next if !$path;    # If we don't have a path, the modHunter module would be better
         print_tag("$key_to_print", "m", "", $path, $key_to_print, 0, "");
@@ -439,7 +448,7 @@ sub tags_to_symbols {
     # Currently only used for testing. Turns an output of tags into a hash of symbol array, similiar to ParseDocument.ts
     my $tags    = shift;
     my $symbols = {};
-    foreach my $tag_str (split("\n", $tags)) {
+    for my $tag_str (split("\n", $tags)) {
         my @pieces = split("\t", $tag_str, -1);
         if (scalar(@pieces) == 7) {
             my ($tag, $type, $typeDetails, $file, $package_name, $line) = @pieces;

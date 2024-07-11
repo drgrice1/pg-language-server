@@ -20,20 +20,17 @@ export const perlcompile = async (
         const parsedDoc = await parsingPromise;
         return { diags: [], perlDoc: parsedDoc };
     }
-    let perlParams: string[] = [...settings.perlParams, '-c'];
+    const perlParams: string[] = [...settings.perlParams, '-c'];
     const filePath = URI.parse(textDocument.uri).fsPath;
 
     // Force enable some warnings if configured to do so.
-    if (settings.enableWarnings) perlParams = perlParams.concat(['-Mwarnings', '-M-warnings=redefine']);
-    perlParams = perlParams.concat(getIncPaths(workspaceFolder, settings));
-    perlParams = perlParams.concat(await getInquisitor());
+    if (settings.enableWarnings) perlParams.push('-Mwarnings', '-M-warnings=redefine');
+    perlParams.push(...getIncPaths(workspaceFolder, settings));
+    perlParams.push(...(await getInquisitor()));
     nLog(
-        'Starting perl compilation check with the equivalent of: ' +
-            settings.perlPath +
-            ' ' +
-            perlParams.join(' ') +
-            ' ' +
-            filePath,
+        `Starting perl compilation check with the equivalent of: ${
+            settings.perlPath
+        } ${perlParams.join(' ')} ${filePath}`,
         settings
     );
 
@@ -156,9 +153,8 @@ const getAdjustedPerlCode = (textDocument: TextDocument, filePath: string): stri
             filePath
         }'; if ($INC{'FindBin.pm'}) { FindBin->again(); }; $lib_bs22::SourceStash::filename = '${
             filePath
-        }'; print "Setting file" . __FILE__; ${register_inc_path} }\n# line 0 "${
-            filePath
-        }"\ndie 'Not needed, but die for safety';\n` + translateCode(code);
+        }'; ${register_inc_path} }\n# line 0 "${filePath}"\ndie 'Not needed, but die for safety';\n` +
+        translateCode(code);
     return code;
 };
 

@@ -17,4 +17,3 @@ if (!eval { require Sub::Util; Sub::Util->import('subname'); 1 }) {
 
 1;
 # This is to provide a pure perl fallback to Sub::Util for old versions of Perl. It's essentially just Sub::Identify.
-

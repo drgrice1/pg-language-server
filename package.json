@@ -22,7 +22,7 @@
         "coc": "^0.0.82",
         "vscode": "^1.53.0"
     },
-    "main": "vscode-client/lib/extension.js",
+    "main": "vscode-client/dist/extension.js",
     "activationEvents": [
         "workspaceContains:**/*.pg",
         "onLanguage:pg"

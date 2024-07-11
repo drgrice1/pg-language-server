@@ -1,3 +1,5 @@
+## no critic
+## use critic
 package Devel::Symdump;
 
 use 5.003;
@@ -24,17 +26,17 @@ $Defaults = {
 
 sub rnew {
     my ($class, @packages) = @_;
-    no strict "refs";
+    no strict "refs";    ## no critic (TestingAndDebugging::ProhibitNoStrict)
     my $self = bless { %${"$class\::Defaults"} }, $class;
-    $self->{RECURS}++;
-    $self->_doit(@packages);
+    ++$self->{RECURS};
+    return $self->_doit(@packages);
 }
 
 sub new {
     my ($class, @packages) = @_;
-    no strict "refs";
+    no strict "refs";    ## no critic (TestingAndDebugging::ProhibitNoStrict)
     my $self = bless { %${"$class\::Defaults"} }, $class;
-    $self->_doit(@packages);
+    return $self->_doit(@packages);
 }
 
 sub _doit {
@@ -48,8 +50,8 @@ sub _symdump {
     my ($self, @packages) = @_;
     my ($key, $val, $num, $pack, @todo, $tmp);
     my $result = {};
-    foreach $pack (@packages) {
-        no strict;
+    for $pack (@packages) {
+        no strict;    ## no critic (TestingAndDebugging::ProhibitNoStrict)
         while (($key, $val) = each(%{ *{"$pack\::"} })) {
             my $gotone = 0;
             local (*ENTRY) = $val;
@@ -122,7 +124,7 @@ sub _partdump {
     my ($self, $part) = @_;
     my ($pack, @result);
     my $prepend = "";
-    foreach $pack (keys %{ $self->{RESULT} }) {
+    for $pack (keys %{ $self->{RESULT} }) {
         $prepend = "$pack\::" unless $part eq 'PACKAGES';
         push @result, map {"$prepend$_"} keys %{ $self->{RESULT}{$pack}{$part} || {} };
     }
@@ -138,8 +140,9 @@ sub as_string {
     for $type (sort keys %{ $self->{'AUTOLOAD'} }) {
         push @m, $type;
         push @m, "\t" . join "\n\t", map {
-            s/([\000-\037\177])/ '^' . pack('c', ord($1) ^ 64) /eg;
-            $_;
+            my $part = $_;
+            $part =~ s/([\000-\037\177])/ '^' . pack('c', ord($1) ^ 64) /eg;
+            $part;
         } sort $self->_partdump(uc $type);
     }
     return join "\n", @m;
@@ -152,10 +155,11 @@ sub as_HTML {
     for $type (sort keys %{ $self->{'AUTOLOAD'} }) {
         push @m, "<TR><TD valign=top><B>$type</B></TD>";
         push @m, "<TD>" . join ", ", map {
-            s/([\000-\037\177])/ '^' .
+            my $part = $_;
+            $part =~ s/([\000-\037\177])/ '^' .
 		pack('c', ord($1) ^ 64)
 		    /eg;
-            $_;
+            $part;
         } sort $self->_partdump(uc $type);
         push @m, "</TD></TR>";
     }
@@ -168,21 +172,21 @@ sub diff {
     my ($type, @m);
     for $type (sort keys %{ $self->{'AUTOLOAD'} }) {
         my (%first, %second, %all, $symbol);
-        foreach $symbol ($self->_partdump(uc $type)) {
+        for $symbol ($self->_partdump(uc $type)) {
             $first{$symbol}++;
             $all{$symbol}++;
         }
-        foreach $symbol ($second->_partdump(uc $type)) {
+        for $symbol ($second->_partdump(uc $type)) {
             $second{$symbol}++;
             $all{$symbol}++;
         }
         my (@typediff);
-        foreach $symbol (sort keys %all) {
+        for $symbol (sort keys %all) {
             next if $first{$symbol} && $second{$symbol};
             push @typediff, "- $symbol" unless $second{$symbol};
             push @typediff, "+ $symbol" unless $first{$symbol};
         }
-        foreach (@typediff) {
+        for (@typediff) {
             s/([\000-\037\177])/ '^' . pack('c', ord($1) ^ 64) /eg;
         }
         push @m, $type, @typediff if @typediff;
@@ -195,23 +199,23 @@ sub inh_tree {
     return $self->{INHTREE} if ref $self && defined $self->{INHTREE};
     my ($inherited_by) = {};
     my ($m)            = "";
-    my (@isa)          = grep /\bISA$/, Devel::Symdump->rnew->arrays;
+    my (@isa)          = grep {/\bISA$/} Devel::Symdump->rnew->arrays;
     my $isa;
-    foreach $isa (sort @isa) {
+    for $isa (sort @isa) {
         $isa =~ s/::ISA$//;
         my ($isaisa);
-        no strict 'refs';
-        foreach $isaisa (@{"$isa\::ISA"}) {
+        no strict 'refs';    ## no critic (TestingAndDebugging::ProhibitNoStrict)
+        for $isaisa (@{"$isa\::ISA"}) {
             $inherited_by->{$isaisa}{$isa}++;
         }
     }
     my $item;
-    foreach $item (sort keys %$inherited_by) {
+    for $item (sort keys %$inherited_by) {
         $m .= "$item\n";
         $m .= _inh_tree($item, $inherited_by);
     }
     $self->{INHTREE} = $m if ref $self;
-    $m;
+    return $m;
 }
 
 sub _inh_tree {
@@ -226,27 +230,27 @@ sub _inh_tree {
     my ($m) = "";
     # print "DEBUG: package[$package]depth[$depth]\n";
     my $i;
-    foreach $i (sort keys %{ $href->{$package} }) {
+    for $i (sort keys %{ $href->{$package} }) {
         $m .= qq{\t} x $depth;
         $m .= qq{$i\n};
         $m .= _inh_tree($i, $href, $depth);
     }
-    $m;
+    return $m;
 }
 
 sub isa_tree {
     my ($self) = @_;
     return $self->{ISATREE} if ref $self && defined $self->{ISATREE};
-    my (@isa) = grep /\bISA$/, Devel::Symdump->rnew->arrays;
+    my (@isa) = grep {/\bISA$/} Devel::Symdump->rnew->arrays;
     my ($m)   = "";
     my ($isa);
-    foreach $isa (sort @isa) {
+    for $isa (sort @isa) {
         $isa =~ s/::ISA$//;
         $m .= qq{$isa\n};
         $m .= _isa_tree($isa);
     }
     $self->{ISATREE} = $m if ref $self;
-    $m;
+    return $m;
 }
 
 sub _isa_tree {
@@ -260,13 +264,13 @@ sub _isa_tree {
     my ($m) = "";
     # print "DEBUG: package[$package]depth[$depth]\n";
     my $isaisa;
-    no strict 'refs';
-    foreach $isaisa (@{"$package\::ISA"}) {
+    no strict 'refs';    ## no critic (TestingAndDebugging::ProhibitNoStrict)
+    for $isaisa (@{"$package\::ISA"}) {
         $m .= qq{\t} x $depth;
         $m .= qq{$isaisa\n};
         $m .= _isa_tree($isaisa, $depth);
     }
-    $m;
+    return $m;
 }
 
 AUTOLOAD {
@@ -274,7 +278,7 @@ AUTOLOAD {
     unless (ref $self) {
         $self = $self->new(@packages);
     }
-    no strict "vars";
+    no strict "vars";    ## no critic
     (my $auto = $AUTOLOAD) =~ s/.*:://;
 
     $auto =~ s/(file|dir)handles/ios/;
@@ -286,8 +290,8 @@ AUTOLOAD {
 
     my @syms = $self->_partdump(uc $auto);
     if (defined $compat) {
-        no strict 'refs';
-        local $^W;    # bleadperl@26631 introduced an io warning here
+        no strict 'refs';    ## no critic (TestingAndDebugging::ProhibitNoStrict)
+        local $^W;           # bleadperl@26631 introduced an io warning here
         if ($compat eq "file") {
             @syms = grep { defined(fileno($_)) } @syms;
         } else {
@@ -306,7 +310,7 @@ sub _is_dirhandle {
         return defined(telldir($glob));
     } else {
         if (!ref $glob) {
-            no strict 'refs';
+            no strict 'refs';    ## no critic (TestingAndDebugging::ProhibitNoStrict)
             $glob = \*{$glob};
         }
         require B;
