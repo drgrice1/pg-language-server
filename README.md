@@ -23,9 +23,9 @@ parsing.
 
 ### Perl paths
 
-If you have a nonstandard install of Perl, please set the setting `pg.perlPath`. You can also add additional include
-paths that will be added to the perl search path (@INC) via `pg.includePaths`. You can use `$workspaceFolder` in
-`pg.includePaths` which will be replaced by the full folder path.
+If you have an installation of Perl at a nonstandard location, please set the `pg.perlPath` setting. You can also add
+additional include paths that will be added to the Perl search path (@INC) via `pg.includePaths`. You can use
+`$workspaceFolder` in `pg.includePaths` which will be replaced by the full folder path.
 
 ### Perl Critic Customization
 

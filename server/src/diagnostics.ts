@@ -105,22 +105,28 @@ const getInquisitor = async (): Promise<string[]> => {
 const translateCode = (code: string): string => {
     return code
         .replaceAll(/\r\n/g, '\n')
-        .replaceAll(/\n\s*END_TEXT[\s;]*\n/g, '\nEND_TEXT\n')
-        .replaceAll(/\n\s*END_PGML[\s;]*\n/g, '\nEND_PGML\n')
-        .replaceAll(/\n\s*END_PGML_SOLUTION[\s;]*\n/g, '\nEND_PGML_SOLUTION\n')
-        .replaceAll(/\n\s*END_PGML_HINT[\s;]*\n/g, '\nEND_PGML_HINT\n')
-        .replaceAll(/\n\s*END_SOLUTION[\s;]*\n/g, '\nEND_SOLUTION\n')
-        .replaceAll(/\n\s*END_HINT[\s;]*\n/g, '\nEND_HINT\n')
-        .replaceAll(/\n\s*BEGIN_TEXT[\s;]*\n/g, "\nSTATEMENT(EV3P(<<'END_TEXT'));\n")
-        .replaceAll(/\n\s*BEGIN_PGML[\s;]*\n/g, "\nSTATEMENT(PGML::Format2(<<'END_PGML'));\n")
-        .replaceAll(/\n\s*BEGIN_PGML_SOLUTION[\s;]*\n/g, "\nSOLUTION(PGML::Format2(<<'END_PGML_SOLUTION'));\n")
-        .replaceAll(/\n\s*BEGIN_PGML_HINT[\s;]*\n/g, "\nHINT(PGML::Format2(<<'END_PGML_HINT'));\n")
-        .replaceAll(/\n\s*BEGIN_SOLUTION[\s;]*\n/g, "\nSOLUTION(EV3P(<<'END_SOLUTION'));\n")
-        .replaceAll(/\n\s*BEGIN_HINT[\s;]*\n/g, "\nHINT(EV3P(<<'END_HINT'));\n")
-        .replaceAll(/\n\s*(.*)\s*->\s*BEGIN_TIKZ[\s;]*\n/g, '\n$1->tex(<<END_TIKZ);\n')
-        .replaceAll(/\n\s*END_TIKZ[\s;]*\n/g, '\nEND_TIKZ\n')
-        .replaceAll(/\n\s*(.*)\s*->\s*BEGIN_LATEX_IMAGE[\s;]*\n/g, '\n$1->tex(<<END_LATEX_IMAGE);\n')
-        .replaceAll(/\n\s*END_LATEX_IMAGE[\s;]*\n/g, '\nEND_LATEX_IMAGE\n')
+        .replaceAll(/\n[^\S\n]*END_TEXT(?:[^\S\n];)*\n/g, '\nEND_TEXT\n')
+        .replaceAll(/\n[^\S\n]*END_PGML(?:[^\S\n];)*\n/g, '\nEND_PGML\n')
+        .replaceAll(/\n[^\S\n]*END_PGML_SOLUTION(?:[^\S\n];)*\n/g, '\nEND_PGML_SOLUTION\n')
+        .replaceAll(/\n[^\S\n]*END_PGML_HINT(?:[^\S\n];)*\n/g, '\nEND_PGML_HINT\n')
+        .replaceAll(/\n[^\S\n]*END_SOLUTION(?:[^\S\n];)*\n/g, '\nEND_SOLUTION\n')
+        .replaceAll(/\n[^\S\n]*END_HINT(?:[^\S\n];)*\n/g, '\nEND_HINT\n')
+        .replaceAll(/\n[^\S\n]*BEGIN_TEXT(?:[^\S\n];)*\n/g, "\nSTATEMENT(EV3P(<<'END_TEXT'));\n")
+        .replaceAll(/\n[^\S\n]*BEGIN_PGML(?:[^\S\n];)*\n/g, "\nSTATEMENT(PGML::Format2(<<'END_PGML'));\n")
+        .replaceAll(
+            /\n[^\S\n]*BEGIN_PGML_SOLUTION(?:[^\S\n];)*\n/g,
+            "\nSOLUTION(PGML::Format2(<<'END_PGML_SOLUTION'));\n"
+        )
+        .replaceAll(/\n[^\S\n]*BEGIN_PGML_HINT(?:[^\S\n];)*\n/g, "\nHINT(PGML::Format2(<<'END_PGML_HINT'));\n")
+        .replaceAll(/\n[^\S\n]*BEGIN_SOLUTION(?:[^\S\n];)*\n/g, "\nSOLUTION(EV3P(<<'END_SOLUTION'));\n")
+        .replaceAll(/\n[^\S\n]*BEGIN_HINT(?:[^\S\n];)*\n/g, "\nHINT(EV3P(<<'END_HINT'));\n")
+        .replaceAll(/\n[^\S\n]*(.*)[^\S\n]*->[^\S\n]*BEGIN_TIKZ(?:[^\S\n];)*\n/g, '\n$1->tex(<<END_TIKZ);\n')
+        .replaceAll(/\n[^\S\n]*END_TIKZ(?:[^\S\n];)*\n/g, '\nEND_TIKZ\n')
+        .replaceAll(
+            /\n[^\S\n]*(.*)[^\S\n]*->[^\S\n]*BEGIN_LATEX_IMAGE(?:[^\S\n];)*\n/g,
+            '\n$1->tex(<<END_LATEX_IMAGE);\n'
+        )
+        .replaceAll(/\n[^\S\n]*END_LATEX_IMAGE(?:[^\S\n];)*\n/g, '\nEND_LATEX_IMAGE\n')
         .replaceAll(/END_DOCUMENT.*/g, 'END_DOCUMENT();')
         .replaceAll('\\', '\\\\')
         .replaceAll('~~', '\\');
