@@ -1,18 +1,14 @@
-/* eslint-env node */
-'use strict';
+import path from 'path';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const path = require('path');
-
-module.exports = [
+export default [
     // coc client configuration
     {
-        context: __dirname,
+        context: import.meta.dirname,
         target: 'node',
         entry: { extension: './coc-client/src/extension.ts' },
         output: {
             filename: '[name].js',
-            path: path.resolve(__dirname, 'coc-client', 'dist'),
+            path: path.resolve(import.meta.dirname, 'coc-client', 'dist'),
             library: { type: 'commonjs' }
         },
         resolve: {
@@ -27,12 +23,12 @@ module.exports = [
     },
     // vscode client configuration
     {
-        context: __dirname,
+        context: import.meta.dirname,
         target: 'node',
         entry: { extension: './vscode-client/src/extension.ts' },
         output: {
             filename: '[name].js',
-            path: path.join(__dirname, 'vscode-client', 'dist'),
+            path: path.join(import.meta.dirname, 'vscode-client', 'dist'),
             library: { type: 'commonjs' }
         },
         resolve: {
@@ -54,12 +50,12 @@ module.exports = [
     },
     // language server configuration
     {
-        context: __dirname,
+        context: import.meta.dirname,
         target: 'node',
         entry: { server: './server/src/server.ts' },
         output: {
             filename: '[name].js',
-            path: path.resolve(__dirname, 'dist'),
+            path: path.resolve(import.meta.dirname, 'dist'),
             library: { name: 'serverExportVar', type: 'var' }
         },
         resolve: {
