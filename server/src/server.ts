@@ -143,7 +143,7 @@ const documentCompDiags: Map<string, Diagnostic[]> = new Map();
 const navSymbols = new LRUCache({
     maxSize: 350000,
     sizeCalculation(value: PerlDocument) {
-        return value.elems.size;
+        return value.elems.size || 1;
     }
 });
 
