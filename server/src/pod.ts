@@ -229,21 +229,19 @@ const convertPODToMarkdown = (pod: string): string => {
         // Inline transformations for code, bold, etc.
         line = processInlineElements(line);
 
-        // Handling =pod to start documentation
         if (line.startsWith('=pod')) {
+            // Handling =pod to start documentation
             continue; // Generally, we just skip this.
-        }
-        // Headings
-        else if (line.startsWith('=head')) {
+        } else if (line.startsWith('=head')) {
+            // Headings
             const output = processHeadings(line);
 
             if (/\w/.test(finalMarkdown) || !/^\n##+ NAME\n$/.test(output)) {
                 // I find it a waste of space to include the headline "NAME". We're short on space in the hover
                 finalMarkdown += output;
             }
-        }
-        // List markers and items
-        else if (
+        } else if (
+            // List markers and items
             line.startsWith('=over') ||
             line.startsWith('=item') ||
             line.startsWith('=back') ||
@@ -251,26 +249,22 @@ const convertPODToMarkdown = (pod: string): string => {
         ) {
             state = processList(line, state);
             finalMarkdown += state.markdown;
-        }
-        // Custom blocks like =begin and =end
-        else if (line.startsWith('=begin') || line.startsWith('=end')) {
+        } else if (line.startsWith('=begin') || line.startsWith('=end')) {
+            // Custom blocks like =begin and =end
             state = processCustomBlock(line, state);
             finalMarkdown += state.markdown;
-        }
-        // Format-specific blocks like =for
-        else if (line.startsWith('=for')) {
+        } else if (line.startsWith('=for')) {
+            // Format-specific blocks like =for
             finalMarkdown += processFormatSpecificBlock(line);
-        }
-        // Encoding
-        else if (line.startsWith('=encoding')) {
+        } else if (line.startsWith('=encoding')) {
+            // Encoding
             state = processEncoding(line, state);
         } else if (state.inList) {
             if (line) {
                 finalMarkdown += ` ${line} `;
             }
-        }
-        // Generic text
-        else {
+        } else {
+            // Generic text
             finalMarkdown += `${line}\n`;
         }
     }
@@ -299,23 +293,19 @@ const processHeadings = (line: string): string => {
 const processList = (line: string, state: ConversionState): ConversionState => {
     let markdown: string = '';
 
-    // The =over command starts a list.
     if (line.startsWith('=over')) {
+        // The =over command starts a list.
         state.inList = true;
         markdown = '\n';
-    }
-
-    // The =item command denotes a list item.
-    else if (/^=item \*\s*$/.test(line)) {
+    } else if (/^=item \*\s*$/.test(line)) {
+        // The =item command denotes a list item.
         state.waitingForListTitle = true;
         markdown = '';
     } else if (state.waitingForListTitle && /[^\s]/.test(line)) {
         state.waitingForListTitle = false;
         markdown = `\n- ${line}  \n  `;
-    }
-
-    // The =item command denotes a list item.
-    else if (line.startsWith('=item')) {
+    } else if (line.startsWith('=item')) {
+        // The =item command denotes a list item.
         state.inList = true;
 
         // Remove the '=item' part to get the actual text for the list item.
@@ -324,9 +314,8 @@ const processList = (line: string, state: ConversionState): ConversionState => {
             // Doubled up list identifiers
             listItem = listItem.replace('*', '');
         markdown = `\n- ${listItem}  \n  `; // Unordered list
-    }
-    // The =back command ends the list.
-    else if (line.startsWith('=back')) {
+    } else if (line.startsWith('=back')) {
+        // The =back command ends the list.
         state.inList = false;
         markdown = '\n';
     }
@@ -340,8 +329,8 @@ const processList = (line: string, state: ConversionState): ConversionState => {
 const processCustomBlock = (line: string, state: ConversionState): ConversionState => {
     let markdown = '';
 
-    // =begin starts a custom block
     if (line.startsWith('=begin')) {
+        // =begin starts a custom block
         // Extract the format following =begin
         const format = line.slice(7).trim();
         state.inCustomBlock = true;
@@ -356,9 +345,8 @@ const processCustomBlock = (line: string, state: ConversionState): ConversionSta
                 markdown = `<!-- begin ${format} -->\n`;
                 break;
         }
-    }
-    // =end ends the custom block
-    else if (line.startsWith('=end')) {
+    } else if (line.startsWith('=end')) {
+        // =end ends the custom block
         // Extract the format following =end
         const format = line.slice(5).trim();
         state.inCustomBlock = false;
@@ -552,14 +540,7 @@ const processVerbatim = (line: string, state: ConversionState): ConversionState 
         // Trim some starting whitespace and add the line to the block
         // Most pod code has 4 spaces or a tab, but I find 2 space indents most readable in the space constrained pop-up
         markdown += line.replace(/^(?:\s{4}|\t)/, '  ') + '\n';
-    }
-    // } else if(/^\s+/.test(line)){
-    //     // Verbatim blocks in lists are tricky.
-    //     Let's just do one line at a time for now so we don't need to keep track of indentation
-    //     markdown = "```\n" + line + "```\n";
-    //     state.isLineVerbatim = true;
-    // }
-    else if (state.inVerbatim) {
+    } else if (state.inVerbatim) {
         // This line ends the verbatim block
         state.inVerbatim = false;
         markdown += '```\n'; // End the Markdown code fence

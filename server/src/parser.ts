@@ -242,9 +242,12 @@ const look_ahead_signatures = (state: ParserState): string[] => {
         }
         let match;
         if (
-            (match = stmt.match(/(?:^|{)\s*my\s*(\(\s*[$@%]\w+\s*(?:,\s*[$@%]\w+\s*)*\))\s*=\s*@_/)) || // my ($foo, $bar) = @_
-            (match = stmt.match(/(?:^|{)\s*my\s+(\s*[$@%]\w+\s*)=\s*shift\b/)) || // my $foo = shift
-            (match = stmt.match(/(?:^|{)\s*my\s*(\(\s*[$@%]\w+\s*\))\s*=\s*shift\b/)) // my ($foo) = shift
+            // my ($foo, $bar) = @_
+            (match = stmt.match(/(?:^|{)\s*my\s*(\(\s*[$@%]\w+\s*(?:,\s*[$@%]\w+\s*)*\))\s*=\s*@_/)) ||
+            // my $foo = shift
+            (match = stmt.match(/(?:^|{)\s*my\s+(\s*[$@%]\w+\s*)=\s*shift\b/)) ||
+            // my ($foo) = shift
+            (match = stmt.match(/(?:^|{)\s*my\s*(\(\s*[$@%]\w+\s*\))\s*=\s*shift\b/))
         ) {
             const vars = match[1].matchAll(/([$@%][\w:]+)\b/g);
             for (const matchvar of vars) {
@@ -263,16 +266,14 @@ const look_ahead_signatures = (state: ParserState): string[] => {
 
 const labels = (state: ParserState): boolean => {
     let match;
-    // Phaser block
     if ((match = state.stmt.match(/^(BEGIN|INIT|CHECK|UNITCHECK|END)\s*\{/))) {
+        // Phaser block
         const phaser = match[1];
         const endLine = SubEndLine(state);
 
         MakeElem(phaser, PerlSymbolKind.Phaser, '', state, endLine);
-    }
-
-    // Label line
-    else if ((match = state.stmt.match(/^([a-zA-Z_][a-zA-Z0-9_]*)\s*:[^:].*{\s*$/))) {
+    } else if ((match = state.stmt.match(/^([a-zA-Z_][a-zA-Z0-9_]*)\s*:[^:].*{\s*$/))) {
+        // Label line
         const label = match[1];
         const endLine = SubEndLine(state);
 
@@ -298,8 +299,8 @@ const constants = (state: ParserState): boolean => {
 
 const fields = (state: ParserState): boolean => {
     let match;
-    // Moo/Moose/Object::Pad/Moops/Corinna attributes
     if ((match = state.stmt.match(/^(?:has|field)(?:\s+|\()["']?([$@%]?\w+)\b/))) {
+        // Moo/Moose/Object::Pad/Moops/Corinna attributes
         const attr = match[1];
         let type;
         if (attr.match(/^\w/)) {
@@ -314,15 +315,7 @@ const fields = (state: ParserState): boolean => {
         // TODO: Define new type. Class variables should probably be shown in the Outline view even though lexical
         // variables are not
         MakeElem(attr, type, '', state);
-    }
-
-    // Is this captured above?
-    // else if (state.perlDoc.imported.has("Object::Pad") &&
-    //         (match = stmt.match(/^field\s+([\$@%]\w+)\b/))) { //  Object::Pad field
-    //     const attr = match[1];
-    //     MakeElem(attr, PerlSymbolKind.LocalVar, '', file, package_name, line_num, perlDoc);
-    // }
-    else if (
+    } else if (
         (state.perlDoc.imported.has('Mars::Class') || state.perlDoc.imported.has('Venus::Class')) &&
         (match = state.stmt.match(/^attr\s+["'](\w+)\b/))
     ) {
