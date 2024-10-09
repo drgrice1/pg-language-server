@@ -118,7 +118,7 @@ const translateCode = (code: string): string => {
         .replaceAll(/\n[ \t]*END_TIKZ[ \t;]*\n/g, '\nEND_TIKZ\n')
         .replaceAll(/\n[ \t]*(.*)[ \t]*->[ \t]*BEGIN_LATEX_IMAGE[ \t;]*\n/g, '\n$1->tex(<<END_LATEX_IMAGE);\n')
         .replaceAll(/\n[ \t]*END_LATEX_IMAGE[ \t;]*\n/g, '\nEND_LATEX_IMAGE\n')
-        .replaceAll(/END_DOCUMENT.*/g, 'END_DOCUMENT();')
+        .replace(/ENDDOCUMENT[\s\S]*/m, 'ENDDOCUMENT();')
         .replaceAll('\\', '\\\\')
         .replaceAll('~~', '\\');
 };

@@ -375,7 +375,7 @@ const translateLine = (line: string): string => {
         .replace(/^\s*END_TIKZ[\s;]*$/, 'END_TIKZ')
         .replace(/^\s*(.*)\s*->\s*BEGIN_LATEX_IMAGE[\s;]*$/, '$1->tex(<<END_LATEX_IMAGE);')
         .replace(/^\s*END_LATEX_IMAGE[\s;]*$/, 'END_LATEX_IMAGE')
-        .replace(/END_DOCUMENT.*/, 'END_DOCUMENT();')
+        .replace(/ENDDOCUMENT.*/, 'ENDDOCUMENT();')
         .replaceAll('\\', '\\\\')
         .replaceAll('~~', '\\');
 };
@@ -388,6 +388,9 @@ const cleanCode = async (
     const code = textDocument.getText();
 
     const codeArray = code.split('\n').map(translateLine);
+    const endDocumentLocation = codeArray.findIndex((t) => t.includes('ENDDOCUMENT'));
+    if (endDocumentLocation !== -1) codeArray.splice(endDocumentLocation + 1);
+
     let codeClean = [];
 
     const commentState: ParserState = {
