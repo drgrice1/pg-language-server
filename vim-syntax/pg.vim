@@ -10,6 +10,8 @@ endif
 runtime! syntax/perl.vim
 unlet b:current_syntax
 
+syn sync fromstart
+
 syn match pgSpecialString "\~\~\%(\o\{1,3}\|x\%({\x\+}\|\x\{1,2}\)\|c.\|[^cx]\)" contained extend
 syn cluster pgInterpDQ contains=pgSpecialString,perlVarPlain,perlVarNotInMatches,perlVarSlash,perlVarBlock
 
@@ -180,7 +182,7 @@ hi def link pgTextDisplayParsedMath Character
 " TiKZ and LaTeX image code
 syn region tikz matchgroup=Identifier
             \ start=/\(^.*->\)\@<=BEGIN_TIKZ[ \t;]*$/ end=/^[ \t]*END_TIKZ[ \t;]*$/
-            \ fold conceal contains=@pgInterpDQ
+            \ fold contains=@pgInterpDQ
 syn region tikz matchgroup=Identifier
             \ start=/\(^.*->\)\@<=BEGIN_LATEX_IMAGE[ \t;]*$/ end=/^[ \t]*END_LATEX_IMAGE[ \t;]*$/
             \ fold contains=@pgInterpDQ
