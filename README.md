@@ -107,3 +107,12 @@ the vscode extensions directory.
 
 The Perl Language Server is free software licensed under the MIT License. This work is largely based the
 `PerlNavigator` and `coc-perl` projects.
+
+## Vim Syntax Highlighting
+
+This project also contains a Vim syntax file `vim-syntax/pg.vim`. Copy that file to the `syntax` subdirectory of the
+vim configuration directory (usually `~/.vim/syntax`) to use it. Then add the following to the `.vimrc` file.
+
+```vim
+autocmd BufRead,BufNewFile *.pg setlocal filetype=pg
+```
