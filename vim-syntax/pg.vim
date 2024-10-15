@@ -36,7 +36,7 @@ syn region pgmlParsed matchgroup=PreProc nextgroup=pgmlOption start=/\[::/ end=/
             \ contains=pgmlPerlCommand,pgmlPerlVariable
 syn region pgmlParsed matchgroup=PreProc nextgroup=pgmlOption start=/\[:::/ end=/:::\]\*\{0,3}/ contained
             \ contains=pgmlPerlCommand,pgmlPerlVariable
-syn region pgmlImage matchgroup=PreProc nextgroup=pgmlOption start=/\[!/ end=/!\]/ contained
+syn region pgmlImage matchgroup=PreProc nextgroup=pgmlOption start=/\[\!/ end=/\!\]/ contained
             \ contains=pgmlPerlCommand,pgmlPerlVariable,@Spell
 syn region pgmlTag matchgroup=PreProc nextgroup=pgmlOption start=/\[</ end=/>\]/ contained contains=@pgmlAll,@Spell
 syn region pgmlBold matchgroup=PreProc start=/\*\w\@=/ end=/\*/ contained contains=@pgmlBase,pgmlItalic,@Spell
