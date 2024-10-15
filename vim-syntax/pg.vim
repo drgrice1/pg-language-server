@@ -1,7 +1,9 @@
 " Vim syntax file
-" Language:	  PG (WeBWorK problem file)
-" Maintainer: Glenn Rice <grice1@missouriwestern.edu>
-" License:    Vim License (see :help license)
+" Language:	   PG (WeBWorK problem file)
+" Maintainer:  Glenn Rice <grice1@missouriwestern.edu>
+" License:     Vim License (see :help license)
+" Homepage:    https://github.com/drgrice1/pg-language-server
+" Last Change: October 15, 2024
 
 if exists("b:current_syntax")
 	finish
@@ -25,8 +27,7 @@ hi def link pgSpecialString PreProc
 
 " PGML
 syn region pgmlPerlCommand matchgroup=PreProc start=/\[@/ end=/@\]\*\{0,3}/ contained contains=@perlTop
-syn region pgmlPerlVariable matchgroup=PreProc start=/\[\$\@=/ end=/\]\*\{0,3}/
-            \ contained contains=perlVarPlain,perlNumber,perlOperator
+syn region pgmlPerlVariable matchgroup=PreProc start=/\[\$\@=/ end=/\]\*\{0,3}/ contained contains=@perlTop
 syn region pgmlOption matchgroup=PreProc nextgroup=pgmlOption start=/{/ end=/}/ contained contains=@perlTop
 syn match pgmlAnswer /\[_*\]\*\?/ nextgroup=pgmlOption contained
 syn region pgmlComment start=/\[%/ end=/%\]/ contained contains=pgmlComment,@Spell
