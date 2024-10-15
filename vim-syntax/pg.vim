@@ -13,7 +13,8 @@ unlet b:current_syntax
 syn sync fromstart
 
 syn match pgSpecialString "\~\~\%(\o\{1,3}\|x\%({\x\+}\|\x\{1,2}\)\|c.\|[^cx]\)" contained extend
-syn cluster pgInterpDQ contains=pgSpecialString,perlVarPlain,perlVarNotInMatches,perlVarSlash,perlVarBlock
+syn cluster perlInterpDQ remove=perlSpecialString
+syn cluster perlInterpDQ add=pgSpecialString
 
 hi def bold term=bold cterm=bold gui=bold
 hi def italic term=italic cterm=italic gui=italic
@@ -155,15 +156,15 @@ hi def link pgmlOrderedListMarker Statement
 
 " PG Text
 syn region pgTextPerlCommand matchgroup=PreProc start=/\\{/ end=/\\}/ contained contains=@perlTop
-syn region pgTextMathMode matchgroup=PreProc start=/\\(/ end=/\\)/ contained contains=pgTextPerlCommand,@pgInterpDQ
-syn region pgTextMathMode matchgroup=PreProc start=/\\\[/ end=/\\\]/ contained contains=pgTextPerlCommand,@pgInterpDQ
+syn region pgTextMathMode matchgroup=PreProc start=/\\(/ end=/\\)/ contained contains=pgTextPerlCommand,@perlInterpDQ
+syn region pgTextMathMode matchgroup=PreProc start=/\\\[/ end=/\\\]/ contained contains=pgTextPerlCommand,@perlInterpDQ
 syn region pgTextParsedMath matchgroup=PreProc
-            \ start=/``\@!/ end=/`\@<!`\*\?/ contained contains=pgTextPerlCommand,@pgInterpDQ
+            \ start=/``\@!/ end=/`\@<!`\*\?/ contained contains=pgTextPerlCommand,@perlInterpDQ
 syn region pgTextDisplayParsedMath matchgroup=PreProc
-            \ start=/``/ end=/``\*\?/ contained contains=pgTextPerlCommand,@pgInterpDQ
+            \ start=/``/ end=/``\*\?/ contained contains=pgTextPerlCommand,@perlInterpDQ
 
 syn cluster pgTextAll
-            \ contains=pgTextPerlCommand,pgTextMathMode,pgTextParsedMath,pgTextDisplayParsedMath,@pgInterpDQ,@Spell
+            \ contains=pgTextPerlCommand,pgTextMathMode,pgTextParsedMath,pgTextDisplayParsedMath,@perlInterpDQ,@Spell
 
 syn region pgText matchgroup=Keyword keepend
             \ start=/^[ \t]*BEGIN_TEXT[ \t;]*$/ end=/^[ \t]*END_TEXT[ \t;]*$/
@@ -182,10 +183,10 @@ hi def link pgTextDisplayParsedMath Character
 " TiKZ and LaTeX image code
 syn region tikz matchgroup=Identifier
             \ start=/\(^.*->\)\@<=BEGIN_TIKZ[ \t;]*$/ end=/^[ \t]*END_TIKZ[ \t;]*$/
-            \ fold contains=@pgInterpDQ
+            \ fold contains=@perlInterpDQ
 syn region tikz matchgroup=Identifier
             \ start=/\(^.*->\)\@<=BEGIN_LATEX_IMAGE[ \t;]*$/ end=/^[ \t]*END_LATEX_IMAGE[ \t;]*$/
-            \ fold contains=@pgInterpDQ
+            \ fold contains=@perlInterpDQ
 
 hi def link tikz String
 
