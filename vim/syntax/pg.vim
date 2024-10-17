@@ -516,7 +516,7 @@ syn match perlSubPrototype "\s*(\([$@%&*\[\];]\|\~\~\)*)" contained extend
 syn match perlSubAttribute "\s*:\s*\h\w*\%(([^)]*)\|\)" contained extend
 syn match perlSubName "\%(\h\|::\|'\w\)\%(\w\|::\|'\w\)*\s*" contained extend
 syn region perlSubDeclaration start="" end="[;{]"
-            \ contains=perlSubName,perlSubPrototype,perlSubAttribute,perlSubSignature,perlComment contained transparent
+            \ contains=perlSubName,perlSubPrototype,perlSubAttribute,perlComment contained transparent
 syn match perlFunction "\<sub\>\_s*" nextgroup=perlSubDeclaration
 
 " The => operator forces a bareword to the left of it to be interpreted as
@@ -566,8 +566,7 @@ if get(g:, 'pg_perl_fold', 0)
                         \ transparent fold keepend extend
         else
             " EXPLANATION:
-            " same, as above, but first non-space character after `sub` keyword must
-            " be [A-Za-z_]
+            " same, as above, but first non-space character after `sub` keyword must be [A-Za-z_]
             syn region perlSubFold
                         \ start="\<sub\>\s*\h\_[^;{]*\%((\([$@%&*\[\];]\|\~\~\)*)\)\?\_[^;]*{"
                         \ end="}"
@@ -622,7 +621,6 @@ hi def link perlOperator              Operator
 hi def link perlFunction              Keyword
 hi def link perlSubName               Function
 hi def link perlSubPrototype          Type
-hi def link perlSubSignature          Type
 hi def link perlSubAttribute          PreProc
 hi def link perlComment               Comment
 hi def link perlTodo                  Todo
@@ -719,13 +717,13 @@ hi def trailingWhitespace ctermbg=176 guibg=#d787d7
 
 " PG specific
 
+syn region endDocument start=/^\s*ENDDOCUMENT/ end="\%$" fold transparent contains=pgAfterEndDocument
 syn region pgAfterEndDocument
             \ start=/\(^\s*ENDDOCUMENT\(()\)\@!\)\@<=.\{-}$/
             \ start=/\(^\s*ENDDOCUMENT();\@!\)\@<=.\{-}$/
             \ start=/\(^\s*ENDDOCUMENT();\)\@<=.\{-}$/
             \ end="\%$"
-            \ fold contains=NONE
-
+            \ contains=NONE
 hi def link pgAfterEndDocument Comment
 
 " PGML
@@ -746,10 +744,11 @@ syn region pgmlParsed matchgroup=PreProc nextgroup=pgmlOption start=/\[:::/ end=
 syn region pgmlImage matchgroup=PreProc nextgroup=pgmlOption start=/\[\!/ end=/\!\]/ contained
             \ contains=pgmlPerlCommand,pgmlPerlVariable,@Spell
 syn region pgmlTag matchgroup=PreProc nextgroup=pgmlOption start=/\[</ end=/>\]/ contained contains=@pgmlAll,@Spell
-syn region pgmlBold matchgroup=PreProc start=/\*\w\@=/ end=/\*/ contained contains=@pgmlBase,pgmlItalic,@Spell
-syn region pgmlItalic matchgroup=PreProc start=/\w\@<!_\w\@=/ end=/_/ contained contains=@pgmlBase,pgmlBold,@Spell
-syn region pgmlBoldItalic matchgroup=PreProc start=/\w\@<!_\*\w\@=/ end=/\*_/ contained contains=@pgmlBase,@Spell
-syn region pgmlBoldItalic matchgroup=PreProc start=/\w\@<!\*_\w\@=/ end=/_\*/ contained contains=@pgmlBase,@Spell
+syn region pgmlBoldItalic matchgroup=PreProc start=/\w\@<!_\w\@=/ end=/_/ contained contains=@pgmlBase,@Spell
+syn region pgmlBold matchgroup=PreProc start=/\*\w\@=/ end=/\*/ contained contains=@pgmlBase,pgmlBoldItalic,@Spell
+syn region pgmlItalicBold matchgroup=PreProc start=/\*\w\@=/ end=/\*/ contained contains=@pgmlBase,@Spell
+syn region pgmlItalic matchgroup=PreProc start=/\w\@<!_[0-9A-Za-z_*]\@=/ end=/_/
+            \ contained contains=@pgmlBase,pgmlItalicBold,@Spell
 syn region pgmlVerbatim matchgroup=PreProc start=/\[|/ end=/|\]\*\?/ contained contains=perlCharacter
 syn region pgmlVerbatim matchgroup=PreProc start=/\[||/ end=/||\]\*\?/ contained contains=perlCharacter
 syn match pgmlEscape /\\[\\\[\]`*_{}()<>#+.!-"]/ contained
@@ -811,7 +810,6 @@ syn cluster pgmlAll contains=
             \ @pgmlBase,
             \ pgmlBold,
             \ pgmlItalic,
-            \ pgmlBoldItalic,
             \ pgmlHeader1,
             \ pgmlHeader2,
             \ pgmlHeader3,
@@ -841,6 +839,7 @@ hi def link pgmlMathMode            Character
 hi def link pgmlParsed              Character
 hi def link pgmlBold                bold
 hi def link pgmlItalic              italic
+hi def link pgmlItalicBold          boldItalic
 hi def link pgmlBoldItalic          boldItalic
 hi def link pgmlEscape              PreProc
 hi def link pgmlRule                PreProc
