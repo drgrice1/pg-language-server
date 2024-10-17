@@ -717,11 +717,22 @@ hi def italic term=italic cterm=italic gui=italic
 hi def boldItalic term=bold,italic cterm=bold,italic gui=bold,italic
 hi def trailingWhitespace ctermbg=176 guibg=#d787d7
 
+" PG specific
+
+syn region pgAfterEndDocument
+            \ start=/\(^\s*ENDDOCUMENT\(()\)\@!\)\@<=.\{-}$/
+            \ start=/\(^\s*ENDDOCUMENT();\@!\)\@<=.\{-}$/
+            \ start=/\(^\s*ENDDOCUMENT();\)\@<=.\{-}$/
+            \ end="\%$"
+            \ fold contains=NONE
+
+hi def link pgAfterEndDocument Comment
+
 " PGML
 syn region pgmlPerlCommand matchgroup=PreProc start=/\[@/ end=/@\]\*\{0,3}/ contained contains=@pgTop
 syn region pgmlPerlVariable matchgroup=PreProc start=/\[\$\@=/ end=/\]\*\{0,3}/ contained contains=@pgTop
 syn region pgmlOption matchgroup=PreProc nextgroup=pgmlOption start=/{/ end=/}/ contained contains=@pgTop
-syn match pgmlAnswer /\[_*\]\*\?/ nextgroup=pgmlOption contained
+syn match pgmlAnswer /\[\(_\+\|[ox^]\)\]\*\?/ nextgroup=pgmlOption contained
 syn region pgmlComment start=/\[%/ end=/%\]/ contained contains=pgmlComment,@Spell
 syn region pgmlMathMode matchgroup=PreProc start=/\[`/ end=/`\]/ contained contains=pgmlPerlCommand,pgmlPerlVariable
 syn region pgmlMathMode matchgroup=PreProc start=/\[``/ end=/``\]/ contained contains=pgmlPerlCommand,pgmlPerlVariable
