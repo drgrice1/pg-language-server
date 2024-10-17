@@ -72,6 +72,11 @@ syn match perlStatementFlow "\<\%(die\|eval\|wantarray\|evalbytes\)\>"
 syn match perlStatementProc "\<\%(get\%(pgrp\|priority\)\|pipe\|set\%(pgrp\|priority\)\|times\)\>"
 syn match perlStatementTime "\<\%(gmtime\|localtime\|time\)\>"
 syn match perlStatementMisc "\<\%(warn\|format\|formline\|reset\|scalar\|prototype\|lock\|tied\?\|untie\)\>"
+syn match pgStatementOperators "\<\%(DOCUMENT\|ENDDOCUMENT\|loadMacros\|TEXT\|SOLUTION\|HINT\|STATEMENT\|COMMENT\)\>"
+syn match pgStatementOperators "\<\%(MODES\|htmlLink\|helpLink\|knowlLink\|image\|Context\|Compute\|Real\|Formula\)\>"
+syn match pgStatementOperators "\<\%(String\|List\|Complex\|Point\|Vector\|Matrix\|Interval\|Set\|Fraction\|ANS\)\>"
+syn match pgStatementOperators "\<\%(NAMED_ANS\|WEIGHTED_ANS\|MultiAnswer\|Value\|random\|list_random\)\>"
+syn match pgStatementOperators "\<\%(non_zero_random\|NchooseK\)\>"
 
 syn keyword perlTodo TODO TODO: TBD TBD: FIXME FIXME: XXX XXX: NOTE NOTE: contained
 
@@ -134,7 +139,8 @@ syn cluster perlExpr contains=
             \ perlQW,
             \ perlQR,
             \ perlArrow,
-            \ perlBraces
+            \ perlBraces,
+            \ pgStatementOperators
 syn region perlArrow matchgroup=perlArrow start="->\s*(" end=")"
             \ contains=@perlExpr nextgroup=perlVarMember,perlVarSimpleMember,perlPostDeref contained
 syn region perlArrow matchgroup=perlArrow start="->\s*\[" end="\]"
@@ -675,6 +681,7 @@ hi def link perlFunctionName          perlIdentifier
 hi def link perlMethod                perlIdentifier
 hi def link perlPostDeref             perlIdentifier
 hi def link perlFunctionPRef          perlType
+hi def link pgStatementOperators      perlStatement
 
 if !get(g:, 'pg_include_pod', 0)
     hi def link perlPOD perlComment
@@ -717,7 +724,8 @@ hi def trailingWhitespace ctermbg=176 guibg=#d787d7
 
 " PG specific
 
-syn region endDocument start=/^\s*ENDDOCUMENT/ end="\%$" fold transparent contains=pgAfterEndDocument
+syn region endDocument matchgroup=pgStatementOperators start=/^\s*ENDDOCUMENT/ end="\%$"
+            \ fold transparent contains=pgAfterEndDocument
 syn region pgAfterEndDocument
             \ start=/\(^\s*ENDDOCUMENT\(()\)\@!\)\@<=.\{-}$/
             \ start=/\(^\s*ENDDOCUMENT();\@!\)\@<=.\{-}$/
