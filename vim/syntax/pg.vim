@@ -71,7 +71,7 @@ syn match perlStatementVector "\<vec\>"
 syn match perlStatementFlow "\<\%(die\|eval\|wantarray\|evalbytes\)\>"
 syn match perlStatementProc "\<\%(get\%(pgrp\|priority\)\|pipe\|set\%(pgrp\|priority\)\|times\)\>"
 syn match perlStatementTime "\<\%(gmtime\|localtime\|time\)\>"
-syn match perlStatementMisc "\<\%(warn\|format\|formline\|reset\|scalar\|prototype\|lock\|tied\?\|untie\)\>"
+syn match perlStatementMisc "\<\%(warn\|scalar\|prototype\|lock\|tie\|untie\)\>"
 syn match pgStatementOperators "\<\%(DOCUMENT\|ENDDOCUMENT\|loadMacros\|TEXT\|SOLUTION\|HINT\|STATEMENT\|COMMENT\)\>"
 syn match pgStatementOperators "\<\%(MODES\|htmlLink\|helpLink\|knowlLink\|image\|Context\|Compute\|Real\|Formula\)\>"
 syn match pgStatementOperators "\<\%(String\|List\|Complex\|Point\|Vector\|Matrix\|Interval\|Set\|Fraction\|ANS\)\>"
@@ -533,17 +533,6 @@ syn match perlString "\I\@<!-\?\I\i*\%(\s*=>\)\@="
 syn match perlComment "#.*" contains=perlTodo,@Spell extend
 syn match perlSharpBang "^#!.*"
 
-" Formats
-syn region perlFormat matchgroup=perlStatementIOFunc
-            \ start="^\s*\<format\s\+\k\+\s*=\s*$"rs=s+6 end="^\s*\.\s*$"
-            \ contains=perlFormatName,perlFormatField,perlVarPlain,perlVarPlain2
-syn match perlFormatName "format\s\+\k\+\s*="lc=7,me=e-1 contained
-syn match perlFormatField "[@^][|<>~]\+\%(\.\.\.\)\?" contained
-syn match perlFormatField "[@^]#[#.]*" contained
-syn match perlFormatField "@\*" contained
-syn match perlFormatField "@[^A-Za-z_|<>~#*]"me=e-1 contained
-syn match perlFormatField "@$" contained
-
 " Folding
 if get(g:, 'pg_perl_fold', 0)
     " Note: this bit must come before the actual highlighting of the `package`
@@ -658,8 +647,6 @@ hi def link perlSubstitutionGQQ       perlString
 hi def link perlTranslationGQ         perlString
 hi def link perlMatch                 perlString
 hi def link perlMatchStartEnd         perlStatement
-hi def link perlFormatName            perlIdentifier
-hi def link perlFormatField           perlString
 hi def link perlPackageDecl           perlType
 hi def link perlStorageClass          perlType
 hi def link perlPackageRef            perlType
@@ -688,7 +675,7 @@ if !get(g:, 'pg_include_pod', 0)
 endif
 hi def link perlSpecialAscii   perlSpecial
 hi def link perlSpecialDollar  perlSpecial
-hi def link perlSpecialString  PreProc
+hi def link perlSpecialString  perlSpecial
 hi def link perlSpecialMatch   perlSpecial
 
 " NOTE: Due to a bug in Vim (or more likely, a misunderstanding on my part),
@@ -735,8 +722,8 @@ syn region pgAfterEndDocument
 hi def link pgAfterEndDocument Comment
 
 " PGML
-syn region pgmlPerlCommand matchgroup=PreProc start=/\[@/ end=/@\]\*\{0,3}/ contained contains=@pgTop
-syn region pgmlPerlVariable matchgroup=PreProc start=/\[\$\@=/ end=/\]\*\{0,3}/ contained contains=@pgTop
+syn region pgmlPerlCommand matchgroup=pgmlSubstitution start=/\[@/ end=/@\]\*\{0,3}/ contained contains=@pgTop
+syn region pgmlPerlVariable matchgroup=pgmlSubstitution start=/\[\$\@=/ end=/\]\*\{0,3}/ contained contains=@pgTop
 syn region pgmlOption matchgroup=PreProc nextgroup=pgmlOption start=/{/ end=/}/ contained contains=@pgTop
 syn match pgmlAnswer /\[\(_\+\|[ox^]\)\]\*\?/ nextgroup=pgmlOption contained
 syn region pgmlComment start=/\[%/ end=/%\]/ contained contains=pgmlComment,@Spell
@@ -841,6 +828,7 @@ syn region pgml matchgroup=Keyword keepend
             \ start=/^[ \t]*BEGIN_PGML_HINT[ \t;]*$/ end=/^[ \t]*END_PGML_HINT[ \t;]*$/
             \ fold contains=@pgmlAll,@Spell
 
+hi def link pgmlSubstitution        PreProc
 hi def link pgmlAnswer              Character
 hi def link pgmlComment             Comment
 hi def link pgmlMathMode            Character
@@ -892,14 +880,14 @@ hi def link pgTextParsedMath        Character
 hi def link pgTextDisplayParsedMath Character
 
 " TiKZ and LaTeX image code
-syn region tikz matchgroup=Identifier
+syn region tikz matchgroup=perlStatement
             \ start=/\(^.*->\)\@<=BEGIN_TIKZ[ \t;]*$/ end=/^[ \t]*END_TIKZ[ \t;]*$/
             \ fold contains=@perlInterpDQ
-syn region tikz matchgroup=Identifier
+syn region tikz matchgroup=perlStatement
             \ start=/\(^.*->\)\@<=BEGIN_LATEX_IMAGE[ \t;]*$/ end=/^[ \t]*END_LATEX_IMAGE[ \t;]*$/
             \ fold contains=@perlInterpDQ
 
-hi def link tikz String
+hi def link tikz perlString
 
 let b:current_syntax = "pg"
 
