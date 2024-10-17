@@ -711,7 +711,7 @@ hi def trailingWhitespace ctermbg=176 guibg=#d787d7
 
 " PG specific
 
-syn region endDocument matchgroup=pgStatementOperators start=/^\s*ENDDOCUMENT/ end="\%$"
+syn region pgEndDocumentFold matchgroup=pgStatementOperators start=/^\s*ENDDOCUMENT/ end="\%$"
             \ fold transparent contains=pgAfterEndDocument
 syn region pgAfterEndDocument
             \ start=/\(^\s*ENDDOCUMENT\(()\)\@!\)\@<=.\{-}$/
@@ -722,64 +722,69 @@ syn region pgAfterEndDocument
 hi def link pgAfterEndDocument Comment
 
 " PGML
-syn region pgmlPerlCommand matchgroup=pgmlSubstitution start=/\[@/ end=/@\]\*\{0,3}/ contained contains=@pgTop
-syn region pgmlPerlVariable matchgroup=pgmlSubstitution start=/\[\$\@=/ end=/\]\*\{0,3}/ contained contains=@pgTop
-syn region pgmlOption matchgroup=PreProc nextgroup=pgmlOption start=/{/ end=/}/ contained contains=@pgTop
+syn region pgmlPerlCommand matchgroup=pgmlSubstStartEnd start=/\[@/ end=/@\]\*\{0,3}/ contained contains=@pgTop
+syn region pgmlPerlVariable matchgroup=pgmlSubstStartEnd start=/\[\$\@=/ end=/\]\*\{0,3}/ contained contains=@pgTop
+syn region pgmlOption matchgroup=pgmlOptionStartEnd nextgroup=pgmlOption start=/{/ end=/}/ contained contains=@pgTop
 syn match pgmlAnswer /\[\(_\+\|[ox^]\)\]\*\?/ nextgroup=pgmlOption contained
-syn region pgmlComment start=/\[%/ end=/%\]/ contained contains=pgmlComment,@Spell
-syn region pgmlMathMode matchgroup=PreProc start=/\[`/ end=/`\]/ contained contains=pgmlPerlCommand,pgmlPerlVariable
-syn region pgmlMathMode matchgroup=PreProc start=/\[``/ end=/``\]/ contained contains=pgmlPerlCommand,pgmlPerlVariable
-syn region pgmlMathMode matchgroup=PreProc start=/\[```/ end=/```\]/ contained contains=pgmlPerlCommand,pgmlPerlVariable
-syn region pgmlParsed matchgroup=PreProc nextgroup=pgmlOption start=/\[:/ end=/:\]\*\{0,3}/ contained
+syn region pgmlComment matchgroup=pgmlCommentStartEnd start=/\[%/ end=/%\]/ contained contains=pgmlComment,@Spell
+syn region pgmlMathMode matchgroup=pgmlMathStartEnd start=/\[`/ end=/`\]/
+            \ contained contains=pgmlPerlCommand,pgmlPerlVariable
+syn region pgmlMathMode matchgroup=pgmlMathStartEnd start=/\[``/ end=/``\]/
+            \ contained contains=pgmlPerlCommand,pgmlPerlVariable
+syn region pgmlMathMode matchgroup=pgmlMathStartEnd start=/\[```/ end=/```\]/
+            \ contained contains=pgmlPerlCommand,pgmlPerlVariable
+syn region pgmlParsed matchgroup=pgmlMathStartEnd nextgroup=pgmlOption start=/\[:/ end=/:\]\*\{0,3}/ contained
             \ contains=pgmlPerlCommand,pgmlPerlVariable
-syn region pgmlParsed matchgroup=PreProc nextgroup=pgmlOption start=/\[::/ end=/::\]\*\{0,3}/ contained
+syn region pgmlParsed matchgroup=pgmlMathStartEnd nextgroup=pgmlOption start=/\[::/ end=/::\]\*\{0,3}/ contained
             \ contains=pgmlPerlCommand,pgmlPerlVariable
-syn region pgmlParsed matchgroup=PreProc nextgroup=pgmlOption start=/\[:::/ end=/:::\]\*\{0,3}/ contained
+syn region pgmlParsed matchgroup=pgmlMathStartEnd nextgroup=pgmlOption start=/\[:::/ end=/:::\]\*\{0,3}/ contained
             \ contains=pgmlPerlCommand,pgmlPerlVariable
-syn region pgmlImage matchgroup=PreProc nextgroup=pgmlOption start=/\[\!/ end=/\!\]/ contained
+syn region pgmlImage matchgroup=pgmlSubstStartEnd nextgroup=pgmlOption start=/\[\!/ end=/\!\]/ contained
             \ contains=pgmlPerlCommand,pgmlPerlVariable,@Spell
-syn region pgmlTag matchgroup=PreProc nextgroup=pgmlOption start=/\[</ end=/>\]/ contained contains=@pgmlAll,@Spell
-syn region pgmlBoldItalic matchgroup=PreProc start=/\w\@<!_\w\@=/ end=/_/ contained contains=@pgmlBase,@Spell
-syn region pgmlBold matchgroup=PreProc start=/\*\w\@=/ end=/\*/ contained contains=@pgmlBase,pgmlBoldItalic,@Spell
-syn region pgmlItalicBold matchgroup=PreProc start=/\*\w\@=/ end=/\*/ contained contains=@pgmlBase,@Spell
-syn region pgmlItalic matchgroup=PreProc start=/\w\@<!_[0-9A-Za-z_*]\@=/ end=/_/
+syn region pgmlTag matchgroup=pgmlBlockStartEnd nextgroup=pgmlOption start=/\[</ end=/>\]/
+            \ contained contains=@pgmlAll,@Spell
+syn region pgmlBoldItalic matchgroup=pgmlFormatStartEnd start=/\w\@<!_\w\@=/ end=/_/ contained contains=@pgmlBase,@Spell
+syn region pgmlBold matchgroup=pgmlFormatStartEnd start=/\*\w\@=/ end=/\*/
+            \ contained contains=@pgmlBase,pgmlBoldItalic,@Spell
+syn region pgmlItalicBold matchgroup=pgmlFormatStartEnd start=/\*\w\@=/ end=/\*/ contained contains=@pgmlBase,@Spell
+syn region pgmlItalic matchgroup=pgmlFormatStartEnd start=/\w\@<!_[0-9A-Za-z_*]\@=/ end=/_/
             \ contained contains=@pgmlBase,pgmlItalicBold,@Spell
-syn region pgmlVerbatim matchgroup=PreProc start=/\[|/ end=/|\]\*\?/ contained contains=perlCharacter
-syn region pgmlVerbatim matchgroup=PreProc start=/\[||/ end=/||\]\*\?/ contained contains=perlCharacter
+syn region pgmlVerbatim matchgroup=pgmlFormatStartEnd start=/\[|/ end=/|\]\*\?/ contained contains=perlCharacter
+syn region pgmlVerbatim matchgroup=pgmlFormatStartEnd start=/\[||/ end=/||\]\*\?/ contained contains=perlCharacter
 syn match pgmlEscape /\\[\\\[\]`*_{}()<>#+.!-"]/ contained
 syn match pgmlRule /\(-\{3,}\)\|\(=\{3,}\)/ nextgroup=pgmlOption contained
-syn region pgmlTable matchgroup=PreProc start=/\[#/ end=/#\]\*\?/ nextgroup=pgmlOption
+syn region pgmlTable matchgroup=pgmlBlockStartEnd start=/\[#/ end=/#\]\*\?/ nextgroup=pgmlOption
             \ contained contains=pgmlTableCell,pgmlComment
-syn region pgmlTableCell matchgroup=PreProc start=/\[\./ end=/\.\]\*\?/ nextgroup=pgmlOption contained
+syn region pgmlTableCell matchgroup=pgmlBlockStartEnd start=/\[\./ end=/\.\]\*\?/ nextgroup=pgmlOption contained
             \ contains=@pgmlAll,@Spell
-syn region pgmlHeader1 matchgroup=Delimiter
+syn region pgmlHeader1 matchgroup=pgmlHeaderStartEnd
             \ start=/\(^\(>> *\)\?\)\@<=##\@!/
             \ end=/#\@<!#\(\(\( \{2,3}$\)\@=\)\|\( *<<$\)\@=\|$\)\|\( \@<! \{,3}<<$\)\@=\|\n\(>>\| \{4}\)\@=\|\n\n/
             \ contained contains=@pgmlAll,@Spell
-syn region pgmlHeader2 matchgroup=Delimiter
+syn region pgmlHeader2 matchgroup=pgmlHeaderStartEnd
             \ start=/\(^\(>> *\)\?\)\@<=###\@!/
             \ end=/#\@<!##\(\(\( \{2,3}$\)\@=\)\|\( *<<$\)\@=\|$\)\|\( \@<! \{,3}<<$\)\@=\|\n\(>>\| \{4}\)\@=\|\n\n/
             \ contained contains=@pgmlAll,@Spell
-syn region pgmlHeader3 matchgroup=Delimiter
+syn region pgmlHeader3 matchgroup=pgmlHeaderStartEnd
             \ start=/\(^\(>> *\)\?\)\@<=####\@!/
             \ end=/#\@<!###\(\(\( \{2,3}$\)\@=\)\|\( *<<$\)\@=\|$\)\|\( \@<! \{,3}<<$\)\@=\|\n\(>>\| \{4}\)\@=\|\n\n/
             \ contained contains=@pgmlAll,@Spell
-syn region pgmlHeader4 matchgroup=Delimiter
+syn region pgmlHeader4 matchgroup=pgmlHeaderStartEnd
             \ start=/\(^\(>> *\)\?\)\@<=#####\@!/
             \ end=/#\@<!####\(\(\( \{2,3}$\)\@=\)\|\( *<<$\)\@=\|$\)\|\( \@<! \{,3}<<$\)\@=\|\n\(>>\| \{4}\)\@=\|\n\n/
             \ contained contains=@pgmlAll,@Spell
-syn region pgmlHeader5 matchgroup=Delimiter
+syn region pgmlHeader5 matchgroup=pgmlHeaderStartEnd
             \ start=/\(^\(>> *\)\?\)\@<=######\@!/
             \ end=/#\@<!#####\(\(\( \{2,3}$\)\@=\)\|\( *<<$\)\@=\|$\)\|\( \@<! \{,3}<<$\)\@=\|\n\(>>\| \{4}\)\@=\|\n\n/
             \ contained contains=@pgmlAll,@Spell
-syn region pgmlHeader5 matchgroup=Delimiter
+syn region pgmlHeader5 matchgroup=pgmlHeaderStartEnd
             \ start=/\(^\(>> *\)\?\)\@<=#######\@!/
             \ end=/#\@<!######\(\(\( \{2,3}$\)\@=\)\|\( *<<$\)\@=\|$\)\|\( \@<! \{,3}<<$\)\@=\|\n\(>>\| \{4}\)\@=\|\n\n/
             \ contained contains=@pgmlAll,@Spell
 syn match pgmlAlignment /^>>/ contained
 syn match pgmlCenter /<<\( \{2,3}\)\?$/ contained
 syn match pgmlPreformatted /^\(\( \{4}\)\|\t\)*: \{3}/ contained
-syn region pgmlCode matchgroup=PreProc start=/^```/ end=/```/ nextgroup=pgmlCodeClass contained
+syn region pgmlCode matchgroup=pgmlCodeStartEnd start=/^```/ end=/```/ nextgroup=pgmlCodeClass contained
             \ contains=pgmlCodeClass,Character
 syn match pgmlCodeClass /\(^```\)\@<=[a-z0-9]\+$/
 syn match pgmlTrailingWhitespace /[ \t]\+$/ contained
@@ -818,21 +823,26 @@ syn cluster pgmlAll contains=
             \ pgmlUnorderedListMarker,
             \ pgmlOrderedListMarker
 
-syn region pgml matchgroup=Keyword keepend
+syn region pgml matchgroup=pgTextBlockStartEnd keepend
             \ start=/^[ \t]*BEGIN_PGML[ \t;]*$/ end=/^[ \t]*END_PGML[ \t;]*$/
             \ fold contains=@pgmlAll,@Spell
-syn region pgml matchgroup=Keyword keepend
+syn region pgml matchgroup=pgTextBlockStartEnd keepend
             \ start=/^[ \t]*BEGIN_PGML_SOLUTION[ \t;]*$/ end=/^[ \t]*END_PGML_SOLUTION[ \t;]*$/
             \ fold contains=@pgmlAll,@Spell
-syn region pgml matchgroup=Keyword keepend
+syn region pgml matchgroup=pgTextBlockStartEnd keepend
             \ start=/^[ \t]*BEGIN_PGML_HINT[ \t;]*$/ end=/^[ \t]*END_PGML_HINT[ \t;]*$/
             \ fold contains=@pgmlAll,@Spell
 
-hi def link pgmlSubstitution        PreProc
+hi def link pgmlSubstStartEnd       PreProc
+hi def link pgmlOptionStartEnd      PreProc
+hi def link pgmlBlockStartEnd       PreProc
 hi def link pgmlAnswer              Character
+hi def link pgmlCommentStartEnd     Comment
 hi def link pgmlComment             Comment
+hi def link pgmlMathStartEnd        PreProc
 hi def link pgmlMathMode            Character
 hi def link pgmlParsed              Character
+hi def link pgmlFormatStartEnd      PreProc
 hi def link pgmlBold                bold
 hi def link pgmlItalic              italic
 hi def link pgmlItalicBold          boldItalic
@@ -840,6 +850,7 @@ hi def link pgmlBoldItalic          boldItalic
 hi def link pgmlEscape              PreProc
 hi def link pgmlRule                PreProc
 hi def link pgmlTrailingWhitespace  trailingWhitespace
+hi def link pgmlHeaderStartEnd      Delimiter
 hi def link pgmlHeader1             Title
 hi def link pgmlHeader2             Title
 hi def link pgmlHeader3             Title
@@ -849,35 +860,42 @@ hi def link pgmlHeader6             Title
 hi def link pgmlAlignment           PreProc
 hi def link pgmlCenter              PreProc
 hi def link pgmlPreformatted        PreProc
+hi def link pgmlCodeStartEnd        PreProc
 hi def link pgmlCodeClass           PreProc
 hi def link pgmlUnorderedListMarker Statement
 hi def link pgmlOrderedListMarker   Statement
 
 " PG Text
-syn region pgTextPerlCommand matchgroup=PreProc start=/\\{/ end=/\\}/ contained contains=@pgTop
-syn region pgTextMathMode matchgroup=PreProc start=/\\(/ end=/\\)/ contained contains=pgTextPerlCommand,@perlInterpDQ
-syn region pgTextMathMode matchgroup=PreProc start=/\\\[/ end=/\\\]/ contained contains=pgTextPerlCommand,@perlInterpDQ
-syn region pgTextParsedMath matchgroup=PreProc
+syn region pgTextPerlCommand matchgroup=pgTextCommandStartEnd start=/\\{/ end=/\\}/ contained contains=@pgTop
+syn region pgTextMathMode matchgroup=pgTextMathStartEnd start=/\\(/ end=/\\)/
+            \ contained contains=pgTextPerlCommand,@perlInterpDQ
+syn region pgTextMathMode matchgroup=pgTextMathStartEnd start=/\\\[/ end=/\\\]/
+            \ contained contains=pgTextPerlCommand,@perlInterpDQ
+syn region pgTextParsedMath matchgroup=pgTextMathStartEnd
             \ start=/``\@!/ end=/`\@<!`\*\?/ contained contains=pgTextPerlCommand,@perlInterpDQ
-syn region pgTextDisplayParsedMath matchgroup=PreProc
+syn region pgTextDisplayParsedMath matchgroup=pgTextMathStartEnd
             \ start=/``/ end=/``\*\?/ contained contains=pgTextPerlCommand,@perlInterpDQ
 
 syn cluster pgTextAll
             \ contains=pgTextPerlCommand,pgTextMathMode,pgTextParsedMath,pgTextDisplayParsedMath,@perlInterpDQ,@Spell
 
-syn region pgText matchgroup=Keyword keepend
+syn region pgText matchgroup=pgTextBlockStartEnd keepend
             \ start=/^[ \t]*BEGIN_TEXT[ \t;]*$/ end=/^[ \t]*END_TEXT[ \t;]*$/
             \ fold contains=@pgTextAll
-syn region pgText matchgroup=Keyword keepend
+syn region pgText matchgroup=pgTextBlockStartEnd keepend
             \ start=/^[ \t]*BEGIN_SOLUTION[ \t;]*$/ end=/^[ \t]*END_SOLUTION[ \t;]*$/
             \ fold contains=@pgTextAll
-syn region pgText matchgroup=Keyword keepend
+syn region pgText matchgroup=pgTextBlockStartEnd keepend
             \ start=/^[ \t]*BEGIN_HINT[ \t;]*$/ end=/^[ \t]*END_HINT[ \t;]*$/
             \ fold contains=@pgTextAll
 
+hi def link pgTextCommandStartEnd   PreProc
+hi def link pgTextMathStartEnd      PreProc
 hi def link pgTextMathMode          Character
 hi def link pgTextParsedMath        Character
 hi def link pgTextDisplayParsedMath Character
+
+hi def link pgTextBlockStartEnd Keyword
 
 " TiKZ and LaTeX image code
 syn region tikz matchgroup=perlStatement
