@@ -771,13 +771,13 @@ syn region pgmlHeader5 matchgroup=Delimiter
             \ start=/\(^\(>> *\)\?\)\@<=#######\@!/
             \ end=/#\@<!######\(\(\( \{2,3}$\)\@=\)\|\( *<<$\)\@=\|$\)\|\( \@<! \{,3}<<$\)\@=\|\n\(>>\| \{4}\)\@=\|\n\n/
             \ contained contains=@pgmlAll,@Spell
-syn match pgmlAlignment /^>>/
-syn match pgmlCenter /<<\( \{2,3}\)\?$/
-syn match pgmlPreformatted /^\(\( \{4}\)\|\t\)*: \{3}/
+syn match pgmlAlignment /^>>/ contained
+syn match pgmlCenter /<<\( \{2,3}\)\?$/ contained
+syn match pgmlPreformatted /^\(\( \{4}\)\|\t\)*: \{3}/ contained
 syn region pgmlCode matchgroup=PreProc start=/^```/ end=/```/ nextgroup=pgmlCodeClass contained
             \ contains=pgmlCodeClass,Character
 syn match pgmlCodeClass /\(^```\)\@<=[a-z0-9]\+$/
-syn match pgmlTrailingWhitespace /[ \t]\+$/
+syn match pgmlTrailingWhitespace /[ \t]\+$/ contained
 syn match pgmlUnorderedListMarker /^\(\t\| \{4\}\)*[-*+o]\s\@=/ contained
 syn match pgmlOrderedListMarker /^\(\t\| \{4\}\)*\(\d\+\|[ivxl]\+\|[IVXL]\+\|[a-zA-Z]\)[.)]\s\@=/ contained
 
