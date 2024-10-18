@@ -53,7 +53,7 @@ function! GetPgIndent()
     " Get current syntax item at the line's first char
     let csynid = ''
     if b:indent_use_syntax
-        let csynid = synIDattr(synID(v:lnum,1,0),"name")
+        let csynid = synIDattr(synID(v:lnum, 1, 0), "name")
     endif
 
     " Don't reindent POD and heredocs
@@ -84,7 +84,7 @@ function! GetPgIndent()
     if b:indent_use_syntax
         let skippin = 2
         while skippin
-            let synid = synIDattr(synID(lnum,1,0),"name")
+            let synid = synIDattr(synID(lnum, 1, 0), "name")
             if (synid == "perlStringStartEnd" && line =~ '^\I\i*$')
                         \ || (skippin != 2 && (synid == "perlPOD" || synid == "perlHereDoc"))
                         \ || synid == "perlComment"
@@ -114,6 +114,7 @@ function! GetPgIndent()
                     \ : csyn_region == 'pgText' ? '^\s*\\\?[])}]'
                     \ : '^\s*[])}]'
         let bracepos = match(line, braceclass, matchend(line, endbrace))
+        let increaseIndent = 0
         while bracepos != -1
             let synid = synIDattr(synID(lnum, bracepos + 1, 0), "name")
             " If the brace is highlighted in one of those groups, indent it.
@@ -133,9 +134,9 @@ function! GetPgIndent()
                         \ || synid == "pgTextMathStartEnd"
                 let brace = strpart(line, bracepos, 1)
                 if brace == '(' || brace == '{' || brace == '['
-                    let ind = ind + shiftwidth()
+                    let increaseIndent = increaseIndent + 1
                 else
-                    let ind = ind - shiftwidth()
+                    let increaseIndent = increaseIndent - 1
                 endif
             endif
             let bracepos = match(line, braceclass, bracepos + 1)
@@ -154,8 +155,13 @@ function! GetPgIndent()
                         \ || synid == "pgmlCommentStartEnd"
                         \ || synid == "pgTextCommandStartEnd"
                         \ || synid == "pgTextMathStartEnd"
-                let ind = ind - shiftwidth()
+                let increaseIndent = increaseIndent - 1
             endif
+        endif
+        if increaseIndent > 0
+            let ind = ind + shiftwidth()
+        elseif increaseIndent < 0
+            let ind = ind - shiftwidth()
         endif
     else
         if line =~ '[{[(]\s*\(#[^])}]*\)\=$'
