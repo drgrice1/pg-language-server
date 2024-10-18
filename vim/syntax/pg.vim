@@ -626,7 +626,6 @@ hi def link perlMisc                  perlStatement
 hi def link perlVarPlain              perlIdentifier
 hi def link perlVarPlain2             perlIdentifier
 hi def link perlArrow                 perlIdentifier
-hi def link perlFiledescStatement     perlIdentifier
 hi def link perlVarSimpleMember       perlIdentifier
 hi def link perlVarSimpleMemberName   perlString
 hi def link perlVarNotInMatches       perlIdentifier
@@ -667,7 +666,6 @@ hi def link perlStatementIndirObj     perlStatement
 hi def link perlFunctionName          perlIdentifier
 hi def link perlMethod                perlIdentifier
 hi def link perlPostDeref             perlIdentifier
-hi def link perlFunctionPRef          perlType
 hi def link pgStatementOperators      perlStatement
 
 if !get(g:, 'pg_include_pod', 0)

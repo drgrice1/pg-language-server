@@ -124,7 +124,6 @@ function! GetPgIndent()
                         \ || synid == "perlBraces"
                         \ || synid == "perlStatementIndirObj"
                         \ || synid == "perlSubDeclaration"
-                        \ || synid =~ "^perlFiledescStatement"
                         \ || synid =~ '^perl\(Sub\|Block\|Package\)Fold'
                         \ || synid == "pgmlOptionStartEnd"
                         \ || synid == "pgmlBlockStartEnd"
