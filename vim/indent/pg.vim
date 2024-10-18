@@ -26,7 +26,7 @@ let b:did_indent = 1
 let b:indent_use_syntax = has("syntax")
 
 setlocal indentexpr=GetPgIndent()
-setlocal indentkeys+=0=,0),0],0=or,0=and,0=>],0=.],0=#],0=\\}
+setlocal indentkeys+=0=,0),0],0=or,0=and,0=>],0=.],0=#],0=@],0=%],0=\\},0=\\],0=\\)
 
 let b:undo_indent = "setl inde< indk<"
 
@@ -110,8 +110,8 @@ function! GetPgIndent()
         " in the character class and causes sorrow.  Instead, put the closing
         " bracket as the first character in the class.
         let braceclass = '[][(){}]'
-        let endbrace = csyn_region == 'pgml' ? '^\s*\([>#.]\]\|[)}]\)'
-                    \ : csyn_region == 'pgText' ? '^\s*\(\\\?}\|[])]\)'
+        let endbrace = csyn_region == 'pgml' ? '^\s*\([>#.@%]\]\|[)}]\)'
+                    \ : csyn_region == 'pgText' ? '^\s*\\\?[])}]'
                     \ : '^\s*[])}]'
         let bracepos = match(line, braceclass, matchend(line, endbrace))
         while bracepos != -1
@@ -128,7 +128,10 @@ function! GetPgIndent()
                         \ || synid =~ '^perl\(Sub\|Block\|Package\)Fold'
                         \ || synid == "pgmlOptionStartEnd"
                         \ || synid == "pgmlBlockStartEnd"
+                        \ || synid == "pgmlPerlCommandStartEnd"
+                        \ || synid == "pgmlCommentStartEnd"
                         \ || synid == "pgTextCommandStartEnd"
+                        \ || synid == "pgTextMathStartEnd"
                 let brace = strpart(line, bracepos, 1)
                 if brace == '(' || brace == '{' || brace == '['
                     let ind = ind + shiftwidth()
@@ -147,8 +150,11 @@ function! GetPgIndent()
                         \ || synid == "perlStatementIndirObj"
                         \ || synid =~ '^perl\(Sub\|Block\|Package\)Fold'
                         \ || synid == "pgmlOptionStartEnd"
+                        \ || synid == "pgmlPerlCommandStartEnd"
                         \ || synid == "pgmlBlockStartEnd"
+                        \ || synid == "pgmlCommentStartEnd"
                         \ || synid == "pgTextCommandStartEnd"
+                        \ || synid == "pgTextMathStartEnd"
                 let ind = ind - shiftwidth()
             endif
         endif
