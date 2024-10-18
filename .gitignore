@@ -3,3 +3,4 @@ dist
 lib
 vim-*-project
 .vim
+.netrwhist

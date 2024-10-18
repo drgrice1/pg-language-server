@@ -823,13 +823,13 @@ syn cluster pgmlAll contains=
             \ pgmlUnorderedListMarker,
             \ pgmlOrderedListMarker
 
-syn region pgml matchgroup=pgTextBlockStartEnd keepend
+syn region pgml matchgroup=pgProblemTextBlockStartEnd keepend
             \ start=/^[ \t]*BEGIN_PGML[ \t;]*$/ end=/^[ \t]*END_PGML[ \t;]*$/
             \ fold contains=@pgmlAll,@Spell
-syn region pgml matchgroup=pgTextBlockStartEnd keepend
+syn region pgml matchgroup=pgProblemTextBlockStartEnd keepend
             \ start=/^[ \t]*BEGIN_PGML_SOLUTION[ \t;]*$/ end=/^[ \t]*END_PGML_SOLUTION[ \t;]*$/
             \ fold contains=@pgmlAll,@Spell
-syn region pgml matchgroup=pgTextBlockStartEnd keepend
+syn region pgml matchgroup=pgProblemTextBlockStartEnd keepend
             \ start=/^[ \t]*BEGIN_PGML_HINT[ \t;]*$/ end=/^[ \t]*END_PGML_HINT[ \t;]*$/
             \ fold contains=@pgmlAll,@Spell
 
@@ -879,13 +879,13 @@ syn region pgTextDisplayParsedMath matchgroup=pgTextMathStartEnd
 syn cluster pgTextAll
             \ contains=pgTextPerlCommand,pgTextMathMode,pgTextParsedMath,pgTextDisplayParsedMath,@perlInterpDQ,@Spell
 
-syn region pgText matchgroup=pgTextBlockStartEnd keepend
+syn region pgText matchgroup=pgProblemTextBlockStartEnd keepend
             \ start=/^[ \t]*BEGIN_TEXT[ \t;]*$/ end=/^[ \t]*END_TEXT[ \t;]*$/
             \ fold contains=@pgTextAll
-syn region pgText matchgroup=pgTextBlockStartEnd keepend
+syn region pgText matchgroup=pgProblemTextBlockStartEnd keepend
             \ start=/^[ \t]*BEGIN_SOLUTION[ \t;]*$/ end=/^[ \t]*END_SOLUTION[ \t;]*$/
             \ fold contains=@pgTextAll
-syn region pgText matchgroup=pgTextBlockStartEnd keepend
+syn region pgText matchgroup=pgProblemTextBlockStartEnd keepend
             \ start=/^[ \t]*BEGIN_HINT[ \t;]*$/ end=/^[ \t]*END_HINT[ \t;]*$/
             \ fold contains=@pgTextAll
 
@@ -895,7 +895,7 @@ hi def link pgTextMathMode          Character
 hi def link pgTextParsedMath        Character
 hi def link pgTextDisplayParsedMath Character
 
-hi def link pgTextBlockStartEnd Keyword
+hi def link pgProblemTextBlockStartEnd Keyword
 
 " TiKZ and LaTeX image code
 syn region tikz matchgroup=perlStatement

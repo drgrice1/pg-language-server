@@ -108,11 +108,34 @@ the vscode extensions directory.
 The PG Language Server is free software licensed under the MIT License. This work is largely based the `PerlNavigator`
 and `coc-perl` projects.
 
-## Vim Syntax Highlighting
+## Vim PG Filetype
 
-This project also contains a Vim syntax file `vim/syntax/pg.vim`. Copy that file to the `syntax` subdirectory of the
-vim configuration directory (usually `~/.vim/syntax`) to use it. Then add the following to the `.vimrc` file.
+This project also contains a Vim syntax file `vim/syntax/pg.vim` and indent file `vim/indent/pg.vim`. Copy the syntax
+file to the `syntax` subdirectory, and the indent file to the `indent` subdirectory of the vim configuration directory
+(usually `~/.vim`). Then add the following to the `.vimrc` file.
 
 ```vim
 autocmd BufRead,BufNewFile *.pg setlocal filetype=pg
+```
+
+The indent file primarily uses syntax to determine proper indentation. So to use it add the following to the `.vimrc`
+file as well.
+
+```vim
+autocmd Filetype pg setlocal foldmethod=syntax
+```
+
+By default Vim opens a buffer with all folds closed. If you would rather have the folds open initially add the
+following to your `.vimrc` file.
+
+```vim
+autocmd Filetype pg setlocal foldlevel=99
+```
+
+There are some additional options that may be set that affect syntax highlighting and are described at the beginning of
+the `vim/syntax/pg.vim` file. For example, add the following to the `.vimrc` file to enable code folding for Perl
+regions. Note that folding of PGML blocks, PG text blocks, TikZ code, and LaTeX image code are enabled always.
+
+```vim
+let g:pg_perl_fold = 1
 ```
