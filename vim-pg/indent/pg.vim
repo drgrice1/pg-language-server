@@ -56,8 +56,8 @@ function! GetPgIndent()
         let csynid = synIDattr(synID(v:lnum, 1, 0), "name")
     endif
 
-    " Don't reindent POD and heredocs.
-    if csynid == "perlPOD" || csynid == "perlHereDoc" || csynid =~ "^pod"
+    " Don't reindent POD, heredocs, or latex image code.
+    if csynid == "perlPOD" || csynid == "perlHereDoc" || csynid =~ "^pod" || csynid == "latexImage"
         return indent(v:lnum)
     endif
 
@@ -85,8 +85,8 @@ function! GetPgIndent()
         let skippin = 2
         while skippin
             let synid = synIDattr(synID(lnum, 1, 0), "name")
-            if (synid == "perlStringStartEnd" && line =~ '^\I\i*$')
-                        \ || (skippin != 2 && (synid == "perlPOD" || synid == "perlHereDoc"))
+            if (synid =~ '^\(perlString\|latexImage\)StartEnd' && line =~ '^\I\i*$')
+                        \ || (skippin != 2 && (synid == "perlPOD" || synid == "perlHereDoc" || synid == "latexImage"))
                         \ || synid == "perlComment"
                         \ || synid =~ "^pod"
                 let lnum = prevnonblank(lnum - 1)

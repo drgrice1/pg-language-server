@@ -908,14 +908,15 @@ hi def link pgTextDisplayParsedMath Character
 hi def link pgProblemTextBlockStartEnd Keyword
 
 " TiKZ and LaTeX image code
-syn region tikz matchgroup=perlStatement
+syn region latexImage matchgroup=latexImageStartEnd
             \ start=/\(^.*->\)\@<=BEGIN_TIKZ[ \t;]*$/ end=/^[ \t]*END_TIKZ[ \t;]*$/
             \ fold contains=@perlInterpDQ
-syn region tikz matchgroup=perlStatement
+syn region latexImage matchgroup=latexImageStartEnd
             \ start=/\(^.*->\)\@<=BEGIN_LATEX_IMAGE[ \t;]*$/ end=/^[ \t]*END_LATEX_IMAGE[ \t;]*$/
             \ fold contains=@perlInterpDQ
 
-hi def link tikz perlString
+hi def link latexImageStartEnd perlStatement
+hi def link latexImage perlString
 
 let b:current_syntax = "pg"
 
