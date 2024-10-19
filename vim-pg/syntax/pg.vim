@@ -9,10 +9,9 @@
 " pg_minlines - The minimum number of lines to look back when syncing. If unset will sync from the first line.
 " pg_include_pod - Set to 1 to include the pod.vim syntax.
 " pg_perl_fold - Set to 1 to enable code folding of perl code sections.
-" pg_fold_blocks - Also fold code blocks.  Only has effect if pg_perl_fold is 1. (Doesn't work very well.)
-" pg_fold_do_blocks - Only fold `do` blocks.  Only has effect if pg_perl_fold is 1 and pg_fold_blocks is 0.
-"                     (Also doesn't work very well).
-" pg_nofold_packages - If pg_perl_fold is 1, then don't fold `package` segments of the code.
+" pg_fold_blocks - Fold code blocks (any block wrapped in braces, brackets, or parentheses.
+"                  Only has effect if pg_perl_fold is 1.
+" pg_fold_packages - Fold `package` segments of the code.  Only has effect if pg_perl_fold is 1.
 " pg_nofold_subs - If pg_perl_fold is 1, then don't fold `sub` definitions.
 " pg_fold_anonymous_subs - If pg_perl_fold is 1 and pg_nofold_subs is 0, then also fold anonymous `sub` definitions.
 
@@ -47,7 +46,15 @@ endif
 
 syn cluster pgTop contains=TOP
 
-syn region perlBraces start="{" end="}" transparent extend
+if get(g:, 'pg_perl_fold', 0) && get(g:, 'pg_fold_blocks', 0)
+    syn region perlBraces matchgroup=perlDelimiter start="{" end="}" fold transparent extend
+    syn region perlBrackets matchgroup=perlDelimiter start="\[" end="\]" fold transparent extend
+    syn region perlParens matchgroup=perlDelimiter start="(" end=")" fold transparent extend
+else
+    syn region perlBraces matchgroup=perlDelimiter start="{" end="}" transparent extend
+    syn region perlBrackets matchgroup=perlDelimiter start="\[" end="\]" transparent extend
+    syn region perlParens matchgroup=perlDelimiter start="(" end=")" transparent extend
+endif
 
 " All keywords
 
@@ -139,6 +146,8 @@ syn cluster perlExpr contains=
             \ perlQR,
             \ perlArrow,
             \ perlBraces,
+            \ perlBrackets,
+            \ perlParens,
             \ pgStatementOperators
 syn region perlArrow matchgroup=perlArrow start="->\s*(" end=")"
             \ contains=@perlExpr nextgroup=perlVarMember,perlVarSimpleMember,perlPostDeref contained
@@ -535,7 +544,7 @@ syn match perlSharpBang "^#!.*"
 if get(g:, 'pg_perl_fold', 0)
     " Note: this bit must come before the actual highlighting of the `package`
     " keyword, otherwise this will screw up Pod lines that match /^package/
-    if !get(g:, 'pg_nofold_packages', 0)
+    if get(g:, 'pg_fold_packages', 0)
         syn region perlPackageFold
                     \ start="^package \S\+;\s*\%(#.*\)\?$"
                     \ end="^1;\?\s*\%(#.*\)\?$"
@@ -544,6 +553,7 @@ if get(g:, 'pg_perl_fold', 0)
         syn region perlPackageFold start="^\z(\s*\)package\s*\S\+\s*{" end="^\z1}" transparent fold keepend
     endif
 
+    " FIXME: Is this section worth keeping? Just using perlBraces, perlParens, and perlBrackets seems more effective.
     if !get(g:, 'pg_nofold_subs', 0)
         if get(g:, "pg_fold_anonymous_subs", 0)
             " EXPLANATION:
@@ -572,27 +582,28 @@ if get(g:, 'pg_perl_fold', 0)
                     \ transparent fold keepend
     endif
 
-    if get(g:, 'pg_fold_blocks', 0)
-        syn region perlBlockFold
-                    \ start="^\z(\s*\)\%(if\|elsif\|unless\|for\|while\|until\|given\)\s*(.*)\%(\s*{\)\?\s*\%(#.*\)\?$"
-                    \ start="^\z(\s*\)for\%(each\)\?\s*\%(\%(my\|our\)\?\s*\S\+\s*\)\?(.*)\%(\s*{\)\?\s*\%(#.*\)\?$"
-                    \ end="^\z1}\s*;\?\%(#.*\)\?$"
-                    \ transparent fold keepend
+    " This is how the original perl.vim file does this.  It doesn't work right at all because it conflicts with the
+    " perlBraces definition.
+     "if get(g:, 'pg_fold_blocks', 0)
+    "    syn region perlBlockFold
+    "                \ start="^\z(\s*\)\%(if\|elsif\|unless\|for\|while\|until\|given\)\s*(.*)\%(\s*{\)\?\s*\%(#.*\)\?$"
+    "                \ start="^\z(\s*\)for\%(each\)\?\s*\%(\%(my\|our\)\?\s*\S\+\s*\)\?(.*)\%(\s*{\)\?\s*\%(#.*\)\?$"
+    "                \ end="^\z1}\s*;\?\%(#.*\)\?$"
+    "                \ transparent fold keepend
 
-        " TODO this does not work correctly
-        syn region perlBlockFold
-                    \ start="^\z(\s*\)\%(do\|else\)\%(\s*{\)\?\s*\%(#.*\)\?$"
-                    \ end="^\z1}\s*while"
-                    \ end="^\z1}\s*;\?\%(#.*\)\?$"
-                    \ transparent fold keepend
-    else
-        if get(g:, 'pg_fold_do_blocks', 0)
-            syn region perlDoBlockDeclaration start="" end="{" contains=perlComment contained transparent
-            syn match perlOperator "\<do\>\_s*" nextgroup=perlDoBlockDeclaration
+    "    syn region perlBlockFold
+    "                \ start="^\z(\s*\)\%(do\|else\)\%(\s*{\)\?\s*\%(#.*\)\?$"
+    "                \ end="^\z1}\s*while"
+    "                \ end="^\z1}\s*;\?\%(#.*\)\?$"
+    "                \ transparent fold keepend
+    "else
+    "    if get(g:, 'pg_fold_do_blocks', 0)
+    "        syn region perlDoBlockDeclaration start="" end="{" contains=perlComment contained transparent
+    "        syn match perlOperator "\<do\>\_s*" nextgroup=perlDoBlockDeclaration
 
-            syn region perlDoBlockFold start="\<do\>\_[^{]*{" end="}" transparent fold keepend extend
-        endif
-    endif
+    "        syn region perlDoBlockFold start="\<do\>\_[^{]*{" end="}" transparent fold keepend extend
+    "    endif
+    "endif
 endif
 
 " The default highlighting.

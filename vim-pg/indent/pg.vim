@@ -45,23 +45,23 @@ function! GetPgIndent()
         if (synname =~ '^perl' || synname == 'pgProblemTextBlockStartEnd') | break | endif
     endfor
 
-    " Indent POD markers to column 0
+    " Indent POD markers to 0.
     if cline =~ '^\s*=\L\@!' && csyn_region == 'perl'
         return 0
     endif
 
-    " Get current syntax item at the line's first char
+    " Get the current syntax item at the beginning of the line.
     let csynid = ''
     if b:indent_use_syntax
         let csynid = synIDattr(synID(v:lnum, 1, 0), "name")
     endif
 
-    " Don't reindent POD and heredocs
+    " Don't reindent POD and heredocs.
     if csynid == "perlPOD" || csynid == "perlHereDoc" || csynid =~ "^pod"
         return indent(v:lnum)
     endif
 
-    " Indent end-of-heredocs markers to column 0
+    " Indent heredocs end markers to 0.
     if b:indent_use_syntax
         " Assumes that an end-of-heredoc marker matches \I\i* to avoid
         " confusion with other types of strings
@@ -70,17 +70,17 @@ function! GetPgIndent()
         endif
     endif
 
-    " Get the indent of the previous line.
     " Find a non-blank line above the current line.
     let lnum = prevnonblank(v:lnum - 1)
-    " Hit the start of the file, use zero indent.
+    " If the start of the file is reached, then use zero indent.
     if lnum == 0
         return 0
     endif
     let line = getline(lnum)
+    " Get the indent of the previous line.
     let ind = indent(lnum)
 
-    " Skip heredocs, POD, and comments on 1st column
+    " Skip heredocs, POD, and comments at the beginning of a line.
     if b:indent_use_syntax
         let skippin = 2
         while skippin
@@ -102,27 +102,20 @@ function! GetPgIndent()
         endwhile
     endif
 
-    " Indent blocks enclosed by {}, (), or []
+    " Indent blocks enclosed by {}, (), or [].
     if b:indent_use_syntax
-        " Find a real opening brace
-        " NOTE: Unlike Perl character classes, we do NOT need to escape the
-        " closing brackets with a backslash.  Doing so just puts a backslash
-        " in the character class and causes sorrow.  Instead, put the closing
-        " bracket as the first character in the class.
-        let braceclass = '[][(){}]'
-        let endbrace = csyn_region == 'pgml' ? '^\s*\(\([>#.@%]\|`\{1,3}\|:\{1,3}\)\]\|[)}]\)'
+        let delimiterClass = '[][(){}]'
+        let endDelimiter = csyn_region == 'pgml' ? '^\s*\(\([>#.@%]\|`\{1,3}\|:\{1,3}\)\]\|[)}]\)'
                     \ : csyn_region == 'pgText' ? '^\s*\\\?[])}]'
                     \ : '^\s*[])}]'
-        let bracepos = match(line, braceclass, matchend(line, endbrace))
+        let delimiterPos = match(line, delimiterClass, matchend(line, endDelimiter))
         let increaseIndent = 0
-        while bracepos != -1
-            let synid = synIDattr(synID(lnum, bracepos + 1, 0), "name")
-            " If the brace is highlighted in one of those groups, indent it.
-            " 'perlHereDoc' is here only to handle the case '&foo(<<EOF)'.
+        while delimiterPos != -1
+            let synid = synIDattr(synID(lnum, delimiterPos + 1, 0), "name")
             if synid == ""
                         \ || synid == "perlMatchStartEnd"
                         \ || synid == "perlHereDoc"
-                        \ || synid == "perlBraces"
+                        \ || synid == "perlDelimiter"
                         \ || synid == "perlStatementIndirObj"
                         \ || synid == "perlSubDeclaration"
                         \ || synid =~ '^perl\(Sub\|Block\|Package\)Fold'
@@ -133,21 +126,21 @@ function! GetPgIndent()
                         \ || synid == "pgmlMathStartEnd"
                         \ || synid == "pgTextCommandStartEnd"
                         \ || synid == "pgTextMathStartEnd"
-                let brace = strpart(line, bracepos, 1)
-                if brace == '(' || brace == '{' || brace == '['
+                let delimiter = strpart(line, delimiterPos, 1)
+                if delimiter == '(' || delimiter == '{' || delimiter == '['
                     let increaseIndent = increaseIndent + 1
                 else
                     let increaseIndent = increaseIndent - 1
                 endif
             endif
-            let bracepos = match(line, braceclass, bracepos + 1)
+            let delimiterPos = match(line, delimiterClass, delimiterPos + 1)
         endwhile
-        let bracepos = matchend(cline, endbrace)
-        if bracepos != -1
-            let synid = synIDattr(synID(v:lnum, bracepos, 0), "name")
+        let delimiterPos = matchend(cline, endDelimiter)
+        if delimiterPos != -1
+            let synid = synIDattr(synID(v:lnum, delimiterPos, 0), "name")
             if synid == ""
                         \ || synid == "perlMatchStartEnd"
-                        \ || synid == "perlBraces"
+                        \ || synid == "perlDelimiter"
                         \ || synid == "perlStatementIndirObj"
                         \ || synid =~ '^perl\(Sub\|Block\|Package\)Fold'
                         \ || synid =~ '^pgmlOption'
@@ -176,7 +169,7 @@ function! GetPgIndent()
 
     if csyn_region != 'perl' | return ind | endif
 
-    " Indent lines that begin with 'or' or 'and'
+    " Indent lines that begin with 'or' or 'and'.
     if cline =~ '^\s*\(or\|and\)\>'
         if line !~ '^\s*\(or\|and\)\>'
             let ind = ind + shiftwidth()
