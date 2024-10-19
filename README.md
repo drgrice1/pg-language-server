@@ -110,9 +110,11 @@ and `coc-perl` projects.
 
 ## Vim PG Filetype
 
-This project also contains a Vim ftdetect file `/vim/ftdetext/pg.vim`, syntax file `vim/syntax/pg.vim`, and indent file
-`vim/indent/pg.vim`. Copy the ftdetext file to the `ftdetect` subdirectory, the syntax file to the `syntax`
+This project also contains a Vim ftdetect file `vim-pg/ftdetext/pg.vim`, syntax file `vim-pg/syntax/pg.vim`, and indent
+file `vim-pg/indent/pg.vim`. Copy the ftdetext file to the `ftdetect` subdirectory, the syntax file to the `syntax`
 subdirectory, and the indent file to the `indent` subdirectory of the vim configuration directory (usually `~/.vim`).
+Alternately, copy the entire `vim-pg` directory into the `pack/plugins/start` subdirectory of the vim configuration
+directory (create those directories if not present).
 
 Note that folding of PGML blocks, PG text blocks, TikZ code, and LaTeX image code are enabled always. By default Vim
 opens a buffer with all folds closed. If you would rather have the folds open initially add the following to your
