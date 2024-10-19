@@ -84,8 +84,7 @@ syn match perlLabel "^\s*\h\w*\s*::\@!\%(\<v\d\+\s*:\)\@<!"
 
 " Perl Identifiers.
 
-" Should be cleaned up to better handle identifiers in particular situations
-" (in hash keys for example)
+" Should be cleaned up to better handle identifiers in particular situations (in hash keys for example)
 
 " Plain identifiers: $foo, @foo, $#foo, %foo, &foo and dereferences $$foo, @$foo, etc.
 " We do not process complex things such as @{${"foo"}}. Too complicated, and
@@ -525,8 +524,7 @@ syn region perlSubDeclaration start="" end="[;{]"
             \ contains=perlSubName,perlSubPrototype,perlSubAttribute,perlComment contained transparent
 syn match perlFunction "\<sub\>\_s*" nextgroup=perlSubDeclaration
 
-" The => operator forces a bareword to the left of it to be interpreted as
-" a string
+" The => operator forces a bareword to the left of it to be interpreted as a string
 syn match perlString "\I\@<!-\?\I\i*\%(\s*=>\)\@="
 
 " All other # are comments, except ^#!

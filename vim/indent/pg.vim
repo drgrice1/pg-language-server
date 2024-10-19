@@ -26,7 +26,7 @@ let b:did_indent = 1
 let b:indent_use_syntax = has("syntax")
 
 setlocal indentexpr=GetPgIndent()
-setlocal indentkeys+=0=,0),0],0=or,0=and,0=>],0=.],0=#],0=@],0=%],0=\\},0=\\],0=\\)
+setlocal indentkeys+=0=,0),0],0=or,0=and,0=>],0=.],0=#],0=@],0=`],0=``],0=```],0=:],0=::],0=:::],0=%],0=\\},0=\\],0=\\)
 
 let b:undo_indent = "setl inde< indk<"
 
@@ -110,7 +110,7 @@ function! GetPgIndent()
         " in the character class and causes sorrow.  Instead, put the closing
         " bracket as the first character in the class.
         let braceclass = '[][(){}]'
-        let endbrace = csyn_region == 'pgml' ? '^\s*\([>#.@%]\]\|[)}]\)'
+        let endbrace = csyn_region == 'pgml' ? '^\s*\(\([>#.@%]\|`\{1,3}\|:\{1,3}\)\]\|[)}]\)'
                     \ : csyn_region == 'pgText' ? '^\s*\\\?[])}]'
                     \ : '^\s*[])}]'
         let bracepos = match(line, braceclass, matchend(line, endbrace))
@@ -126,10 +126,11 @@ function! GetPgIndent()
                         \ || synid == "perlStatementIndirObj"
                         \ || synid == "perlSubDeclaration"
                         \ || synid =~ '^perl\(Sub\|Block\|Package\)Fold'
-                        \ || synid == "pgmlOptionStartEnd"
+                        \ || synid =~ '^pgmlOption'
                         \ || synid == "pgmlBlockStartEnd"
-                        \ || synid == "pgmlPerlCommandStartEnd"
+                        \ || synid =~ '^pgmlPerlCommand'
                         \ || synid == "pgmlCommentStartEnd"
+                        \ || synid == "pgmlMathStartEnd"
                         \ || synid == "pgTextCommandStartEnd"
                         \ || synid == "pgTextMathStartEnd"
                 let brace = strpart(line, bracepos, 1)
@@ -149,10 +150,11 @@ function! GetPgIndent()
                         \ || synid == "perlBraces"
                         \ || synid == "perlStatementIndirObj"
                         \ || synid =~ '^perl\(Sub\|Block\|Package\)Fold'
-                        \ || synid == "pgmlOptionStartEnd"
-                        \ || synid == "pgmlPerlCommandStartEnd"
+                        \ || synid =~ '^pgmlOption'
+                        \ || synid =~ '^pgmlPerlCommand'
                         \ || synid == "pgmlBlockStartEnd"
                         \ || synid == "pgmlCommentStartEnd"
+                        \ || synid == "pgmlMathStartEnd"
                         \ || synid == "pgTextCommandStartEnd"
                         \ || synid == "pgTextMathStartEnd"
                 let increaseIndent = increaseIndent - 1
