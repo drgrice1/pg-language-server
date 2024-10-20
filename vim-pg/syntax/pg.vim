@@ -49,11 +49,11 @@ syn cluster pgTop contains=TOP
 if get(g:, 'pg_perl_fold', 0) && get(g:, 'pg_fold_blocks', 0)
     syn region perlBraces matchgroup=perlDelimiter start="{" end="}" fold transparent extend
     syn region perlBrackets matchgroup=perlDelimiter start="\[" end="\]" fold transparent extend
-    syn region perlParens matchgroup=perlDelimiter start="(" end=")" fold transparent extend
+    syn region perlParens matchgroup=perlDelimiter start="(\([^)]*)\)\@!" end=")" fold transparent extend
 else
     syn region perlBraces matchgroup=perlDelimiter start="{" end="}" transparent extend
     syn region perlBrackets matchgroup=perlDelimiter start="\[" end="\]" transparent extend
-    syn region perlParens matchgroup=perlDelimiter start="(" end=")" transparent extend
+    syn region perlParens matchgroup=perlDelimiter start="(\([^)]*)\)\@!" end=")" transparent extend
 endif
 
 " All keywords
@@ -438,87 +438,61 @@ syn region perlQR matchgroup=perlStringStartEnd
             \ contains=@perlInterpMatch,perlBracketsDQ,perlComment keepend extend nextgroup=perlQRModifiers
 
 " Constructs such as <<EOF [...] EOF, i.e., 'here' documents
-" XXX: Any statements after the identifier are in perlString colour (i.e.
-" 'if $a' in 'print <<EOF if $a'). This is almost impossible to get right it
-" seems due to the 'auto-extending nature' of regions.
-" XXX: Indented heredocs are not perfect - they sometimes seem to take a moment
-"     to update if switched from double to single quotes and vice versa.
-" Note: bare delimiters such as << to mean <<"" are not supported. These are a
+" XXX: Any statements after the identifier are in perlString colour (i.e. 'if $a' in 'print <<EOF if $a').
+"      Unfortunately, better can not be done since Vim insists that syntax regions be contiquous.
+" Note: Bare delimiters such as << to mean <<"" are not supported. These are a
 "       fatal error since 5.28 and, apparently, a rarely used feature.
-
-syn region perlHereDocStart matchgroup=perlStringStartEnd
-            \ start=+<<\~\?\I\i*+ end=+$+ contains=@pgTop oneline
-syn region perlHereDocStart matchgroup=perlStringStartEnd
-            \ start=+<<\~\~\I\i*+ end=+$+ contains=@pgTop oneline
-syn region perlHereDocStart matchgroup=perlStringStartEnd
-            \ start=+<<\~\?\s*"[^~"]*\%(\~\~.[^~"]*\)*"+ end=+$+ contains=@pgTop oneline
-syn region perlHereDocStart matchgroup=perlStringStartEnd
-            \ start=+<<\~\?\s*'[^~']*\%(\~\~.[^~']*\)*'+ end=+$+ contains=@pgTop oneline
-syn region perlHereDocStart matchgroup=perlStringStartEnd
-            \ start=+<<\~\?\s*""+ end=+$+ contains=@pgTop oneline
-syn region perlHereDocStart matchgroup=perlStringStartEnd
-            \ start=+<<\~\?\s*''+ end=+$+ contains=@pgTop oneline
 
 if get(g:, 'pg_perl_fold', 0)
     syn region perlHereDoc matchgroup=perlStringStartEnd
-                \ start=+<<\z(\I\i*\)+ end=+^\z1$+
-                \  contains=perlHereDocStart,@perlInterpDQ fold extend
+                \ start=+<<\z(\I\i*\)+ end=+^\z1$+ contains=@perlInterpDQ fold extend
     syn region perlHereDoc matchgroup=perlStringStartEnd
-                \ start=+<<\~\~\z(\I\i*\)+ end=+^\z1$+
-                \ contains=perlHereDocStart,@perlInterpSQ fold extend
+                \ start=+<<\~\~\z(\I\i*\)+ end=+^\z1$+ contains=@perlInterpSQ fold extend
     syn region perlHereDoc matchgroup=perlStringStartEnd
-                \ start=+<<\s*"\z([^~"]*\%(\~\~.[^~"]*\)*\)"+ end=+^\z1$+
-                \ contains=perlHereDocStart,@perlInterpDQ fold extend
+                \ start=+<<\s*"\z([^"]*\%(\~\~"[^"]*\)*\)"+ end=+^\z1$+ contains=@perlInterpDQ fold extend
     syn region perlHereDoc matchgroup=perlStringStartEnd
-                \ start=+<<\s*'\z([^~']*\%(\~\~.[^~']*\)*\)'+ end=+^\z1$+
-                \ contains=perlHereDocStart,@perlInterpSQ fold extend
+                \ start=+<<\s*'\z([^~']*\%(\~\~.[^~']*\)*\)'+ end=+^\z1$+ contains=@perlInterpSQ fold extend
     syn region perlHereDoc matchgroup=perlStringStartEnd
-                \ start=+<<\s*""+ end=+^$+
-                \ contains=perlHereDocStart,@perlInterpDQ,perlNotEmptyLine fold extend
+                \ start=+<<\s*""+ end=+^$+ contains=@perlInterpDQ,perlNotEmptyLine fold extend
     syn region perlHereDoc matchgroup=perlStringStartEnd
-                \ start=+<<\s*''+ end=+^$+
-                \ contains=perlHereDocStart,@perlInterpSQ,perlNotEmptyLine fold extend
+                \ start=+<<\s*''+ end=+^$+ contains=@perlInterpSQ,perlNotEmptyLine fold extend
 else
     syn region perlHereDoc matchgroup=perlStringStartEnd
-                \ start=+<<\z(\I\i*\)+ end=+^\z1$+ contains=perlHereDocStart,@perlInterpDQ
+                \ start=+<<\z(\I\i*\)+ end=+^\z1$+ contains=@perlInterpDQ keepend
     syn region perlHereDoc matchgroup=perlStringStartEnd
-                \ start=+<<\~\~\z(\I\i*\)+ end=+^\z1$+ contains=perlHereDocStart,@perlInterpSQ
+                \ start=+<<\~\~\z(\I\i*\)+ end=+^\z1$+ contains=@perlInterpSQ keepend
     syn region perlHereDoc matchgroup=perlStringStartEnd
-                \ start=+<<\s*"\z([^~"]*\%(\~\~.[^~"]*\)*\)"+ end=+^\z1$+ contains=perlHereDocStart,@perlInterpDQ
+                \ start=+<<\s*"\z([^"]*\%(\~\~"[^"]*\)*\)"+ end=+^\z1$+ contains=@perlInterpDQ keepend
     syn region perlHereDoc matchgroup=perlStringStartEnd
-                \ start=+<<\s*'\z([^~']*\%(\~\~.[^~']*\)*\)'+ end=+^\z1$+ contains=perlHereDocStart,@perlInterpSQ
+                \ start=+<<\s*'\z([^']*\%(\~\~'[^']*\)*\)'+ end=+^\z1$+ contains=@perlInterpSQ keepend
     syn region perlHereDoc matchgroup=perlStringStartEnd
-                \ start=+<<\s*""+ end=+^$+ contains=perlHereDocStart,@perlInterpDQ,perlNotEmptyLine
+                \ start=+<<\s*""+ end=+^$+ contains=@perlInterpDQ,perlNotEmptyLine keepend
     syn region perlHereDoc matchgroup=perlStringStartEnd
-                \ start=+<<\s*''+ end=+^$+ contains=perlHereDocStart,@perlInterpSQ,perlNotEmptyLine
+                \ start=+<<\s*''+ end=+^$+ contains=@perlInterpSQ,perlNotEmptyLine keepend
 endif
 
 if get(g:, 'pg_perl_fold', 0)
     syn region perlIndentedHereDoc matchgroup=perlStringStartEnd
-                \ start=+<<\~\z(\I\i*\)+ end=+^\s*\z1$+ contains=perlIndentedHereDocStart,@perlInterpDQ fold extend
+                \ start=+<<\~\z(\I\i*\)+ end=+^\s*\z1$+ contains=@perlInterpDQ fold extend
     syn region perlIndentedHereDoc matchgroup=perlStringStartEnd
-                \ start=+<<\~\s*"\z([^~"]*\%(\~\~.[^~"]*\)*\)"+ end=+^\s*\z1$+
-                \ contains=perlIndentedHereDocStart,@perlInterpDQ fold extend
+                \ start=+<<\~\s*"\z([^"]*\%(\~\~"[^"]*\)*\)"+ end=+^\s*\z1$+ contains=@perlInterpDQ fold extend
     syn region perlIndentedHereDoc matchgroup=perlStringStartEnd
-                \ start=+<<\~\s*'\z([^~']*\%(\~\~.[^~']*\)*\)'+ end=+^\s*\z1$+
-                \ contains=perlIndentedHereDocStart,@perlInterpSQ fold extend
+                \ start=+<<\~\s*'\z([^']*\%(\~\~'[^']*\)*\)'+ end=+^\s*\z1$+ contains=@perlInterpSQ fold extend
     syn region perlIndentedHereDoc matchgroup=perlStringStartEnd
-                \ start=+<<\~\s*""+ end=+^$+
-                \ contains=perlIndentedHereDocStart,@perlInterpDQ,perlNotEmptyLine fold extend
+                \ start=+<<\~\s*""+ end=+^$+ contains=@perlInterpDQ,perlNotEmptyLine fold extend
     syn region perlIndentedHereDoc matchgroup=perlStringStartEnd
-                \ start=+<<\~\s*''+ end=+^$+
-                \ contains=perlIndentedHereDocStart,@perlInterpSQ,perlNotEmptyLine fold extend
+                \ start=+<<\~\s*''+ end=+^$+ contains=@perlInterpSQ,perlNotEmptyLine fold extend
 else
     syn region perlIndentedHereDoc matchgroup=perlStringStartEnd
-                \ start=+<<\~\z(\I\i*\)+ end=+^\s*\z1$+ contains=perlHereDocStart,@perlInterpDQ
+                \ start=+<<\~\z(\I\i*\)+ end=+^\s*\z1$+ contains=@perlInterpDQ keepend
     syn region perlIndentedHereDoc matchgroup=perlStringStartEnd
-                \ start=+<<\~\s*"\z([^~"]*\%(\~\~.[^~"]*\)*\)"+ end=+^\s*\z1$+ contains=perlHereDocStart,@perlInterpDQ
+                \ start=+<<\~\s*"\z([^"]*\%(\~\~"[^"]*\)*\)"+ end=+^\s*\z1$+ contains=@perlInterpDQ keepend
     syn region perlIndentedHereDoc matchgroup=perlStringStartEnd
-                \ start=+<<\~\s*'\z([^~']*\%(\~\~.[^~']*\)*\)'+ end=+^\s*\z1$+ contains=perlHereDocStart,@perlInterpSQ
+                \ start=+<<\~\s*'\z([^']*\%(\~\~'[^']*\)*\)'+ end=+^\s*\z1$+ contains=@perlInterpSQ keepend
     syn region perlIndentedHereDoc matchgroup=perlStringStartEnd
-                \ start=+<<\~\s*""+ end=+^$+ contains=perlHereDocStart,@perlInterpDQ,perlNotEmptyLine
+                \ start=+<<\~\s*""+ end=+^$+ contains=@perlInterpDQ,perlNotEmptyLine keepend
     syn region perlIndentedHereDoc matchgroup=perlStringStartEnd
-                \ start=+<<\~\s*''+ end=+^$+ contains=perlHereDocStart,@perlInterpSQ,perlNotEmptyLine
+                \ start=+<<\~\s*''+ end=+^$+ contains=@perlInterpSQ,perlNotEmptyLine keepend
 endif
 
 " Class declarations

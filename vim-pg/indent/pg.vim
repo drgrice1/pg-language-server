@@ -57,7 +57,11 @@ function! GetPgIndent()
     endif
 
     " Don't reindent POD, heredocs, or latex image code.
-    if csynid == "perlPOD" || csynid == "perlHereDoc" || csynid =~ "^pod" || csynid == "latexImage"
+    if csynid == "perlPOD"
+                \ || csynid == "perlHereDoc"
+                \ || csynid == "perlIndentedHereDoc"
+                \ || csynid =~ '^pod'
+                \ || csynid == "latexImage"
         return indent(v:lnum)
     endif
 
@@ -85,8 +89,16 @@ function! GetPgIndent()
         let skippin = 2
         while skippin
             let synid = synIDattr(synID(lnum, 1, 0), "name")
-            if (synid =~ '^\(perlString\|latexImage\)StartEnd' && line =~ '^\I\i*$')
-                        \ || (skippin != 2 && (synid == "perlPOD" || synid == "perlHereDoc" || synid == "latexImage"))
+            if (synid =~ '^\(perlString\|latexImage\)StartEnd' && line =~ '^\s*\I\i*$')
+                        \ || (
+                            \ skippin != 2
+                            \ && (
+                                \ synid == "perlPOD"
+                                \ || synid == "perlHereDoc"
+                                \ || synid == "perlIndentedHereDoc"
+                                \ || synid == "latexImage"
+                            \ )
+                        \ )
                         \ || synid == "perlComment"
                         \ || synid =~ "^pod"
                 let lnum = prevnonblank(lnum - 1)
@@ -111,10 +123,12 @@ function! GetPgIndent()
         let delimiterPos = match(line, delimiterClass, matchend(line, endDelimiter))
         let increaseIndent = 0
         while delimiterPos != -1
+            " 'perlHereDoc' and 'perlIndentedHereDoc' are here to handle situations such as 'method(<<EOF)'.
             let synid = synIDattr(synID(lnum, delimiterPos + 1, 0), "name")
             if synid == ""
                         \ || synid == "perlMatchStartEnd"
-                        \ || synid == "perlHereDoc"
+                        \ || synid =~ 'perl\(Indented\)\?HereDoc'
+                        \ || synid =~ 'perl\(Braces\|Parens\|Brackets\)'
                         \ || synid == "perlDelimiter"
                         \ || synid == "perlStatementIndirObj"
                         \ || synid == "perlSubDeclaration"
@@ -140,6 +154,7 @@ function! GetPgIndent()
             let synid = synIDattr(synID(v:lnum, delimiterPos, 0), "name")
             if synid == ""
                         \ || synid == "perlMatchStartEnd"
+                        \ || synid =~ 'perl\(Braces\|Parens\|Brackets\)'
                         \ || synid == "perlDelimiter"
                         \ || synid == "perlStatementIndirObj"
                         \ || synid =~ '^perl\(Sub\|Block\|Package\)Fold'
