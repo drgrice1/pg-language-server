@@ -46,15 +46,10 @@ function! GetPgIndent()
     endfor
 
     " Indent POD markers to 0.
-    if cline =~ '^\s*=\L\@!' && csyn_region == 'perl'
-        return 0
-    endif
+    if cline =~ '^\s*=\L\@!' && csyn_region == 'perl' | return 0 | endif
 
     " Get the current syntax item at the beginning of the line.
-    let csynid = ''
-    if b:indent_use_syntax
-        let csynid = synIDattr(synID(v:lnum, 1, 0), "name")
-    endif
+    let csynid = b:indent_use_syntax ? synIDattr(synID(v:lnum, 1, 0), "name") : ''
 
     " Don't reindent POD, heredocs, or latex image code.
     if csynid == "perlPOD"
@@ -65,21 +60,17 @@ function! GetPgIndent()
         return indent(v:lnum)
     endif
 
-    " Indent heredocs end markers to 0.
-    if b:indent_use_syntax
-        " Assumes that an end-of-heredoc marker matches \I\i* to avoid
-        " confusion with other types of strings
-        if csynid == "perlStringStartEnd" && cline =~ '^\I\i*$'
-            return 0
-        endif
+    " Indent heredocs end markers to 0.  Assumes that an end-of-heredoc marker matches \I\i* to avoid confusion with
+    " other types of strings
+    if b:indent_use_syntax && csynid == "perlStringStartEnd" && cline =~ '^\I\i*$'
+        return 0
     endif
 
     " Find a non-blank line above the current line.
     let lnum = prevnonblank(v:lnum - 1)
     " If the start of the file is reached, then use zero indent.
-    if lnum == 0
-        return 0
-    endif
+    if lnum == 0 | return 0 | endif
+
     let line = getline(lnum)
     " Get the indent of the previous line.
     let ind = indent(lnum)
@@ -102,9 +93,7 @@ function! GetPgIndent()
                         \ || synid == "perlComment"
                         \ || synid =~ "^pod"
                 let lnum = prevnonblank(lnum - 1)
-                if lnum == 0
-                    return 0
-                endif
+                if lnum == 0 | return 0 | endif
                 let line = getline(lnum)
                 let ind = indent(lnum)
                 let skippin = 1

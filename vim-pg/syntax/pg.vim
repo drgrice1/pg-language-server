@@ -49,11 +49,11 @@ syn cluster pgTop contains=TOP
 if get(g:, 'pg_perl_fold', 0) && get(g:, 'pg_fold_blocks', 0)
     syn region perlBraces matchgroup=perlDelimiter start="{" end="}" fold transparent extend
     syn region perlBrackets matchgroup=perlDelimiter start="\[" end="\]" fold transparent extend
-    syn region perlParens matchgroup=perlDelimiter start="(\([^)]*)\)\@!" end=")" fold transparent extend
+    syn region perlParens matchgroup=perlDelimiter start="(" end=")" fold transparent extend
 else
     syn region perlBraces matchgroup=perlDelimiter start="{" end="}" transparent extend
     syn region perlBrackets matchgroup=perlDelimiter start="\[" end="\]" transparent extend
-    syn region perlParens matchgroup=perlDelimiter start="(\([^)]*)\)\@!" end=")" transparent extend
+    syn region perlParens matchgroup=perlDelimiter start="(" end=")" transparent extend
 endif
 
 " All keywords
