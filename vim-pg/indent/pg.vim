@@ -51,7 +51,7 @@ function! GetPgIndent()
     " Get the current syntax item at the beginning of the line.
     let csynid = b:indent_use_syntax ? synIDattr(synID(v:lnum, 1, 0), "name") : ''
 
-    " Don't reindent POD, heredocs, or latex image code.
+    " Don't re-indent POD, heredocs, or latex image code.
     if csynid == "perlPOD"
                 \ || csynid == "perlHereDoc"
                 \ || csynid == "perlIndentedHereDoc"

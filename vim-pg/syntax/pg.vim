@@ -201,7 +201,7 @@ syn match perlSpecialMatch
             \ "(\*\%(\%(PRUNE\|SKIP\|THEN\)\%(:[^)]*\)\?\|\%(MARK\|\):[^)]*\|COMMIT\|F\%(AIL\)\?\|ACCEPT\))" contained
 
 " Possible errors
-" Highlight lines with only whitespace (only in blank delimited here documents) as errors
+" Highlight lines with only white space (only in blank delimited here documents) as errors
 syn match perlNotEmptyLine "^\s\+$" contained
 " Highlight `} else if (...) {`, it should be `} else { if (...) { ` or `} elsif (...) {`
 syn match perlElseIfError "else\_s*if" containedin=perlConditional
@@ -426,7 +426,7 @@ syn region perlQR matchgroup=perlStringStartEnd
             \ start=+\<\%(::\|'\|->\)\@<!qr\s*(+ end=+)+
             \ contains=@perlInterpMatch,perlParensDQ keepend extend nextgroup=perlQRModifiers
 
-" A special case for qr{}, qr<> and qr[] which allows for comments and extra whitespace in the pattern
+" A special case for qr{}, qr<> and qr[] which allows for comments and extra white space in the pattern
 syn region perlQR matchgroup=perlStringStartEnd
             \ start=+\<\%(::\|'\|->\)\@<!qr\s*{+ end=+}+
             \ contains=@perlInterpMatch,perlBracesDQ,perlComment keepend extend nextgroup=perlQRModifiers
@@ -439,7 +439,7 @@ syn region perlQR matchgroup=perlStringStartEnd
 
 " Constructs such as <<EOF [...] EOF, i.e., 'here' documents
 " XXX: Any statements after the identifier are in perlString colour (i.e. 'if $a' in 'print <<EOF if $a').
-"      Unfortunately, better can not be done since Vim insists that syntax regions be contiquous.
+"      Unfortunately, better can not be done since Vim insists that syntax regions be contiguous.
 " Note: Bare delimiters such as << to mean <<"" are not supported. These are a
 "       fatal error since 5.28 and, apparently, a rarely used feature.
 
@@ -507,7 +507,7 @@ syn region perlSubDeclaration start="" end="[;{]"
             \ contains=perlSubName,perlSubPrototype,perlSubAttribute,perlComment contained transparent
 syn match perlFunction "\<sub\>\_s*" nextgroup=perlSubDeclaration
 
-" The => operator forces a bareword to the left of it to be interpreted as a string
+" The => operator forces a bare word to the left of it to be interpreted as a string
 syn match perlString "\I\@<!-\?\I\i*\%(\s*=>\)\@="
 
 " All other # are comments, except ^#!
