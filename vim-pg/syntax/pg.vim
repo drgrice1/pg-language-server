@@ -725,11 +725,12 @@ syn region pgmlImage matchgroup=pgmlImageStartEnd nextgroup=pgmlOption start=/\[
             \ contained contains=pgmlPerlCommand,pgmlPerlVariable,@Spell
 syn region pgmlTag matchgroup=pgmlBlockStartEnd nextgroup=pgmlOption start=/\[</ end=/>\]/
             \ contained contains=@pgmlAll,@Spell
-syn region pgmlBoldItalic matchgroup=pgmlFormatStartEnd start=/\w\@<!_\w\@=/ end=/_/ contained contains=@pgmlBase,@Spell
-syn region pgmlBold matchgroup=pgmlFormatStartEnd start=/\*\w\@=/ end=/\*/
+syn region pgmlBoldItalic matchgroup=pgmlFormatStartEnd start=/\w\@<!_\+\w\@=/ end=/_\+/
+            \ contained contains=@pgmlBase,@Spell
+syn region pgmlBold matchgroup=pgmlFormatStartEnd start=/\*\+\w\@=/ end=/\*\+/
             \ contained contains=@pgmlBase,pgmlBoldItalic,@Spell
-syn region pgmlItalicBold matchgroup=pgmlFormatStartEnd start=/\*\w\@=/ end=/\*/ contained contains=@pgmlBase,@Spell
-syn region pgmlItalic matchgroup=pgmlFormatStartEnd start=/\w\@<!_[0-9A-Za-z_*]\@=/ end=/_/
+syn region pgmlItalicBold matchgroup=pgmlFormatStartEnd start=/\*\+\w\@=/ end=/\*\+/ contained contains=@pgmlBase,@Spell
+syn region pgmlItalic matchgroup=pgmlFormatStartEnd start=/\w\@<!_\+[0-9A-Za-z_*]\@=/ end=/_\+/
             \ contained contains=@pgmlBase,pgmlItalicBold,@Spell
 syn region pgmlVerbatim matchgroup=pgmlFormatStartEnd start=/\[|/ end=/|\]\*\?/ contained contains=perlCharacter
 syn region pgmlVerbatim matchgroup=pgmlFormatStartEnd start=/\[||/ end=/||\]\*\?/ contained contains=perlCharacter
