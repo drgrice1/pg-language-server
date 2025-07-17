@@ -1,8 +1,6 @@
 #!/usr/bin/env perl
 
-use strict;
-use warnings;
-use utf8;
+use Mojo::Base -strict;
 
 use Getopt::Long       qw(GetOptions);
 use File::Spec         ();
@@ -10,7 +8,6 @@ use File::Basename     ();
 use Unicode::Normalize qw(NFKD);
 use PPI                ();
 use Perl::Critic       ();
-use open               qw(:std :utf8);
 
 my ($file, $profile, $severity, $theme, $exclude, $include);
 GetOptions(
@@ -22,41 +19,37 @@ GetOptions(
     "include=s"  => \$include,
 );
 
-my $sSource = do { local $/; <> };
-die "Did not pass any source via stdin" if !defined $sSource;
+my $source = do { local $/; <> };
+die "The source must be passed via stdin" if !defined $source;
 
 $profile = resolve_profile($profile);
 
-# Do not check for readability of the source $file since we never actually read it.
-# Only checking the name for policy violations.
-print "Running perlcritic on $file and using profile $profile\n";
+say "Running perlcritic on $file and using profile $profile";
 
-$sSource = preprocess_code($sSource);
-$sSource =~ s/([^\x00-\x7F])/AsciiReplacementChar($1)/ge;
-$sSource = adjustForKeywords($sSource);
+$source = preprocess_code($source);
+$source =~ s/([^\x00-\x7F])/AsciiReplacementChar($1)/ge;
 
-my $doc = PPI::Document->new(\$sSource);
+my $doc = PPI::Document->new(\$source);
 
+# Do not check for readability of the source $file since it is not actually read.
+# The file name needs to be set for policy violations that rely on it.
 $doc->{filename} = $file;
-
-my $exclude_ref = $exclude ? [$exclude] : [];
-my $include_ref = $include ? [$include] : [];
 
 my $critic = Perl::Critic->new(
     -profile  => $profile,
     -severity => $severity,
     -theme    => $theme,
-    -exclude  => $exclude_ref,
-    -include  => $include_ref
+    -exclude  => $exclude ? [$exclude] : [],
+    -include  => $include ? [$include] : []
 );
 Perl::Critic::Violation::set_format("%s~|~%l~|~%c~|~%m~|~%p~||~");
 
 my @violations = $critic->critique($doc);
 
 if (@violations) {
-    print "Perl Critic violations:\n";
-    for my $viol (@violations) {
-        print "$viol\n";
+    say "Perl Critic violations:";
+    for my $violation (@violations) {
+        say $violation->to_string;
     }
 }
 
@@ -89,47 +82,6 @@ sub preprocess_code {
     $evalString =~ s/~~/\\/g;
 
     return $evalString;
-}
-
-# None of this is probably needed for pg problems.
-sub adjustForKeywords {
-    # PPI can't handle Keywords like `async` or `method`. This is a couple of hacks to make it work.  Be careful about
-    # using \s in any substitutions since it'll match newlines and throw off the line count for reporting issues.
-
-    $sSource = shift;
-
-    # Change `async sub` to `sub`, and keep the word sub aligned where the line started. Also supports method and multi
-    $sSource =~ s/^(\h*)(?:async\h+)?(?:multi\h+)?(?:method|sub)\h(?=\h*\w)/${1}sub /gm;
-
-    # Another possible alignment. This was an attempt at keeping the name aligned.
-    #$sSource =~
-    #    s/^(\h*)((?:async\h+)?)(method|sub)\h(?=\h*\w)/"$1" . (" " x (length($2) + length($3) - 3)) . "sub "/gme;
-
-    if ($sSource =~ /^use\h+(?:Object::Pad|feature\h.*class.*|experimental\h.*class.*|Feature::Compat::Class)[\h;]/m) {
-        # Object::Pad or the new corinna. Eventually needs to be updated with use
-        # v.?? when it becomes part of a feature bundle
-
-        # Remove :isa statements since they trip Subroutines::ProhibitCallsToUndeclaredSubs.
-        # This regex is less robust (e.g. version declaration), so we'll remove "class" in a seperate one.
-        $sSource =~ s/^(\h*class\h+[\w:]+\h+):\h*isa\(\h*[\w:]+\h*\)/$1/gm;
-
-        # classes become packages (which they are) to support RequireExplicitPackage and RequireFilenameMatchesPackage
-        $sSource =~ s/^(\h*)class\h(?=\h*\w)/${1}package /gm;
-
-        # Should these be mangled? Subroutines::ProhibitBuiltinHomonyms triggers on these
-        # ADJUST blocks and similar are not processed correctly since they aren't recognized.
-        # Important for Modules::RequireEndWithOne
-        $sSource =~ s/^(\h*)(ADJUST|ADJUST\h+:params|ADJUSTPARAMS|BUILD)(?=\h*\s?(\{|\())/${1}sub $2/gm;
-
-        # Change private sigil'd methods to regular subs. Single underscore
-        # would get caught by Subroutines::ProhibitUnusedPrivateSubroutines
-        $sSource =~ s/^(\h*)method\h+\$(?=\w)/${1}sub /gm;
-
-        # Remove param(name) from source, since they get confused for subs as well.
-        $sSource =~ s/^(\h*field\h+[\$\@\%]\w+\s+):param\(\s*\w+\s*\)/${1}/gm;
-    }
-
-    return $sSource;
 }
 
 # Tries to find ascii replacements for non-ascii characters.

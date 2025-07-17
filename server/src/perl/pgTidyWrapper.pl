@@ -1,8 +1,6 @@
 #!/usr/bin/env perl
 
-use strict;
-use warnings;
-use utf8;
+use Mojo::Base -strict;
 
 use Getopt::Long qw(GetOptions);
 use Mojo::File   qw(curfile);
@@ -15,7 +13,7 @@ GetOptions("profile=s" => \$profile);
 die "PerlTidy profile not readable" if $profile && !-f $profile;    # Profie may be undef
 
 my $source = do { local $/; <> };
-die "Did not pass any source via stdin" if !defined $source;
+die "The source must be passed via stdin" if !defined $source;
 
 my ($destination, $stderr, $formatErrors);
 
