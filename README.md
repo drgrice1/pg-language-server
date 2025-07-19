@@ -107,8 +107,8 @@ the vscode extensions directory.
 
 ## Licenses / Acknowledgments
 
-The PG Language Server is free software licensed under the MIT License. This work is largely based the `PerlNavigator`
-and `coc-perl` projects.
+The PG Language Server is free software licensed under the MIT License. This work is largely based on the
+`PerlNavigator` and `coc-perl` projects.
 
 ## Vim PG Filetype
 
