@@ -204,8 +204,10 @@
         }
     },
     "scripts": {
+        "format:check": "prettier --check \"**/*.{js,cjs,ts,md,json}\"",
         "format:prettier": "prettier --write \"**/*.{js,cjs,ts,md,json}\"",
-        "lint:eslint": "eslint ./ --fix",
+        "lint:check": "eslint .",
+        "lint:eslint": "eslint . --fix",
         "compile": "tsc -b",
         "watch": "tsc -b -w",
         "build": "export NODE_OPTIONS=--openssl-legacy-provider; webpack --mode production --devtool hidden-source-map"
