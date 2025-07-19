@@ -417,12 +417,8 @@ connection.onHover(async (params) => {
 connection.onDefinition(async (params) => {
     const document = documents.get(params.textDocument.uri);
     const perlDoc = navSymbols.get(params.textDocument.uri);
-    let mods = availableMods.get('default');
-    if (!mods) mods = new Map();
-    if (!document) return;
-    if (!perlDoc) return;
-    const locOut: Location | Location[] | undefined = await getDefinition(params, perlDoc, document, mods);
-    return locOut;
+    if (!document || !perlDoc) return;
+    return await getDefinition(params, perlDoc, document, availableMods.get('default') ?? new Map());
 });
 */
 

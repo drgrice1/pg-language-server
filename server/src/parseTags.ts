@@ -13,9 +13,9 @@ export const buildNav = (stdout: string, _filePath: string, fileuri: string): Pe
         uri: fileuri
     };
 
-    stdout.split('\n').forEach((perl_elem) => {
-        parseElem(perl_elem, perlDoc);
-    });
+    for (const perlElement of stdout.split('\n')) {
+        parseElem(perlElement, perlDoc);
+    }
 
     return perlDoc;
 };

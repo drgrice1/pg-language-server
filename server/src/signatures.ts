@@ -81,10 +81,9 @@ const buildSignature = (elem: PerlElem, currentSig: string, symbol: string): Sig
         parameters: paramLabels,
         label: '(' + params.join(', ') + ')'
     };
-    const sig: SignatureHelp = {
+    return {
         signatures: [mainSig],
         activeSignature: 0,
         activeParameter: activeParameter
     };
-    return sig;
 };

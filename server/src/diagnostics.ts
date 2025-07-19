@@ -82,9 +82,9 @@ export const perlcompile = async (
     const parsedDoc = await parsingPromise;
     const mergedDoc = mergeDocs(parsedDoc, compiledDoc);
 
-    output.split('\n').forEach((violation) => {
+    for (const violation of output.split('\n')) {
         maybeAddCompDiag(violation, severity, diagnostics, filePath, mergedDoc);
-    });
+    }
 
     // If a base object throws a warning multiple times, we want to deduplicate it to declutter the problems tab.
     const uniq_diagnostics = Array.from(new Set(diagnostics.map((diag) => JSON.stringify(diag)))).map((str) =>
@@ -202,10 +202,10 @@ const localizeErrors = (
             // The error/warnings must be in an imported library (possibly indirectly imported).
             let lineNum = 0; // If indirectly imported
             const importFileName = match[2].replace('.pm', '').replace(/[\\/]/g, '::');
-            perlDoc.imported.forEach((line, mod) => {
+            for (const [mod, line] of perlDoc.imported) {
                 // importFileName could be something like usr::lib::perl::dir::Foo::Bar
                 if (importFileName.endsWith(mod)) lineNum = line;
-            });
+            }
             return { violation, lineNum };
         }
     }

@@ -25,25 +25,28 @@ export const getCompletions = (
 
     const imPrefix = getImportPrefix(text, index);
     if (imPrefix) {
-        const replace: Range = {
-            start: { line: position.line, character: imPrefix.charStart },
-            end: { line: position.line, character: imPrefix.charEnd }
-        };
-
-        const matches = getImportMatches(modMap, imPrefix.symbol, replace, perlDoc);
-        return matches;
+        return getImportMatches(
+            modMap,
+            imPrefix.symbol,
+            {
+                start: { line: position.line, character: imPrefix.charStart },
+                end: { line: position.line, character: imPrefix.charEnd }
+            },
+            perlDoc
+        );
     } else {
         const prefix = getPrefix(text, index);
-
         if (!prefix.symbol) return [];
 
-        const replace: Range = {
-            start: { line: position.line, character: prefix.charStart },
-            end: { line: position.line, character: prefix.charEnd }
-        };
-
-        const matches = getMatches(perlDoc, prefix.symbol, replace, prefix.stripPackage);
-        return matches;
+        return getMatches(
+            perlDoc,
+            prefix.symbol,
+            {
+                start: { line: position.line, character: prefix.charStart },
+                end: { line: position.line, character: prefix.charEnd }
+            },
+            prefix.stripPackage
+        );
     }
 };
 
@@ -85,12 +88,10 @@ const getPrefix = (text: string, position: number): CompletionPrefix => {
 
 // First we check if it's an import statement, which is a special type of autocomplete with far more options
 const getImportPrefix = (text: string, position: number): CompletionPrefix | undefined => {
-    text = text.substring(0, position);
-
-    const partialImport = /^\s*(?:use|require)\s+([\w:]+)$/.exec(text);
+    const partialImport = /^\s*(?:use|require)\s+([\w:]+)$/.exec(text.substring(0, position));
     if (!partialImport) return;
-    const symbol = partialImport[1];
 
+    const symbol = partialImport[1];
     return { symbol: symbol, charStart: position - symbol.length, charEnd: position, stripPackage: false };
 };
 
@@ -103,7 +104,7 @@ const getImportMatches = (
     const matches: CompletionItem[] = [];
 
     const lcSymbol = symbol.toLowerCase();
-    modMap.forEach((modFile, mod) => {
+    for (const [mod, modFile] of modMap) {
         if (mod.toLowerCase().startsWith(lcSymbol)) {
             const modUri = URI.parse(modFile).toString();
             const modElem: PerlElem = {
@@ -126,7 +127,7 @@ const getImportMatches = (
                 data: newElem
             });
         }
-    });
+    }
     return matches;
 };
 
@@ -154,11 +155,14 @@ const getMatches = (perlDoc: PerlDocument, symbol: string, replace: Range, strip
     // Case insensitive matches are hard since we restore what you originally matched on
     // const lcQualifiedSymbol = qualifiedSymbol.toLowerCase();
 
-    perlDoc.elems.forEach((elements: PerlElem[], elemName: string) => {
-        if (/^[$@%].$/.test(elemName)) return; // Remove single character magic perl variables. Mostly clutter the list
+    for (const [elemName, elements] of perlDoc.elems) {
+        // Remove single character magic perl variables. Mostly clutter the list
+        if (/^[$@%].$/.test(elemName)) continue;
 
         // Get the canonical (typed) element, otherwise just grab the first one.
         const element = perlDoc.canonicalElems.get(elemName) || elements[0];
+
+        let qualifiedElemName = elemName;
 
         // All plain and inherited subroutines should match with $self. We're excluding PerlSymbolKind.ImportedSub here
         // because imports clutter the list, despite perl allowing them called on $self->
@@ -171,20 +175,20 @@ const getMatches = (perlDoc: PerlDocument, symbol: string, replace: Range, strip
                 PerlSymbolKind.Field
             ].includes(element.type)
         )
-            elemName = `$self::${elemName}`;
+            qualifiedElemName = `$self::${qualifiedElemName}`;
 
-        if (goodMatch(perlDoc, elemName, qualifiedSymbol, symbol, bKnownObj)) {
+        if (goodMatch(perlDoc, qualifiedElemName, qualifiedSymbol, symbol, bKnownObj)) {
             // Hooray, it's a match!
             // You may have asked for FOO::BAR->BAZ or $qux->BAZ and I found FOO::BAR::BAZ.
             // Let's put back the arrow or variable before sending
             const quotedSymbol = qualifiedSymbol.replaceAll('$', '\\$'); // quotemeta for $self->FOO
-            let aligned = elemName.replace(new RegExp(`^${quotedSymbol}`, 'gi'), symbol);
+            let aligned = qualifiedElemName.replace(new RegExp(`^${quotedSymbol}`, 'gi'), symbol);
 
             if (symbol.endsWith('-')) aligned = aligned.replaceAll('-:', '->'); // Half-arrows count too
 
             // Don't send invalid constructs
             // like FOO->BAR::BAZ
-            if (/->\w+::/.test(aligned)) return;
+            if (/->\w+::/.test(aligned)) continue;
             // FOO->BAR if Bar is not a sub/method.
             if (
                 /->\w+$/.test(aligned) &&
@@ -198,7 +202,7 @@ const getMatches = (perlDoc: PerlDocument, symbol: string, replace: Range, strip
                     PerlSymbolKind.PathedField
                 ].includes(element.type)
             )
-                return;
+                continue;
             // FOO::BAR if Bar is a instance method or attribute
             // (I assume them to be instance methods/attributes, not class)
             if (
@@ -210,16 +214,16 @@ const getMatches = (perlDoc: PerlDocument, symbol: string, replace: Range, strip
                     PerlSymbolKind.PathedField
                 ].includes(element.type)
             )
-                return;
+                continue;
             if (
                 aligned.indexOf('-:') != -1 || // We look things up like this, but don't let them slip through
                 (aligned.startsWith('$') && aligned.indexOf('::', 1) != -1)
             )
                 // $Foo::Bar, I don't really hunt for these anyway
-                return;
+                continue;
             matches = matches.concat(buildMatches(aligned, element, replace, stripPackage, perlDoc));
         }
-    });
+    }
 
     return matches;
 };
@@ -266,7 +270,7 @@ const buildMatches = (
     stripPackage: boolean,
     perlDoc: PerlDocument
 ): CompletionItem[] => {
-    let kind: CompletionItemKind;
+    let kind: CompletionItemKind | undefined = undefined;
     let detail: string | undefined = undefined;
     let documentation: MarkupContent | undefined = undefined;
     const docs: string[] = [];
@@ -347,7 +351,7 @@ const buildMatches = (
 
     const matches: CompletionItem[] = [];
 
-    labelsToBuild.forEach((label) => {
+    for (const label of labelsToBuild) {
         let replaceText = label;
         if (stripPackage)
             // When autocompleting Foo->new(...)->, we need the dropdown to show Foo->func,
@@ -357,15 +361,15 @@ const buildMatches = (
         const newElem: completionElem = { perlElem: elem, docUri: perlDoc.uri };
 
         matches.push({
-            label: label,
+            label,
             textEdit: { newText: replaceText, range },
-            kind: kind,
+            kind,
             sortText: getSortText(label),
-            detail: detail,
-            documentation: documentation,
+            detail,
+            documentation,
             data: newElem
         });
-    });
+    }
 
     return matches;
 };

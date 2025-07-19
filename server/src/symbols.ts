@@ -5,15 +5,15 @@ import {
     type WorkspaceSymbolParams
 } from 'vscode-languageserver/node';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
-import { ParseType, type PerlElem, PerlSymbolKind } from './types';
+import { ParseType, PerlSymbolKind } from './types';
 import { parseDocument } from './parser';
 
 export const getSymbols = async (textDocument: TextDocument, uri: string): Promise<SymbolInformation[]> => {
     const perlDoc = await parseDocument(textDocument, ParseType.outline);
 
     const symbols: SymbolInformation[] = [];
-    perlDoc.elems?.forEach((elements: PerlElem[], elemName: string) => {
-        elements.forEach((element) => {
+    for (const [elemName, elements] of perlDoc.elems) {
+        for (const element of elements) {
             let kind: SymbolKind;
             switch (element.type) {
                 case PerlSymbolKind.LocalSub:
@@ -48,7 +48,7 @@ export const getSymbols = async (textDocument: TextDocument, uri: string): Promi
                     kind = SymbolKind.Interface;
                     break;
                 default:
-                    return;
+                    continue;
             }
             const location: Location = {
                 range: {
@@ -64,8 +64,8 @@ export const getSymbols = async (textDocument: TextDocument, uri: string): Promi
             };
 
             symbols.push(newSymbol);
-        });
-    });
+        }
+    }
 
     return symbols;
 };
@@ -78,7 +78,7 @@ export const getWorkspaceSymbols = (
         const symbols: SymbolInformation[] = [];
 
         // const lcQuery = params.query.toLowerCase(); // Currently unused.
-        defaultMods.forEach((modUri: string, modName: string) => {
+        for (const [modName, modUri] of defaultMods) {
             // Just send the whole list and let the client sort through it with fuzzy search
             // if(!lcQuery || modName.toLowerCase().startsWith(lcQuery)){
 
@@ -95,7 +95,7 @@ export const getWorkspaceSymbols = (
                 kind: SymbolKind.Module,
                 location: location
             });
-        });
+        }
         resolve(symbols);
     });
 };

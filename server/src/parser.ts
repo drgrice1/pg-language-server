@@ -508,7 +508,7 @@ const SubEndLine = (state: ParserState, rFilter: RegExp | null = null): number =
             }
         }
 
-        stmt.split('').forEach((char: string) => {
+        for (const char of stmt.split('')) {
             if (char == '{') {
                 // You may just be finding default function args = {}
                 found = true;
@@ -516,7 +516,7 @@ const SubEndLine = (state: ParserState, rFilter: RegExp | null = null): number =
             } else if (char == '}') {
                 pos--;
             }
-        });
+        }
         //  Checking outside the statement is faster, but less accurate
         if (found && pos == 0) {
             return i;
@@ -546,14 +546,14 @@ const PackageEndLine = (state: ParserState): number => {
     for (let i = start_line; i < state.codeArray.length; i++) {
         // Perhaps limit the max depth?
         const stmt = state.codeArray[i];
-        stmt.split('').forEach((char: string) => {
+        for (const char of stmt.split('')) {
             if (char == '{') {
                 found = true;
                 pos++;
             } else if (char == '}') {
                 pos--;
             }
-        });
+        }
 
         if (found == false) {
             // If we haven't found the start of the package block, there probably isn't one.
@@ -562,18 +562,14 @@ const PackageEndLine = (state: ParserState): number => {
             }
         }
 
-        //  Checking outside the forEach statement is faster, but less accurate
-        if (found && pos == 0) {
-            return i;
-        }
+        // Checking outside the for loop is faster, but less accurate.
+        if (found && pos == 0) return i;
     }
 
     for (let i = start_line + 1; i < state.codeArray.length; i++) {
         // TODO: update with class inheritance / version numbers, etc
         // Although should we do with nested packages/classes? (e.g. Pack A -> Pack B {} -> A)
-        if (state.codeArray[i].match(/^\s*(class|package)\s+([\w:]+)/)) {
-            return i - 1;
-        }
+        if (state.codeArray[i].match(/^\s*(class|package)\s+([\w:]+)/)) return i - 1;
     }
 
     // If we didn't find an end, run until end of file
