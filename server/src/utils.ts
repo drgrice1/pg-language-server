@@ -15,7 +15,7 @@ export const getIncPaths = (
 ): string[] => {
     let includePaths: string[] = [];
 
-    settings.includePaths.forEach((path) => {
+    for (const path of settings.includePaths) {
         if (path.indexOf('$workspaceFolder') != -1) {
             if (workspaceFolder) {
                 const incPath = URI.parse(workspaceFolder.uri).fsPath;
@@ -29,7 +29,7 @@ export const getIncPaths = (
         } else {
             includePaths = includePaths.concat(['-I', path]);
         }
-    });
+    }
 
     return includePaths;
 };
@@ -216,13 +216,13 @@ export const lookupSymbol = (
             // Haven't found the method yet, let's check if anything could be a
             // possible match since you don't know the object type
             const foundElems: PerlElem[] = [];
-            perlDoc.elems.forEach((elements: PerlElem[], elemName: string) => {
+            for (const [elemName, elements] of perlDoc.elems) {
                 const element = elements[0]; // All Elements are with same name are normally the same.
                 const elemMethod = elemName.split('::').pop();
                 if (elemMethod == method) {
                     foundElems.push(element);
                 }
-            });
+            }
             if (foundElems.length > 0) return foundElems;
         }
     }

@@ -8,10 +8,7 @@ export const getPod = async (
     perlDoc: PerlDocument,
     modMap: Map<string, string>
 ): Promise<string | undefined> => {
-    // File may not exists. Return nothing if it doesn't
-
     const absolutePath = await resolvePathForDoc(elem, perlDoc, modMap);
-
     if (!absolutePath) return;
 
     let fileContent;
@@ -122,9 +119,7 @@ const resolvePathForDoc = async (
     const absolutePath = URI.parse(elem.uri).fsPath;
 
     const foundPath = await fsPathOrAlt(absolutePath);
-    if (foundPath) {
-        return foundPath;
-    }
+    if (foundPath) return foundPath;
 
     if (elem.package) {
         const elemResolved = perlDoc.elems.get(elem.package);
@@ -145,15 +140,11 @@ const resolvePathForDoc = async (
             if (foundPackPath) return foundPackPath;
         }
     }
-    if (await badFile(absolutePath)) {
-        return;
-    }
+    if (await badFile(absolutePath)) return;
 };
 
 const fsPathOrAlt = async (fsPath: string | undefined): Promise<string | undefined> => {
-    if (!fsPath) {
-        return;
-    }
+    if (!fsPath) return;
 
     if (/\.pm$/.test(fsPath)) {
         const podPath = fsPath.replace(/\.pm$/, '.pod');

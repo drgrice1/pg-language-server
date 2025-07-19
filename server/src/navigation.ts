@@ -153,21 +153,19 @@ export const getAvailableMods = async (
         return mods;
     }
 
-    output.split('\n').forEach((mod) => {
+    for (const mod of output.split('\n')) {
         const items = mod.split('\t');
 
-        if (items.length != 5 || items[1] != 'M' || !items[2] || !items[3]) return;
+        if (items.length != 5 || items[1] != 'M' || !items[2] || !items[3]) continue;
 
         // Load file
         realpath(items[3], (err, path) => {
-            if (err) {
-                // Skip if error
-            } else {
+            if (!err) {
                 if (!path) return; // Could file be empty, but no error?
                 const uri = URI.file(path).toString(); // Resolve symlinks
                 mods.set(items[2], uri);
             }
         });
-    });
+    }
     return mods;
 };

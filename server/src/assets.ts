@@ -20,12 +20,12 @@ const extractAssetsIfNecessary = async (): Promise<string> => {
             'server/src/perl/pgTidyWrapper.pl'
         ];
 
-        assets.forEach((asset) => {
+        for (const asset of assets) {
             const source = join(dirname(__dirname), asset);
             const dest = join(pkgAssetPath, asset);
             mkdirSync(dirname(dest), { recursive: true }); // Create all parent folders
             createReadStream(source).pipe(createWriteStream(dest));
-        });
+        }
 
         haveExtractedAssets = true;
         // Allow time to copy. TODO: Change writeStreams to be async and just wait on them
