@@ -1,4 +1,4 @@
-import type { TextDocumentPositionParams, Hover, MarkupContent } from 'vscode-languageserver/node';
+import type { TextDocumentPositionParams, Hover } from 'vscode-languageserver/node';
 import { MarkupKind } from 'vscode-languageserver/node';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
 import { type PerlDocument, type PerlElem, PerlSymbolKind } from './types';
@@ -39,18 +39,16 @@ export const getHover = async (
     let docs = await getPod(elem, perlDoc, modMap);
 
     if (docs) {
-        if (!docs.startsWith('\n')) docs = '\n' + docs; // Markdown requires two newlines to make one
+        if (!docs.startsWith('\n')) docs = `\n${docs}`; // Markdown requires two newlines to make one
         merged += `\n${docs}`;
     }
 
-    const hoverContent: MarkupContent = {
-        kind: MarkupKind.Markdown,
-        value: merged
+    return {
+        contents: {
+            kind: MarkupKind.Markdown,
+            value: merged
+        }
     };
-
-    const documentation: Hover = { contents: hoverContent };
-
-    return documentation;
 };
 
 const buildHoverDoc = (symbol: string, elem: PerlElem, refined: PerlElem | undefined): string | undefined => {

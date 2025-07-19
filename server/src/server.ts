@@ -428,7 +428,6 @@ connection.onDefinition(async (params) => {
 
 /*
 connection.onDocumentSymbol(async (params) => {
-    console.log('document symbol');
     const document = documents.get(params.textDocument.uri);
     // It may be neccessary to async wait for the document to be processed, but I suspect the order is fine.
     if (!document) return;

@@ -58,13 +58,15 @@ npm run build
 
 ### Install Runtime Dependencies
 
-In order for the `pg-perldity.pl` script to work the following Perl dependencies are needed. Note that the
-`pg-perltidy.pl` script is part of the PG repository that was cloned when the git submodules were initialized above.
+The following Perl dependencies are needed.
 
 - Perl::Tidy
 - Mojolicious
 - PPI
 - Perl::Critic
+- Sub::Util
+- Devel::Symdump
+- Class::Inspector
 
 ### Vim Installation (via coc.nvim)
 

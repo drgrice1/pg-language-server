@@ -77,10 +77,8 @@ export const getPod = async (
     // Split the file into lines and iterate through them
     const lines = fileContent.split(/\r?\n/);
     for (const line of lines) {
-        if (line.startsWith('=cut')) {
-            // =cut lines are not added.
-            inPodBlock = false;
-        }
+        // =cut lines are not added.
+        if (line.startsWith('=cut')) inPodBlock = false;
 
         if (line.match(/^=(pod|head\d|over|item|back|begin|end|for|encoding)/)) {
             inPodBlock = true;
@@ -99,9 +97,7 @@ export const getPod = async (
 
         if (inPodBlock) {
             if (searchItem) {
-                if (inRelevantBlock) {
-                    podBuffer += line + '\n';
-                }
+                if (inRelevantBlock) podBuffer += line + '\n';
             } else {
                 podContent += line + '\n';
             }
@@ -138,9 +134,7 @@ const resolvePathForDoc = async (
             const modUri = modMap.get(elem.package);
             if (modUri) {
                 const modPath = await fsPathOrAlt(URI.parse(modUri).fsPath);
-                if (modPath) {
-                    return modPath;
-                }
+                if (modPath) return modPath;
             }
             return;
         }
@@ -148,9 +142,7 @@ const resolvePathForDoc = async (
         for (const potentialElem of elemResolved) {
             const potentialPath = URI.parse(potentialElem.uri).fsPath;
             const foundPackPath = await fsPathOrAlt(potentialPath);
-            if (foundPackPath) {
-                return foundPackPath;
-            }
+            if (foundPackPath) return foundPackPath;
         }
     }
     if (await badFile(absolutePath)) {
@@ -165,29 +157,16 @@ const fsPathOrAlt = async (fsPath: string | undefined): Promise<string | undefin
 
     if (/\.pm$/.test(fsPath)) {
         const podPath = fsPath.replace(/\.pm$/, '.pod');
-        if (!(await badFile(podPath))) {
-            return podPath;
-        }
+        if (!(await badFile(podPath))) return podPath;
     }
-    if (!(await badFile(fsPath))) {
-        return fsPath;
-    }
+    if (!(await badFile(fsPath))) return fsPath;
     return;
 };
 
 const badFile = async (fsPath: string): Promise<boolean> => {
-    if (!fsPath || fsPath.length <= 1) {
-        return true;
-    }
-
-    if (/\w+\.c$/.test(fsPath)) {
-        return true;
-    }
-
-    if (!(await isFile(fsPath))) {
-        return true;
-    }
-
+    if (!fsPath || fsPath.length <= 1) return true;
+    if (/\w+\.c$/.test(fsPath)) return true;
+    if (!(await isFile(fsPath))) return true;
     return false;
 };
 
@@ -220,10 +199,8 @@ const convertPODToMarkdown = (pod: string): string => {
         if (shouldConsiderVerbatim(line) || state.inVerbatim) {
             state = processVerbatim(line, state);
             finalMarkdown += state.markdown;
-            if (state.inVerbatim) {
-                // Don't need to keep going if we're still in verbatim mode
-                continue;
-            }
+            // Don't need to keep going if we're still in verbatim mode
+            if (state.inVerbatim) continue;
         }
 
         // Inline transformations for code, bold, etc.

@@ -13,7 +13,7 @@ my %skipModules = (if => 1, open => 1, sort => 1, next => 1);
 
 sub get_modules {
     # Add the pg library directory first in the search order.
-    my @dirs = (curfile->dirname . '/pg/lib');
+    my @dirs = (curfile->dirname->child('pg', 'lib'));
 
     # Clean up @INC
     for my $dirname (@INC) {
@@ -30,7 +30,7 @@ sub get_modules {
     File::Find::find(
         {
             wanted => sub {
-                # Skip hidden dirs
+                # Skip hidden directories.
                 if ($File::Find::dir =~ /\/\./) { $File::Find::prune = 1; return }
                 push @files, $_ if -f $_ && /\.pm$/;
             },
@@ -83,8 +83,7 @@ sub reduce_dirs {
 sub uniq {
     my @list = @_;
     my %seen;
-    my $k;
-    return grep { defined $_ ? !$seen{ $k = $_ }++ : 0 } @list;
+    return grep { defined $_ ? !$seen{$_}++ : 0 } @list;
 }
 
 for my $module (@{ get_modules() }) {

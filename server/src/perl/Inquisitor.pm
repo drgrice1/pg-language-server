@@ -46,7 +46,7 @@ $INC{'namespace/autoclean.pm'} = '';    ## no critic (Variables::RequireLocalize
 }
 
 CHECK {
-    run() if (!$ENV{'PERLNAVIGATORTEST'});
+    run() unless $ENV{PERLNAVIGATORTEST};
 }
 
 sub run {
@@ -59,7 +59,7 @@ sub run {
 
         dump_loaded_mods();
 
-        dump_vars_to_main("main");
+        dump_vars_to_main('main');
 
         # This following one has the largest impact on memory and finds less interesting stuff.
         # Low limits though, which probably helps
@@ -97,7 +97,7 @@ sub load_dependencies {
 
     # Sub::Util was added to core in 5.22. The real version can find module names of C code (e.g. List::Util).
     # The fallback can still trace Pure Perl functions
-    require SubUtilPP;
+    require Sub::Util;
     require Inspectorito;
     require Devel::Symdump;
     return;
@@ -124,7 +124,7 @@ sub load_test_file {
 sub maybe_print_sub_info {
     my ($sFullPath, $sDisplayName, $codeRef, $sSkipPackage, $subType) = @_;
     $subType = 't' if !$subType;
-    my $UNKNOWN = "";
+    my $UNKNOWN = '';
 
     if (defined &$sFullPath || $codeRef) {
         $codeRef ||= \&$sFullPath;
@@ -136,7 +136,7 @@ sub maybe_print_sub_info {
 
         my $pack    = $UNKNOWN;
         my $subname = $UNKNOWN;
-        $subname = SubUtilPP::subname($codeRef);
+        $subname = Sub::Util::subname($codeRef);
         $pack    = $1 if ($subname =~ m/^(.+)::.*?$/);
 
         # Subname is a fully qualified name. If it's the normal name, just ignore it.
@@ -246,19 +246,19 @@ sub dump_vars_to_main {
         maybe_print_sub_info($sFullPath, $thing, '', $package);
 
         if (defined(my $value = eval { ${$sFullPath} })) {
-            print_tag("\$$thing", "c", '', '', '', '', $value);
+            print_tag("\$$thing", 'c', '', '', '', '', $value);
         }
         if (my $aref = *{$sFullPath}{'ARRAY'}) {
             next if $sFullPath =~ /^main::ARGV$/;
             # TODO: Check if aref is tied to prevent arbitrary functions from running
-            my $value = join(', ', map({ defined($_) ? $_ : "" } eval {@$aref}));
-            print_tag("\@$thing", "c", '', '', '', '', $value);
+            my $value = join(', ', map({ defined($_) ? $_ : '' } eval {@$aref}));
+            print_tag("\@$thing", 'c', '', '', '', '', $value);
         }
         if (*{$sFullPath}{'HASH'}) {
             next if ($thing =~ /::/);
             # Hashes are usually large and unordered, with less interesting stuff in them.
             # Reconsider printing values if you find a good use-case.
-            print_tag("%$thing", "h", '', '', '', '', '');
+            print_tag("%$thing", 'h', '', '', '', '', '');
         }
     }
     return;
@@ -281,7 +281,7 @@ sub populate_preloaded {
     # Populate preloaded modules before we pollute the symbol table.
     for my $mod (@checkPreloaded) {
         # Ideally we'd use Module::Loaded, but it only became core in Perl 5.9
-        my $file = $mod . ".pm";
+        my $file = $mod . '.pm';
         $file =~ s/::/\//g;
         push(@preloaded, $mod) if $INC{$file};
     }
@@ -289,7 +289,7 @@ sub populate_preloaded {
 }
 
 sub dump_subs_from_packages {
-    my ($modpacks, $seen, $allowance) = @_;
+    my ($modpacks) = @_;
     my $totalCount = 0;
     my %baseCount;
     my $baseRegex = qr/^(\w+)/;
@@ -304,8 +304,7 @@ INSPECTOR: for my $mod (@$modpacks) {
         my $pkgCount = 0;
         next INSPECTOR if $mod =~ $baseRegex && $baseCount{$1} > $nameSpaceLimit;
         my $methods = Inspectorito->local_methods($mod);
-        next INSPECTOR if !defined($methods);
-        #my $methods = ClassInspector->functions( $mod ); # Less memory, but less accurate?
+        next INSPECTOR unless defined $methods;
 
         # Sort because we have a memory limit and want to cut the less important things.
         @$methods = sort {
@@ -339,19 +338,19 @@ sub filter_modpacks {
     # Some of these things I've imported in here, some are just piles of C code.
     # We'll still nav to modules and find anything explictly imported so we can be aggressive at removing these.
     my @to_remove = (
-        "if",                      "Cwd",            "B",                         "main",
-        "version",                 "POSIX",          "Fcntl",                     "Errno",
-        "Socket",                  "DynaLoader",     "CORE",                      "utf8",
-        "UNIVERSAL",               "PerlIO",         "re",                        "Internals",
-        "strict",                  "mro",            "Regexp",                    "Exporter",
-        "Inquisitor",              "XSLoader",       "attributes",                "warnings",
-        "strict",                  "utf8",           "constant",                  "XSLoader",
-        "Carp",                    "Inspectorito",   "SubUtilPP",                 "base",
-        "Config",                  "overloading",    "Devel::Symdump",            "vars",
-        "Tie::Hash::NamedCapture", "Text::Balanced", "Filter::Util::Call",        "IO::Poll",
-        "IO::Seekable",            "IO::Handle",     "IO::File",                  "Symbol",
-        "IO",                      "SelectSaver",    "overload",                  "Filter::Simple",
-        "SelfLoader",              "PerlIO::Layer",  "Text::Balanced::Extractor", "IO::Socket",
+        'if',                      'Cwd',            'B',                         'main',
+        'version',                 'POSIX',          'Fcntl',                     'Errno',
+        'Socket',                  'DynaLoader',     'CORE',                      'utf8',
+        'UNIVERSAL',               'PerlIO',         're',                        'Internals',
+        'strict',                  'mro',            'Regexp',                    'Exporter',
+        'Inquisitor',              'XSLoader',       'attributes',                'warnings',
+        'strict',                  'utf8',           'constant',                  'XSLoader',
+        'Carp',                    'Inspectorito',   'Sub::Util',                 'base',
+        'Config',                  'overloading',    'Devel::Symdump',            'vars',
+        'Tie::Hash::NamedCapture', 'Text::Balanced', 'Filter::Util::Call',        'IO::Poll',
+        'IO::Seekable',            'IO::Handle',     'IO::File',                  'Symbol',
+        'IO',                      'SelectSaver',    'overload',                  'Filter::Simple',
+        'SelfLoader',              'PerlIO::Layer',  'Text::Balanced::Extractor', 'IO::Socket',
         @checkPreloaded
     );
 
@@ -402,7 +401,7 @@ sub dump_loaded_mods {
     for my $key_to_print (@$filtered_modules) {
         my $path = $displays->{$key_to_print};
         next if !$path;    # If we don't have a path, the modHunter module would be better
-        print_tag("$key_to_print", "m", "", $path, $key_to_print, 0, "");
+        print_tag("$key_to_print", 'm', '', $path, $key_to_print, 0, '');
     }
     return;
 }
@@ -424,7 +423,7 @@ sub load_source {
         $source = do { local $/; <$fh> };
         $offset = 1;
         close($fh);
-    } elsif ($INC{"lib_bs22/SourceStash.pm"}) {
+    } elsif ($INC{'lib_bs22/SourceStash.pm'}) {
         # Path run during the extension
         $source = $lib_bs22::SourceStash::source;
         $file   = $lib_bs22::SourceStash::filename;
@@ -440,7 +439,7 @@ sub load_source {
         $offset = 1;
         close($fh);
     }
-    $source = "" if !defined($source);
+    $source = '' if !defined($source);
     return ($source, $offset, $file);
 }
 

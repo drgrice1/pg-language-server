@@ -8,7 +8,6 @@ use parent qw(Class::Inspector);
 
 use strict qw{vars subs};
 use warnings;
-use 5.006;
 use vars qw{$VERSION $RE_IDENTIFIER $RE_CLASS $UNIX $BIDENTIFY};
 
 use File::Spec ();
@@ -28,7 +27,7 @@ SCOPE: {
     # Are we on something Unix-like?
     $UNIX = !!($File::Spec::ISA[0] eq 'File::Spec::Unix');
 
-    require SubUtilPP;
+    require Sub::Util;
 }
 
 sub local_methods {
@@ -62,7 +61,7 @@ sub local_methods {
 
         for my $func (@functions) {
             if (my $codeRef = UNIVERSAL::can($namespace, $func)) {
-                my $source = SubUtilPP::subname($codeRef);
+                my $source = Sub::Util::subname($codeRef);
                 my $pack;
                 $pack = $1 if $source =~ m/^(.+)::.*?$/;
                 next unless defined $pack && $namespace eq $pack;

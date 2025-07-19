@@ -21,9 +21,7 @@ export const getDefinition = async (
 
     const foundElems = lookupSymbol(perlDoc, modMap, symbol, position.line);
 
-    if (foundElems.length == 0) {
-        return;
-    }
+    if (foundElems.length == 0) return;
 
     const locationsFound: Location[] = [];
 
@@ -33,7 +31,7 @@ export const getDefinition = async (
 
         let uri: string;
         if (perlDoc.uri !== elemResolved.uri) {
-            // If sending to a different file, let's make sure it exists and clean up the path
+            // If sending to a different file, make sure it exists and clean up the path.
             const file = URI.parse(elemResolved.uri).fsPath;
 
             if (!(await isFile(file))) continue; // Make sure the file exists and hasn't been deleted.
@@ -54,7 +52,7 @@ export const getDefinition = async (
 
         locationsFound.push(newLoc);
     }
-    // const count = locationsFound
+
     return locationsFound;
 };
 
@@ -82,9 +80,7 @@ const resolveElemForNav = async (
                         // Eventually, you could consult a tagger for this step.
 
                         for (const potentialElem of found) {
-                            if (Math.abs(potentialElem.line - elem.line) <= 1) {
-                                return potentialElem;
-                            }
+                            if (Math.abs(potentialElem.line - elem.line) <= 1) return potentialElem;
                         }
                     }
                 }
@@ -101,9 +97,7 @@ const resolveElemForNav = async (
             const elemResolved = perlDoc.elems.get(elem.package);
             if (elemResolved) {
                 for (const potentialElem of elemResolved) {
-                    if (potentialElem.uri && !badFile(potentialElem.uri)) {
-                        return potentialElem;
-                    }
+                    if (potentialElem.uri && !badFile(potentialElem.uri)) return potentialElem;
                 }
             }
         }

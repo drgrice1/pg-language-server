@@ -1,6 +1,5 @@
-## no critic
+## no critic (StrictWarnings)
 package lib_bs22::SourceStash;
-## use critic
 
 use strict;
 ## no critic (TestingAndDebugging::RequireUseWarnings)
