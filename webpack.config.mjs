@@ -43,7 +43,10 @@ export default [
                 util: false
             }
         },
-        module: { rules: [{ test: /\.ts$/, exclude: /node_modules/, use: [{ loader: 'ts-loader' }] }] },
+        module: {
+            noParse: /vscode-languageserver-types/,
+            rules: [{ test: /\.ts$/, exclude: /node_modules/, use: [{ loader: 'ts-loader' }] }]
+        },
         externals: { vscode: 'commonjs vscode' },
         performance: { hints: false },
         devtool: 'source-map'
@@ -71,7 +74,10 @@ export default [
                 util: false
             }
         },
-        module: { rules: [{ test: /\.ts$/, exclude: /node_modules/, use: [{ loader: 'ts-loader' }] }] },
+        module: {
+            noParse: /vscode-languageserver-types/,
+            rules: [{ test: /\.ts$/, exclude: /node_modules/, use: [{ loader: 'ts-loader' }] }]
+        },
         externals: { vscode: 'commonjs vscode' },
         performance: { hints: false },
         devtool: 'source-map'
