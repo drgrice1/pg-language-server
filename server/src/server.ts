@@ -29,7 +29,7 @@ import { LRUCache } from 'lru-cache';
 import { perlcompile, perlcritic } from './diagnostics';
 //import { getDefinition, getAvailableMods } from './navigation';
 //import { getSymbols , getWorkspaceSymbols } from './symbols';
-import type { PGLanguageServerSettings, PerlDocument /*, PerlElem */ } from './types';
+import type { PGLanguageServerSettings, PerlDocument /*, PerlElement */ } from './types';
 //import { getHover } from './hover';
 //import { getCompletions, getCompletionDoc } from './completion';
 import { formatDoc, formatRange } from './formatting';
@@ -134,7 +134,7 @@ const documentCompilationDiagnostics = new Map<string, Diagnostic[]>();
 const navSymbols = new LRUCache({
     maxSize: 350000,
     sizeCalculation(value: PerlDocument) {
-        return value.elems.size || 1;
+        return value.elements.size || 1;
     }
 });
 
@@ -365,7 +365,7 @@ connection.onCompletion((params: TextDocumentPositionParams): CompletionList | u
 });
 
 connection.onCompletionResolve(async (item: CompletionItem): Promise<CompletionItem> => {
-    const perlElem: PerlElem = item.data.perlElem;
+    const perlElement: PerlElement = item.data.perlElement;
 
     const perlDoc = navSymbols.get(item.data?.docUri);
     if (!perlDoc) return item;
@@ -373,7 +373,7 @@ connection.onCompletionResolve(async (item: CompletionItem): Promise<CompletionI
     let mods = availableMods.get('default');
     if (!mods) mods = new Map();
 
-    const docs = await getCompletionDoc(perlElem, perlDoc, mods);
+    const docs = await getCompletionDoc(perlElement, perlDoc, mods);
     if (docs?.match(/\w/)) {
         item.documentation = { kind: 'markdown', value: docs };
     }

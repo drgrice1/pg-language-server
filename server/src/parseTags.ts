@@ -1,12 +1,12 @@
 import { URI } from 'vscode-uri';
-import { type PerlDocument, type PerlElem, PerlSymbolKind, TagKind, ElemSource } from './types';
+import { type PerlDocument, type PerlElement, PerlSymbolKind, TagKind, ElementSource } from './types';
 
 export const buildNav = (stdout: string, _filePath: string, fileuri: string): PerlDocument => {
     stdout = stdout.replaceAll('\r', ''); // Windows
 
     const perlDoc: PerlDocument = {
-        elems: new Map(),
-        canonicalElems: new Map(),
+        elements: new Map(),
+        canonicalElements: new Map(),
         autoloads: new Map(),
         imported: new Map(),
         parents: new Map(),
@@ -14,13 +14,13 @@ export const buildNav = (stdout: string, _filePath: string, fileuri: string): Pe
     };
 
     for (const perlElement of stdout.split('\n')) {
-        parseElem(perlElement, perlDoc);
+        parseElement(perlElement, perlDoc);
     }
 
     return perlDoc;
 };
 
-const parseElem = (perlTag: string, perlDoc: PerlDocument): void => {
+const parseElement = (perlTag: string, perlDoc: PerlDocument): void => {
     const items = perlTag.split('\t');
 
     if (items.length != 7) {
@@ -55,7 +55,7 @@ const parseElem = (perlTag: string, perlDoc: PerlDocument): void => {
     }
 
     // Add anyway
-    const newElem: PerlElem = {
+    const newElement: PerlElement = {
         name: name,
         type: type as PerlSymbolKind,
         typeDetail: typeDetail,
@@ -64,13 +64,13 @@ const parseElem = (perlTag: string, perlDoc: PerlDocument): void => {
         line: startLine,
         lineEnd: endLine,
         value: value,
-        source: ElemSource.symbolTable
+        source: ElementSource.symbolTable
     };
 
     // Move fancy object types into the typeDetail field????
     if (type.length > 1) {
         // We overwrite, so the last typed element is the canonical one. No reason for this.
-        perlDoc.canonicalElems.set(name, newElem);
+        perlDoc.canonicalElements.set(name, newElement);
     }
 
     // This object is only intended as the canonicalLookup, not for anything else.
@@ -78,11 +78,11 @@ const parseElem = (perlTag: string, perlDoc: PerlDocument): void => {
     if (type == PerlSymbolKind.Canonical.valueOf()) return;
 
     if (type == PerlSymbolKind.AutoLoadVar.valueOf()) {
-        perlDoc.autoloads.set(name, newElem);
+        perlDoc.autoloads.set(name, newElement);
         return; // Don't store it as an element
     }
 
-    addVal(perlDoc.elems, name, newElem);
+    addVal(perlDoc.elements, name, newElement);
 
     return;
 };

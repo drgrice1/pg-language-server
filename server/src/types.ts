@@ -28,7 +28,7 @@ export interface PGLanguageServerSettings {
     logging: boolean;
 }
 
-export interface PerlElem {
+export interface PerlElement {
     name: string;
     type: PerlSymbolKind;
     typeDetail: string;
@@ -38,19 +38,19 @@ export interface PerlElem {
     line: number;
     lineEnd: number;
     value: string;
-    source: ElemSource;
+    source: ElementSource;
 }
 
 export interface PerlDocument {
-    elems: Map<string, PerlElem[]>;
-    canonicalElems: Map<string, PerlElem>;
-    autoloads: Map<string, PerlElem>;
+    elements: Map<string, PerlElement[]>;
+    canonicalElements: Map<string, PerlElement>;
+    autoloads: Map<string, PerlElement>;
     imported: Map<string, number>;
     parents: Map<string, string>;
     uri: string;
 }
 
-export enum ElemSource {
+export enum ElementSource {
     symbolTable,
     modHunter,
     parser,
@@ -81,8 +81,8 @@ export enum TagKind {
     UseStatement = 'u' // Reserved: used in pltags, but removed before symbol assignment.
 }
 
-export interface completionElem {
-    perlElem: PerlElem;
+export interface completionElement {
+    perlElement: PerlElement;
     docUri: string;
 }
 

@@ -1,14 +1,14 @@
 import { URI } from 'vscode-uri';
 import * as fs from 'fs';
-import { type PerlDocument, type PerlElem, PerlSymbolKind } from './types';
+import { type PerlDocument, type PerlElement, PerlSymbolKind } from './types';
 import { isFile } from './utils';
 
 export const getPod = async (
-    elem: PerlElem,
+    element: PerlElement,
     perlDoc: PerlDocument,
     modMap: Map<string, string>
 ): Promise<string | undefined> => {
-    const absolutePath = await resolvePathForDoc(elem, perlDoc, modMap);
+    const absolutePath = await resolvePathForDoc(element, perlDoc, modMap);
     if (!absolutePath) return;
 
     let fileContent;
@@ -26,7 +26,7 @@ export const getPod = async (
     let meaningFullContent = false;
     let searchItem;
 
-    if ([PerlSymbolKind.Package, PerlSymbolKind.Module].includes(elem.type)) {
+    if ([PerlSymbolKind.Package, PerlSymbolKind.Module].includes(element.type)) {
         // Search all. Note I'm not really treating packages different from Modules
     } else if (
         [
@@ -35,9 +35,9 @@ export const getPod = async (
             PerlSymbolKind.Inherited,
             PerlSymbolKind.LocalMethod,
             PerlSymbolKind.LocalSub
-        ].includes(elem.type)
+        ].includes(element.type)
     ) {
-        searchItem = elem.name;
+        searchItem = element.name;
         searchItem = searchItem.replace(/^[\w:]+::(\w+)$/, '$1'); // Remove package
     } else {
         return;
@@ -111,21 +111,21 @@ export const getPod = async (
 };
 
 const resolvePathForDoc = async (
-    elem: PerlElem,
+    element: PerlElement,
     perlDoc: PerlDocument,
     modMap: Map<string, string>
 ): Promise<string | undefined> => {
-    const absolutePath = URI.parse(elem.uri).fsPath;
+    const absolutePath = URI.parse(element.uri).fsPath;
 
     const foundPath = await fsPathOrAlt(absolutePath);
     if (foundPath) return foundPath;
 
-    if (elem.package) {
-        const elemResolved = perlDoc.elems.get(elem.package);
+    if (element.package) {
+        const elementResolved = perlDoc.elements.get(element.package);
 
-        if (!elemResolved) {
+        if (!elementResolved) {
             // Looking up a module by the package name is only convention, but helps for things like POSIX
-            const modUri = modMap.get(elem.package);
+            const modUri = modMap.get(element.package);
             if (modUri) {
                 const modPath = await fsPathOrAlt(URI.parse(modUri).fsPath);
                 if (modPath) return modPath;
@@ -133,13 +133,12 @@ const resolvePathForDoc = async (
             return;
         }
 
-        for (const potentialElem of elemResolved) {
-            const potentialPath = URI.parse(potentialElem.uri).fsPath;
+        for (const potentialElement of elementResolved) {
+            const potentialPath = URI.parse(potentialElement.uri).fsPath;
             const foundPackPath = await fsPathOrAlt(potentialPath);
             if (foundPackPath) return foundPackPath;
         }
     }
-    if (await badFile(absolutePath)) return;
 };
 
 const fsPathOrAlt = async (fsPath: string | undefined): Promise<string | undefined> => {

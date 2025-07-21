@@ -1,14 +1,14 @@
 import type { TextDocumentPositionParams } from 'vscode-languageserver/node';
 import { URI } from 'vscode-uri';
 import * as fs from 'fs';
-import { ElemSource, ParseType, type PerlDocument, type PerlElem, PerlSymbolKind } from './types';
+import { ElementSource, ParseType, type PerlDocument, type PerlElement, PerlSymbolKind } from './types';
 import { parseFromUri } from './parser';
 
 export const refineElementIfSub = async (
-    elem: PerlElem,
+    element: PerlElement,
     params: TextDocumentPositionParams,
     perlDoc: PerlDocument
-): Promise<PerlElem | undefined> => {
+): Promise<PerlElement | undefined> => {
     if (
         ![
             PerlSymbolKind.LocalSub,
@@ -16,56 +16,54 @@ export const refineElementIfSub = async (
             PerlSymbolKind.Inherited,
             PerlSymbolKind.LocalMethod,
             PerlSymbolKind.Method
-        ].includes(elem.type)
+        ].includes(element.type)
     ) {
         return;
     }
 
-    if (elem.source == ElemSource.parser && elem.line == params.position.line) {
-        // We're typing the actual signature or hovering over the definition. No pop-up needed.
-        return;
-    }
+    // The actual signature is being typed or the cursor is hovering over the definition. No pop-up needed.
+    if (element.source == ElementSource.parser && element.line == params.position.line) return;
 
-    return await refineElement(elem, perlDoc);
+    return await refineElement(element, perlDoc);
 };
 
-export const refineElement = async (elem: PerlElem, perlDoc: PerlDocument): Promise<PerlElem> => {
-    // Return back the original if you can't refine
-    let refined: PerlElem = elem;
-    if (elem.source == ElemSource.parser || elem.source == ElemSource.modHunter) {
-        refined = elem;
+export const refineElement = async (element: PerlElement, perlDoc: PerlDocument): Promise<PerlElement> => {
+    // Return the original element if it can't be refined.
+    let refined: PerlElement = element;
+    if (element.source == ElementSource.parser || element.source == ElementSource.modHunter) {
+        refined = element;
     } else {
-        const resolvedUri = await getUriFromElement(elem, perlDoc);
+        const resolvedUri = await getUriFromElement(element, perlDoc);
         if (!resolvedUri) return refined;
 
         const doc = await parseFromUri(resolvedUri, ParseType.refinement);
         if (!doc) return refined;
 
-        let refinedElems: PerlElem[] | undefined;
-        if (elem.type === PerlSymbolKind.Package) {
-            refinedElems = doc.elems.get(elem.name);
+        let refinedElements: PerlElement[] | undefined;
+        if (element.type === PerlSymbolKind.Package) {
+            refinedElements = doc.elements.get(element.name);
         } else {
             // Looks up Foo::Bar::baz by only the function name baz.
             // This will fail if there are multiple functions by the same name in one file.
-            const match = /\w+$/.exec(elem.name);
-            if (match) refinedElems = doc.elems.get(match[0]);
+            const match = /\w+$/.exec(element.name);
+            if (match) refinedElements = doc.elements.get(match[0]);
         }
 
-        if (refinedElems && refinedElems.length == 1) refined = refinedElems[0];
+        if (refinedElements && refinedElements.length == 1) refined = refinedElements[0];
     }
     return refined;
 };
 
-const getUriFromElement = async (elem: PerlElem, perlDoc: PerlDocument): Promise<string | undefined> => {
-    if (await isFile(elem.uri)) return elem.uri;
+const getUriFromElement = async (element: PerlElement, perlDoc: PerlDocument): Promise<string | undefined> => {
+    if (await isFile(element.uri)) return element.uri;
 
-    if (!elem.package) return;
+    if (!element.package) return;
 
-    const elemResolved = perlDoc.elems.get(elem.package);
-    if (!elemResolved) return;
+    const elementResolved = perlDoc.elements.get(element.package);
+    if (!elementResolved) return;
 
-    for (const potentialElem of elemResolved) {
-        if (await isFile(potentialElem.uri)) return potentialElem.uri;
+    for (const potentialElement of elementResolved) {
+        if (await isFile(potentialElement.uri)) return potentialElement.uri;
     }
 };
 

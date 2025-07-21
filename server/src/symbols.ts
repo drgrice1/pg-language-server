@@ -12,7 +12,7 @@ export const getSymbols = async (textDocument: TextDocument, uri: string): Promi
     const perlDoc = await parseDocument(textDocument, ParseType.outline);
 
     const symbols: SymbolInformation[] = [];
-    for (const [elemName, elements] of perlDoc.elems) {
+    for (const [elementName, elements] of perlDoc.elements) {
         for (const element of elements) {
             let kind: SymbolKind;
             switch (element.type) {
@@ -48,7 +48,7 @@ export const getSymbols = async (textDocument: TextDocument, uri: string): Promi
             const newSymbol: SymbolInformation = {
                 kind: kind,
                 location: location,
-                name: elemName
+                name: elementName
             };
 
             symbols.push(newSymbol);

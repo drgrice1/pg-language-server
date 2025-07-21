@@ -343,10 +343,10 @@ const mergeDocs = (doc1: PerlDocument, doc2: PerlDocument): PerlDocument => {
     // TODO: Redo this code. Instead of merging sources, you should keep track of where symbols came from
 
     doc1.autoloads = new Map([...doc1.autoloads, ...doc2.autoloads]);
-    doc1.canonicalElems = new Map([...doc1.canonicalElems, ...doc2.canonicalElems]);
+    doc1.canonicalElements = new Map([...doc1.canonicalElements, ...doc2.canonicalElements]);
 
-    // TODO: Should elems be merged? Probably. Or tagged doc and compilation results are totally split
-    doc1.elems = new Map([...doc2.elems, ...doc1.elems]); // Tagged docs have priority?
+    // TODO: Should elements be merged? Probably. Or tagged doc and compilation results are totally split
+    doc1.elements = new Map([...doc2.elements, ...doc1.elements]); // Tagged docs have priority?
     doc1.imported = new Map([...doc1.imported, ...doc2.imported]);
     doc1.parents = new Map([...doc1.parents, ...doc2.parents]);
     doc1.uri = doc2.uri;

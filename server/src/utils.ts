@@ -5,8 +5,8 @@ import { execFile } from 'child_process';
 import { dirname, join } from 'path';
 import { promisify } from 'util';
 import { promises } from 'fs';
-import type { PerlDocument, PerlElem, PGLanguageServerSettings } from './types';
-import { PerlSymbolKind, ElemSource } from './types';
+import type { PerlDocument, PerlElement, PGLanguageServerSettings } from './types';
+import { PerlSymbolKind, ElementSource } from './types';
 
 export const async_execFile = promisify(execFile);
 
@@ -121,7 +121,7 @@ export const getSymbol = (position: Position, txtDoc: TextDocument): string => {
     return symbol;
 };
 
-const findRecent = (found: PerlElem[], line: number): PerlElem => {
+const findRecent = (found: PerlElement[], line: number): PerlElement => {
     let best = found[0];
     for (const item of found) {
         // TODO: is this flawed because not all lookups are in the same file?
@@ -142,8 +142,8 @@ export const lookupSymbol = (
     modMap: Map<string, string>,
     symbol: string,
     line: number
-): PerlElem[] => {
-    let found = perlDoc.elems.get(symbol);
+): PerlElement[] => {
+    let found = perlDoc.elements.get(symbol);
     if (found?.length) {
         // Simple lookup worked. If we have multiple (e.g. 2 lexical variables), find the nearest earlier declaration.
         const best = findRecent(found, line);
@@ -163,7 +163,7 @@ export const lookupSymbol = (
                 line: 0,
                 lineEnd: 0,
                 value: '',
-                source: ElemSource.modHunter
+                source: ElementSource.modHunter
             }
         ];
     }
@@ -174,7 +174,7 @@ export const lookupSymbol = (
     if (superClass) {
         // If looking up the superclass of $self->SUPER, we need to find the package
         // in which $self is defined, and then find the parent
-        const child = perlDoc.elems.get(superClass[1]);
+        const child = perlDoc.elements.get(superClass[1]);
         if (child?.length) {
             const recentChild = findRecent(child, line);
             if (recentChild.package) {
@@ -188,23 +188,23 @@ export const lookupSymbol = (
 
     const knownObject = /^(\$\w+)->(?:\w+)$/.exec(symbol);
     if (knownObject) {
-        const targetVar = perlDoc.canonicalElems.get(knownObject[1]);
+        const targetVar = perlDoc.canonicalElements.get(knownObject[1]);
         if (targetVar) qSymbol = qSymbol.replace(/^\$\w+(?=->)/, targetVar.typeDetail);
     }
 
     // Add what we mean when someone wants ->new().
     const synonyms = ['_init', 'BUILD'];
     for (const synonym of synonyms) {
-        found = perlDoc.elems.get(symbol.replace(/->new$/, '::' + synonym));
+        found = perlDoc.elements.get(symbol.replace(/->new$/, '::' + synonym));
         if (found?.length) return [found[0]];
     }
-    found = perlDoc.elems.get(symbol.replace(/DBI->new$/, 'DBI::connect'));
+    found = perlDoc.elements.get(symbol.replace(/DBI->new$/, 'DBI::connect'));
     if (found?.length) return [found[0]];
 
     qSymbol = qSymbol.replaceAll('->', '::'); // Module->method() can be found via Module::method
     qSymbol = qSymbol.replace(/^main::(\w+)$/g, '$1'); // main::foo is just tagged as foo
 
-    found = perlDoc.elems.get(qSymbol);
+    found = perlDoc.elements.get(qSymbol);
     if (found?.length) return [found[0]];
 
     if (qSymbol.includes('::') && symbol.includes('->')) {
@@ -213,7 +213,7 @@ export const lookupSymbol = (
         if (method) {
             // Perhaps the method is within our current scope, explictly imported,
             // or an inherited method (dumper by Inquisitor)
-            found = perlDoc.elems.get(method);
+            found = perlDoc.elements.get(method);
             if (found?.length) return [found[0]];
 
             // Autoloaded are lower priority than inherited, but higher than random hunting
@@ -222,15 +222,15 @@ export const lookupSymbol = (
 
             // Haven't found the method yet, let's check if anything could be a
             // possible match since you don't know the object type
-            const foundElems: PerlElem[] = [];
-            for (const [elemName, elements] of perlDoc.elems) {
+            const foundElements: PerlElement[] = [];
+            for (const [elementName, elements] of perlDoc.elements) {
                 const element = elements[0]; // All Elements are with same name are normally the same.
-                const elemMethod = elemName.split('::').pop();
-                if (elemMethod == method) {
-                    foundElems.push(element);
+                const elementMethod = elementName.split('::').pop();
+                if (elementMethod == method) {
+                    foundElements.push(element);
                 }
             }
-            if (foundElems.length > 0) return foundElems;
+            if (foundElements.length > 0) return foundElements;
         }
     }
 
@@ -238,8 +238,8 @@ export const lookupSymbol = (
         // Running out of options here. Perhaps it's a Package, and the
         // file is in the symbol table under its individual functions.
 
-        for (const potentialElem of perlDoc.elems.values()) {
-            const element = potentialElem[0]; // All Elements are with same name are normally the same.
+        for (const potentialElement of perlDoc.elements.values()) {
+            const element = potentialElement[0]; // All Elements are with same name are normally the same.
             if (element.package && element.package == symbol) {
                 // Just return the first one. The others would likely be the same
                 return [
@@ -252,7 +252,7 @@ export const lookupSymbol = (
                         line: 0,
                         lineEnd: 0,
                         value: '',
-                        source: ElemSource.packageInference
+                        source: ElementSource.packageInference
                     }
                 ];
             }

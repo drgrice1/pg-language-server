@@ -5,7 +5,7 @@ import type {
     ParameterInformation
 } from 'vscode-languageserver/node';
 import type { TextDocument, Position } from 'vscode-languageserver-textdocument';
-import { type PerlDocument, type PerlElem, PerlSymbolKind } from './types';
+import { type PerlDocument, type PerlElement, PerlSymbolKind } from './types';
 import { lookupSymbol } from './utils';
 import { refineElementIfSub } from './refinement';
 
@@ -18,13 +18,13 @@ export const getSignature = async (
     const position = params.position;
     const [symbol, currentSig] = getFunction(position, txtDoc);
     if (!symbol) return;
-    const elems = lookupSymbol(perlDoc, modMap, symbol, position.line);
+    const elements = lookupSymbol(perlDoc, modMap, symbol, position.line);
     // Nothing or too many things.
-    if (elems.length != 1) return;
-    const elem = elems[0];
-    const refined = await refineElementIfSub(elem, params, perlDoc);
+    if (elements.length != 1) return;
+    const element = elements[0];
+    const refined = await refineElementIfSub(element, params, perlDoc);
     if (!refined) return;
-    // const elem_count = perlDoc.elems.size; // Currently unused.
+    // const element_count = perlDoc.elements.size; // Currently unused.
     return buildSignature(refined, currentSig, symbol);
 };
 
@@ -64,12 +64,12 @@ const getFunction = (position: Position, txtDoc: TextDocument): string[] => {
     return [symbol, currSig];
 };
 
-const buildSignature = (elem: PerlElem, currentSig: string, symbol: string): SignatureHelp | undefined => {
-    let params = elem.signature;
+const buildSignature = (element: PerlElement, currentSig: string, symbol: string): SignatureHelp | undefined => {
+    let params = element.signature;
     if (!params) return;
     params = [...params]; // Clone to ensure we don't modify the original
     const activeParameter = (currentSig.match(/,/g) ?? []).length;
-    if (symbol.includes('->') && elem.type != PerlSymbolKind.LocalMethod) {
+    if (symbol.includes('->') && element.type != PerlSymbolKind.LocalMethod) {
         // Subroutine vs method is not relevant, only matters if you called it as a method (except Corinna,
         // for which $self is implicit)
         params.shift();

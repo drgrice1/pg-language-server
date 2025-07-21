@@ -3,7 +3,7 @@ import type { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
 import { realpathSync, realpath } from 'fs';
 import { join } from 'path';
-import { PerlDocument, PerlElem, PGLanguageServerSettings, PerlSymbolKind } from './types';
+import { PerlDocument, PerlElement, PGLanguageServerSettings, PerlSymbolKind } from './types';
 import { getIncPaths, async_execFile, getSymbol, lookupSymbol, nLog, isFile, getPerlAssetsPath } from './utils';
 import { refineElement } from './refinement';
 
@@ -18,20 +18,20 @@ export const getDefinition = async (
 
     if (!symbol) return;
 
-    const foundElems = lookupSymbol(perlDoc, modMap, symbol, position.line);
+    const foundElements = lookupSymbol(perlDoc, modMap, symbol, position.line);
 
-    if (foundElems.length == 0) return;
+    if (foundElements.length == 0) return;
 
     const locationsFound: Location[] = [];
 
-    for (const elem of foundElems) {
-        const elemResolved: PerlElem | undefined = await resolveElemForNav(perlDoc, elem, symbol);
-        if (!elemResolved) continue;
+    for (const element of foundElements) {
+        const elementResolved: PerlElement | undefined = await resolveElementForNav(perlDoc, element, symbol);
+        if (!elementResolved) continue;
 
         let uri: string;
-        if (perlDoc.uri !== elemResolved.uri) {
+        if (perlDoc.uri !== elementResolved.uri) {
             // If sending to a different file, make sure it exists and clean up the path.
-            const file = URI.parse(elemResolved.uri).fsPath;
+            const file = URI.parse(elementResolved.uri).fsPath;
 
             if (!(await isFile(file))) continue; // Make sure the file exists and hasn't been deleted.
 
@@ -44,8 +44,8 @@ export const getDefinition = async (
         const newLoc: Location = {
             uri: uri,
             range: {
-                start: { line: elemResolved.line, character: 0 },
-                end: { line: elemResolved.line, character: 500 }
+                start: { line: elementResolved.line, character: 0 },
+                end: { line: elementResolved.line, character: 500 }
             }
         };
 
@@ -55,29 +55,29 @@ export const getDefinition = async (
     return locationsFound;
 };
 
-const resolveElemForNav = async (
+const resolveElementForNav = async (
     perlDoc: PerlDocument,
-    elem: PerlElem,
+    element: PerlElement,
     symbol: string
-): Promise<PerlElem | undefined> => {
-    const refined = await refineElement(elem, perlDoc).catch(() => undefined);
-    elem = refined ?? elem;
-    if (!badFile(elem.uri)) {
-        if (perlDoc.uri == elem.uri && symbol.includes('->')) {
+): Promise<PerlElement | undefined> => {
+    const refined = await refineElement(element, perlDoc).catch(() => undefined);
+    element = refined ?? element;
+    if (!badFile(element.uri)) {
+        if (perlDoc.uri == element.uri && symbol.includes('->')) {
             // Corinna methods don't have line numbers. So hunt for them.
             // If nothing better is found, return the original element.
             const method = symbol.split('->').pop();
             if (method) {
-                const found = perlDoc.elems.get(method);
+                const found = perlDoc.elements.get(method);
                 if (found) {
-                    if (elem.line == 0 && elem.type == PerlSymbolKind.Method) {
+                    if (element.line == 0 && element.type == PerlSymbolKind.Method) {
                         if (found[0].uri == perlDoc.uri) return found[0];
-                    } else if (elem.line > 0 && elem.type == PerlSymbolKind.ImportedSub) {
+                    } else if (element.line > 0 && element.type == PerlSymbolKind.ImportedSub) {
                         // Solve the off-by-one error at least for these.
                         // Eventually, you could consult a tagger for this step.
 
-                        for (const potentialElem of found) {
-                            if (Math.abs(potentialElem.line - elem.line) <= 1) return potentialElem;
+                        for (const potentialElement of found) {
+                            if (Math.abs(potentialElement.line - element.line) <= 1) return potentialElement;
                         }
                     }
                 }
@@ -86,15 +86,15 @@ const resolveElemForNav = async (
         }
 
         // Normal path; file is good
-        return elem;
+        return element;
     } else {
         // Try looking it up by package instead of file.
         // Happens with XS subs and Moo subs
-        if (elem.package) {
-            const elemResolved = perlDoc.elems.get(elem.package);
-            if (elemResolved) {
-                for (const potentialElem of elemResolved) {
-                    if (potentialElem.uri && !badFile(potentialElem.uri)) return potentialElem;
+        if (element.package) {
+            const elementResolved = perlDoc.elements.get(element.package);
+            if (elementResolved) {
+                for (const potentialElement of elementResolved) {
+                    if (potentialElement.uri && !badFile(potentialElement.uri)) return potentialElement;
                 }
             }
         }
@@ -105,9 +105,9 @@ const resolveElemForNav = async (
         // Not very helpful, since the user can simply click on the module manually if they want
         // const base_module = symbol.match(/^([\w:]+)->\w+$/);
         // if(base_module){
-        //     const elemResolved = perlDoc.elems.get(base_module);
-        //     if(elemResolved && elemResolved.file && !badFile(elem.file)){
-        //         return elemResolved;
+        //     const elementResolved = perlDoc.elements.get(base_module);
+        //     if(elementResolved && elementResolved.file && !badFile(element.file)){
+        //         return elementResolved;
         //     }
         // }
     }

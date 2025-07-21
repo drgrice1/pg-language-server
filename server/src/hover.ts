@@ -1,7 +1,7 @@
 import type { TextDocumentPositionParams, Hover } from 'vscode-languageserver/node';
 import { MarkupKind } from 'vscode-languageserver/node';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
-import { type PerlDocument, type PerlElem, PerlSymbolKind } from './types';
+import { type PerlDocument, type PerlElement, PerlSymbolKind } from './types';
 import { getSymbol, lookupSymbol } from './utils';
 import { refineElementIfSub } from './refinement';
 import { getPod } from './pod';
@@ -17,18 +17,18 @@ export const getHover = async (
     const position = params.position;
     const symbol = getSymbol(position, txtDoc);
 
-    let elem = perlDoc.canonicalElems.get(symbol);
+    let element = perlDoc.canonicalElements.get(symbol);
 
-    if (!elem) {
-        const elems = lookupSymbol(perlDoc, modMap, symbol, position.line);
+    if (!element) {
+        const elements = lookupSymbol(perlDoc, modMap, symbol, position.line);
         // Nothing or too many things.
-        if (elems.length != 1) return;
-        elem = elems[0];
+        if (elements.length != 1) return;
+        element = elements[0];
     }
 
-    const refined = await refineElementIfSub(elem, params, perlDoc);
+    const refined = await refineElementIfSub(element, params, perlDoc);
 
-    const title = buildHoverDoc(symbol, elem, refined);
+    const title = buildHoverDoc(symbol, element, refined);
 
     // Sometimes, there's nothing worth showing.
     // I'm assuming we won't get any useful POD if we can't get a useful title. Could be wrong
@@ -36,7 +36,7 @@ export const getHover = async (
 
     let merged = title;
 
-    let docs = await getPod(elem, perlDoc, modMap);
+    let docs = await getPod(element, perlDoc, modMap);
 
     if (docs) {
         if (!docs.startsWith('\n')) docs = `\n${docs}`; // Markdown requires two newlines to make one
@@ -51,15 +51,15 @@ export const getHover = async (
     };
 };
 
-const buildHoverDoc = (symbol: string, elem: PerlElem, refined: PerlElem | undefined): string | undefined => {
+const buildHoverDoc = (symbol: string, element: PerlElement, refined: PerlElement | undefined): string | undefined => {
     let sig = '';
-    let name = elem.name;
+    let name = element.name;
     // Early return.
-    if ([PerlSymbolKind.LocalVar, PerlSymbolKind.ImportedVar, PerlSymbolKind.Canonical].includes(elem.type)) {
-        if (elem.typeDetail.length > 0) return `(object) ${elem.typeDetail}`;
+    if ([PerlSymbolKind.LocalVar, PerlSymbolKind.ImportedVar, PerlSymbolKind.Canonical].includes(element.type)) {
+        if (element.typeDetail.length > 0) return `(object) ${element.typeDetail}`;
         else if (symbol.startsWith('$self'))
             // We either know the object type, or it's $self
-            return `(object) ${elem.package}`;
+            return `(object) ${element.package}`;
     }
     if (refined?.signature) {
         let signature = refined.signature;
@@ -71,11 +71,11 @@ const buildHoverDoc = (symbol: string, elem: PerlElem, refined: PerlElem | undef
         if (signature.length > 0) sig = '(' + signature.join(', ') + ')';
     }
     let desc;
-    switch (elem.type) {
+    switch (element.type) {
         case PerlSymbolKind.ImportedSub: // inherited methods can still be subs (e.g. new from a parent)
         case PerlSymbolKind.Inherited:
             desc = `(subroutine) ${name}${sig}`;
-            if (elem.typeDetail && elem.typeDetail != elem.name) desc += `  [${elem.typeDetail}]`;
+            if (element.typeDetail && element.typeDetail != element.name) desc += `  [${element.typeDetail}]`;
             break;
         case PerlSymbolKind.LocalSub:
             desc = `(subroutine) ${name}${sig}`;
@@ -89,17 +89,17 @@ const buildHoverDoc = (symbol: string, elem: PerlElem, refined: PerlElem | undef
             // desc = `(variable) ${symbol}`;
             break;
         case PerlSymbolKind.ImportedVar:
-            desc = `${name}: ${elem.value}`;
-            if (elem.package) desc += ` [${elem.package}]`; // Is this ever known?
+            desc = `${name}: ${element.value}`;
+            if (element.package) desc += ` [${element.package}]`; // Is this ever known?
             break;
         case PerlSymbolKind.ImportedHash:
-            desc = `${elem.name}  [${elem.package}]`;
+            desc = `${element.name}  [${element.package}]`;
             break;
         case PerlSymbolKind.Package:
-            desc = `(package) ${elem.name}`;
+            desc = `(package) ${element.name}`;
             break;
         case PerlSymbolKind.Module: {
-            desc = `(module) ${elem.name}: ${URI.parse(elem.uri).fsPath}`;
+            desc = `(module) ${element.name}: ${URI.parse(element.uri).fsPath}`;
             break;
         }
         case PerlSymbolKind.Label:
@@ -117,7 +117,7 @@ const buildHoverDoc = (symbol: string, elem: PerlElem, refined: PerlElem | undef
             break;
         default:
             // We should never get here
-            desc = `Unknown: ${elem.name}`;
+            desc = `Unknown: ${element.name}`;
             break;
     }
     return desc;

@@ -4,19 +4,8 @@ import * as vsctm from 'vscode-textmate';
 import * as oniguruma from 'vscode-oniguruma';
 import * as fs from 'fs';
 import * as path from 'path';
-import { type PerlDocument, type PerlElem, PerlSymbolKind, ParseType, TagKind, ElemSource } from './types';
+import { type PerlDocument, type PerlElement, PerlSymbolKind, ParseType, TagKind, ElementSource } from './types';
 import { getProjectRoot } from './utils';
-
-const init_doc = (textDocument: TextDocument): PerlDocument => {
-    return {
-        elems: new Map(),
-        canonicalElems: new Map(),
-        autoloads: new Map(),
-        imported: new Map(),
-        parents: new Map(),
-        uri: textDocument.uri
-    };
-};
 
 interface ParserState {
     stmt: string;
@@ -32,7 +21,7 @@ interface ParserState {
 type ParseFunc = (state: ParserState) => boolean;
 
 export const parseFromUri = async (uri: string, parseType: ParseType): Promise<PerlDocument | undefined> => {
-    // File may not exists. Return nothing if it doesn't
+    // File may not exist. Return nothing if it doesn't.
     const absolutePath = URI.parse(uri).fsPath;
     try {
         const content = await fs.promises.readFile(absolutePath, 'utf8');
@@ -59,7 +48,14 @@ export const parseDocument = async (textDocument: TextDocument, parseType: Parse
 
     parseFunctions.unshift(packages); // Packages always need to be found to be able to categorize the elements.
 
-    const perlDoc = init_doc(textDocument);
+    const perlDoc = {
+        elements: new Map(),
+        canonicalElements: new Map(),
+        autoloads: new Map(),
+        imported: new Map(),
+        parents: new Map(),
+        uri: textDocument.uri
+    };
 
     const state: ParserState = {
         stmt: '',
@@ -74,9 +70,7 @@ export const parseDocument = async (textDocument: TextDocument, parseType: Parse
 
     for (state.line_number = 0; state.line_number < state.codeArray.length; ++state.line_number) {
         state.stmt = state.codeArray[state.line_number];
-        // Nothing left? Never mind.
         if (!state.stmt) continue;
-
         parseFunctions.some((fn) => fn(state));
     }
     return perlDoc;
@@ -94,7 +88,7 @@ const knownObj = (state: ParserState): boolean => {
     ) {
         const varName = match[1];
         const objName = match[2];
-        MakeElem(varName, PerlSymbolKind.LocalVar, objName, state);
+        makeElement(varName, PerlSymbolKind.LocalVar, objName, state);
 
         state.var_continues = false; // We skipped ahead of the line here. Why though?
         return true;
@@ -125,22 +119,22 @@ const localVars = (state: ParserState): boolean => {
         // Now find all variable names, i.e. "words" preceded by $, @ or %
         const vars = mod_stmt.matchAll(/([$@%][\w:]+)\b/g);
 
-        for (const match of vars) MakeElem(match[1], PerlSymbolKind.LocalVar, '', state);
+        for (const match of vars) makeElement(match[1], PerlSymbolKind.LocalVar, '', state);
         return true;
         // Lexical loop variables, potentially with labels in front. foreach my $foo
     } else if ((match = /^(?:(\w+)\s*:(?!:))?\s*(?:for|foreach)\s+my\s+(\$[\w]+)\b/.exec(state.stmt))) {
-        if (match[1]) MakeElem(match[1], PerlSymbolKind.Label, '', state);
-        MakeElem(match[2], PerlSymbolKind.LocalVar, '', state);
+        if (match[1]) makeElement(match[1], PerlSymbolKind.Label, '', state);
+        makeElement(match[2], PerlSymbolKind.LocalVar, '', state);
         // Lexical match variables if(my ($foo, $bar) ~= ).
         // Optional to detect (my $newstring = $oldstring) =~ s/foo/bar/g;
     } else if ((match = /^(?:\}\s*elsif|if|unless|while|until|for)?\s*\(\s*my\b(.*)$/.exec(state.stmt))) {
         // Remove any assignment piece
         const mod_stmt = state.stmt.replace(/\s*=.*/, '');
         const vars = mod_stmt.matchAll(/([$@%][\w]+)\b/g);
-        for (const match of vars) MakeElem(match[1], PerlSymbolKind.LocalVar, '', state);
+        for (const match of vars) makeElement(match[1], PerlSymbolKind.LocalVar, '', state);
         // Try-catch exception variables
     } else if ((match = /^\}?\s*catch\s*\(\s*(\$\w+)\s*\)\s*\{?$/.exec(state.stmt))) {
-        MakeElem(match[1], PerlSymbolKind.LocalVar, '', state);
+        makeElement(match[1], PerlSymbolKind.LocalVar, '', state);
     } else {
         return false;
     }
@@ -154,14 +148,14 @@ const packages = (state: ParserState): boolean => {
 
     // Get name of the package
     state.package_name = match[1];
-    MakeElem(state.package_name, PerlSymbolKind.Package, '', state, packageEndLine(state));
+    makeElement(state.package_name, PerlSymbolKind.Package, '', state, packageEndLine(state));
     return true;
 };
 
 const subs = (state: ParserState): boolean => {
     const match = /^(sub)\s+([\w:]+)([^{]*)/.exec(state.stmt);
     if (!match) return false;
-    MakeElem(match[2], PerlSymbolKind.LocalSub, '', state, subEndLine(state));
+    makeElement(match[2], PerlSymbolKind.LocalSub, '', state, subEndLine(state));
     return true;
 };
 
@@ -169,10 +163,10 @@ const labels = (state: ParserState): boolean => {
     let match;
     if ((match = /^(BEGIN|INIT|CHECK|UNITCHECK|END)\s*\{/.exec(state.stmt))) {
         // Phaser block
-        MakeElem(match[1], PerlSymbolKind.Phaser, '', state, subEndLine(state));
+        makeElement(match[1], PerlSymbolKind.Phaser, '', state, subEndLine(state));
     } else if ((match = /^([a-zA-Z_][a-zA-Z0-9_]*)\s*:[^:].*{\s*$/.exec(state.stmt))) {
         // Label line
-        MakeElem(match[1], PerlSymbolKind.Label, '', state, subEndLine(state));
+        makeElement(match[1], PerlSymbolKind.Label, '', state, subEndLine(state));
     } else {
         return false;
     }
@@ -184,7 +178,7 @@ const labels = (state: ParserState): boolean => {
 const imports = (state: ParserState): boolean => {
     const match = /^use\s+([\w:]+)\b/.exec(state.stmt);
     if (!match) return false;
-    MakeElem(match[1], TagKind.UseStatement, '', state);
+    makeElement(match[1], TagKind.UseStatement, '', state);
     return true;
 };
 
@@ -193,8 +187,7 @@ const autoloads = (state: ParserState): boolean => {
     if (!match) return false;
 
     // Common paradigm is for autoloaders to basically just point to the class variable
-    const variable = match[2];
-    MakeElem('get_' + variable, PerlSymbolKind.AutoLoadVar, '', state);
+    makeElement('get_' + match[2], PerlSymbolKind.AutoLoadVar, '', state);
     return true;
 };
 
@@ -251,10 +244,8 @@ const cleanCode = async (
 
         let match;
         if (parseType == ParseType.selfNavigation && (match = /#.*(\$\w+) isa ([\w:]+)\b/.exec(commentState.stmt))) {
-            const pvar = match[1];
-            const typeName = match[2];
-            // TODO: Do I need a file or package here? Canonical variables are weird
-            MakeElem(pvar, PerlSymbolKind.Canonical, typeName, commentState);
+            // TODO: Is a file or package needed here? Canonical variables are weird.
+            makeElement(match[1], PerlSymbolKind.Canonical, match[2], commentState);
         }
 
         let mod_stmt = commentState.stmt;
@@ -270,7 +261,7 @@ const cleanCode = async (
     return codeClean;
 };
 
-const MakeElem = (
+const makeElement = (
     name: string,
     type: PerlSymbolKind | TagKind,
     typeDetail: string,
@@ -295,7 +286,7 @@ const MakeElem = (
         return; // Don't store it as an element
     }
 
-    const newElem: PerlElem = {
+    const newElement: PerlElement = {
         name: name,
         type: type,
         typeDetail: typeDetail,
@@ -304,27 +295,27 @@ const MakeElem = (
         line: state.line_number,
         lineEnd: lineEnd,
         value: '',
-        source: ElemSource.parser
+        source: ElementSource.parser
     };
 
     if (type == PerlSymbolKind.AutoLoadVar) {
-        state.perlDoc.autoloads.set(name, newElem);
+        state.perlDoc.autoloads.set(name, newElement);
         return; // Don't store it as an element
     }
 
-    if (signature && signature.length > 0) newElem.signature = signature;
+    if (signature && signature.length > 0) newElement.signature = signature;
 
     if (typeDetail.length > 0) {
-        // TODO: The canonicalElems don't need to be PerlElems, they might be just a string.
+        // TODO: The canonicalElements don't need to be PerlElements, they might be just a string.
         // We overwrite, so the last typed element is the canonical one. No reason for this.
-        state.perlDoc.canonicalElems.set(name, newElem);
+        state.perlDoc.canonicalElements.set(name, newElement);
         // This object is only intended as the canonicalLookup, not for anything else.
         if (type == PerlSymbolKind.Canonical) return;
     }
 
-    const array = state.perlDoc.elems.get(name) ?? [];
-    array.push(newElem);
-    state.perlDoc.elems.set(name, array);
+    const array = state.perlDoc.elements.get(name) ?? [];
+    array.push(newElement);
+    state.perlDoc.elements.set(name, array);
 
     return;
 };
@@ -453,24 +444,22 @@ const stripCommentsAndQuotes = async (code: string[]): Promise<string[]> => {
             const content = line.substring(lastEndIndex, token.endIndex);
             lastEndIndex = token.endIndex;
 
-            // This includes regexes and pod too
+            // This includes regexes and pod too.
             const isComment = token.scopes.some((scope) => scope.startsWith('comment'));
 
-            if (isComment) {
-                // Remove all comments
-                continue;
-            }
+            // Remove all comments.
+            if (isComment) continue;
 
             const isString = token.scopes.some((scope) => scope.startsWith('string'));
             const isPunc = token.scopes.some((scope) => scope.startsWith('punctuation'));
 
             if (isString && !isPunc) {
                 if (strippedCode == '') {
-                    // The 2nd-Nth lines of multi-line strings should be stripped
+                    // The 2nd-Nth lines of multi-line strings should be stripped.
                     strippedCode += '___';
                     continue;
                 } else if (/[{}]/.exec(content)) {
-                    // In-line strings that contains {} need to be stripped regardless of position
+                    // In-line strings that contains {} need to be stripped regardless of position.
                     continue;
                 }
             }

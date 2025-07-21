@@ -6,8 +6,8 @@ import {
     type MarkupContent
 } from 'vscode-languageserver/node';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
-import type { PerlDocument, PerlElem, CompletionPrefix, completionElem } from './types';
-import { PerlSymbolKind, ElemSource } from './types';
+import type { PerlDocument, PerlElement, CompletionPrefix, completionElement } from './types';
+import { PerlSymbolKind, ElementSource } from './types';
 import { getPod } from './pod';
 import { URI } from 'vscode-uri';
 
@@ -51,11 +51,11 @@ export const getCompletions = (
 };
 
 export const getCompletionDoc = async (
-    elem: PerlElem,
+    element: PerlElement,
     perlDoc: PerlDocument,
     modMap: Map<string, string>
 ): Promise<string | undefined> => {
-    const docs = await getPod(elem, perlDoc, modMap);
+    const docs = await getPod(element, perlDoc, modMap);
     return docs;
 };
 
@@ -107,7 +107,7 @@ const getImportMatches = (
     for (const [mod, modFile] of modMap) {
         if (mod.toLowerCase().startsWith(lcSymbol)) {
             const modUri = URI.parse(modFile).toString();
-            const modElem: PerlElem = {
+            const modElement: PerlElement = {
                 name: symbol,
                 type: PerlSymbolKind.Module,
                 typeDetail: '',
@@ -116,15 +116,15 @@ const getImportMatches = (
                 line: 0,
                 lineEnd: 0,
                 value: '',
-                source: ElemSource.modHunter
+                source: ElementSource.modHunter
             };
-            const newElem: completionElem = { perlElem: modElem, docUri: perlDoc.uri };
+            const newElement: completionElement = { perlElement: modElement, docUri: perlDoc.uri };
 
             matches.push({
                 label: mod,
                 textEdit: { newText: mod, range: replace },
                 kind: CompletionItemKind.Module,
-                data: newElem
+                data: newElement
             });
         }
     }
@@ -141,7 +141,7 @@ const getMatches = (perlDoc: PerlDocument, symbol: string, replace: Range, strip
     // Check if we know the type of this object
     const knownObject = /^(\$\w+):(?::\w*)?$/.exec(qualifiedSymbol);
     if (knownObject) {
-        const targetVar = perlDoc.canonicalElems.get(knownObject[1]);
+        const targetVar = perlDoc.canonicalElements.get(knownObject[1]);
         if (targetVar) {
             qualifiedSymbol = qualifiedSymbol.replace(/^\$\w+(?=:)/, targetVar.typeDetail);
             bKnownObj = true;
@@ -155,14 +155,14 @@ const getMatches = (perlDoc: PerlDocument, symbol: string, replace: Range, strip
     // Case insensitive matches are hard since we restore what you originally matched on
     // const lcQualifiedSymbol = qualifiedSymbol.toLowerCase();
 
-    for (const [elemName, elements] of perlDoc.elems) {
+    for (const [elementName, elements] of perlDoc.elements) {
         // Remove single character magic perl variables. Mostly clutter the list
-        if (/^[$@%].$/.test(elemName)) continue;
+        if (/^[$@%].$/.test(elementName)) continue;
 
         // Get the canonical (typed) element, otherwise just grab the first one.
-        const element = perlDoc.canonicalElems.get(elemName) ?? elements[0];
+        const element = perlDoc.canonicalElements.get(elementName) ?? elements[0];
 
-        let qualifiedElemName = elemName;
+        let qualifiedElementName = elementName;
 
         // All plain and inherited subroutines should match with $self. We're excluding PerlSymbolKind.ImportedSub here
         // because imports clutter the list, despite perl allowing them called on $self->
@@ -170,14 +170,14 @@ const getMatches = (perlDoc: PerlDocument, symbol: string, replace: Range, strip
             bSelf &&
             [PerlSymbolKind.LocalSub, PerlSymbolKind.Inherited, PerlSymbolKind.LocalMethod].includes(element.type)
         )
-            qualifiedElemName = `$self::${qualifiedElemName}`;
+            qualifiedElementName = `$self::${qualifiedElementName}`;
 
-        if (goodMatch(perlDoc, qualifiedElemName, qualifiedSymbol, symbol, bKnownObj)) {
+        if (goodMatch(perlDoc, qualifiedElementName, qualifiedSymbol, symbol, bKnownObj)) {
             // Hooray, it's a match!
             // You may have asked for FOO::BAR->BAZ or $qux->BAZ and I found FOO::BAR::BAZ.
             // Let's put back the arrow or variable before sending
             const quotedSymbol = qualifiedSymbol.replaceAll('$', '\\$'); // quotemeta for $self->FOO
-            let aligned = qualifiedElemName.replace(new RegExp(`^${quotedSymbol}`, 'gi'), symbol);
+            let aligned = qualifiedElementName.replace(new RegExp(`^${quotedSymbol}`, 'gi'), symbol);
 
             if (symbol.endsWith('-')) aligned = aligned.replaceAll('-:', '->'); // Half-arrows count too
 
@@ -219,27 +219,27 @@ const getMatches = (perlDoc: PerlDocument, symbol: string, replace: Range, strip
 // TODO: preprocess all "allowed" matches so we don't waste time iterating over them for every autocomplete.
 const goodMatch = (
     perlDoc: PerlDocument,
-    elemName: string,
+    elementName: string,
     qualifiedSymbol: string,
     origSymbol: string,
     bKnownObj: boolean
 ): boolean => {
-    if (!elemName.startsWith(qualifiedSymbol)) return false;
+    if (!elementName.startsWith(qualifiedSymbol)) return false;
     // All uppercase methods are generally private or autogenerated and unhelpful
-    if (/(?:::|->)[A-Z][A-Z_]+$/.test(elemName)) return false;
+    if (/(?:::|->)[A-Z][A-Z_]+$/.test(elementName)) return false;
     if (bKnownObj) {
         // If this is a known object type, we probably aren't importing the package or building a new one.
-        if (/(?:::|->)(?:new|import)$/.test(elemName)) return false;
+        if (/(?:::|->)(?:new|import)$/.test(elementName)) return false;
         // If we known the object type (and variable name is not $self), then exclude the double underscore private
         // variables (rare anyway. single underscore kept, but ranked last in the autocomplete)
-        if (origSymbol.startsWith('$') && !origSymbol.startsWith('$self') && /(?:::|->)__\w+$/.test(elemName))
+        if (origSymbol.startsWith('$') && !origSymbol.startsWith('$self') && /(?:::|->)__\w+$/.test(elementName))
             return false;
         // Otherwise, always autocomplete, even if the module has not been explicitly imported.
         return true;
     }
     // Get the module name to see if it's been imported. Otherwise, don't allow it.
     const modRg = /^(.+)::.*?$/;
-    const match = modRg.exec(elemName);
+    const match = modRg.exec(elementName);
     if (match && !perlDoc.imported.has(match[1])) {
         // TODO: Allow completion on packages/class defined within the file itself
         // (e.g. Foo->new, $foo->new already works)
@@ -253,7 +253,7 @@ const goodMatch = (
 
 const buildMatches = (
     lookupName: string,
-    elem: PerlElem,
+    element: PerlElement,
     range: Range,
     stripPackage: boolean,
     perlDoc: PerlDocument
@@ -263,32 +263,32 @@ const buildMatches = (
     let documentation: MarkupContent | undefined = undefined;
     const docs: string[] = [];
 
-    if ([PerlSymbolKind.LocalVar, PerlSymbolKind.ImportedVar, PerlSymbolKind.Canonical].includes(elem.type)) {
-        if (elem.typeDetail.length > 0) {
+    if ([PerlSymbolKind.LocalVar, PerlSymbolKind.ImportedVar, PerlSymbolKind.Canonical].includes(element.type)) {
+        if (element.typeDetail.length > 0) {
             kind = CompletionItemKind.Variable;
-            detail = `${lookupName}: ${elem.typeDetail}`;
+            detail = `${lookupName}: ${element.typeDetail}`;
         } else if (lookupName == '$self') {
             kind = CompletionItemKind.Variable;
-            // elem.package can be misleading if you use $self in two different packages in the same module.
+            // element.package can be misleading if you use $self in two different packages in the same module.
             // Get scoped matches will address this
-            detail = `${lookupName}: ${elem.package}`;
+            detail = `${lookupName}: ${element.package}`;
         }
     }
     if (!detail) {
-        switch (elem.type) {
+        switch (element.type) {
             case PerlSymbolKind.LocalVar:
                 kind = CompletionItemKind.Variable;
                 break;
             case PerlSymbolKind.ImportedVar:
                 kind = CompletionItemKind.Constant;
-                // detail = elem.name;
-                docs.push(elem.name);
-                docs.push(`Value: ${elem.value}`);
+                // detail = element.name;
+                docs.push(element.name);
+                docs.push(`Value: ${element.value}`);
                 break;
             case PerlSymbolKind.ImportedHash:
             case PerlSymbolKind.LocalSub:
                 // For consistency with the other $self methods. VScode seems to hide documentation if less populated?
-                if (lookupName.startsWith('$self-')) docs.push(elem.name);
+                if (lookupName.startsWith('$self-')) docs.push(element.name);
                 kind = CompletionItemKind.Function;
                 break;
             case PerlSymbolKind.ImportedSub:
@@ -296,8 +296,9 @@ const buildMatches = (
             case PerlSymbolKind.Method:
             case PerlSymbolKind.LocalMethod:
                 kind = CompletionItemKind.Method;
-                docs.push(elem.name);
-                if (elem.typeDetail && elem.typeDetail != elem.name) docs.push(`\nDefined as:\n  ${elem.typeDetail}`);
+                docs.push(element.name);
+                if (element.typeDetail && element.typeDetail != element.name)
+                    docs.push(`\nDefined as:\n  ${element.typeDetail}`);
                 break;
             case PerlSymbolKind.Package:
             case PerlSymbolKind.Module:
@@ -333,7 +334,7 @@ const buildMatches = (
             // but the replacement only to be ->func
             replaceText = replaceText.replace(/^(\w(?:\w|::\w)*)(?=->)/, '');
 
-        const newElem: completionElem = { perlElem: elem, docUri: perlDoc.uri };
+        const newElement: completionElement = { perlElement: element, docUri: perlDoc.uri };
 
         matches.push({
             label,
@@ -342,7 +343,7 @@ const buildMatches = (
             sortText: getSortText(label),
             detail,
             documentation,
-            data: newElem
+            data: newElement
         });
     }
 
