@@ -2,12 +2,15 @@ import type { WorkspaceFolder } from 'vscode-languageserver-protocol';
 import type { TextDocument, Position } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
 import { execFile } from 'child_process';
+import { dirname, join } from 'path';
 import { promisify } from 'util';
 import { promises } from 'fs';
 import type { PerlDocument, PerlElem, PGLanguageServerSettings } from './types';
 import { PerlSymbolKind, ElemSource } from './types';
 
 export const async_execFile = promisify(execFile);
+
+export const getPerlAssetsPath = (): string => join(dirname(__dirname), 'server', 'src', 'perl');
 
 export const getIncPaths = (
     workspaceFolder: WorkspaceFolder | undefined,
@@ -257,9 +260,7 @@ export const lookupSymbol = (
 
 export const nLog = (message: string, settings: PGLanguageServerSettings): void => {
     // TODO: Remove resource level settings and just use a global logging setting?
-    if (settings.logging) {
-        console.error(message);
-    }
+    if (settings.logging) console.error(message);
 };
 
 export const isFile = async (file: string): Promise<boolean> => {

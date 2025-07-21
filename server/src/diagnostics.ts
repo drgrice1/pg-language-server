@@ -5,9 +5,8 @@ import { URI } from 'vscode-uri';
 import { join } from 'path';
 import type { ExecException } from 'child_process';
 import { ParseType, type PGLanguageServerSettings, type CompilationResults, type PerlDocument } from './types';
-import { getIncPaths, async_execFile, nLog } from './utils';
+import { getIncPaths, async_execFile, nLog, getPerlAssetsPath } from './utils';
 import { buildNav } from './parseTags';
-import { getPerlAssetsPath } from './assets';
 import { parseDocument } from './parser';
 
 export const perlcompile = async (
@@ -27,7 +26,7 @@ export const perlcompile = async (
     // Force enable some warnings if configured to do so.
     if (settings.enableWarnings) perlParams.push('-Mwarnings', '-M-warnings=redefine');
     perlParams.push(...getIncPaths(workspaceFolder, settings));
-    perlParams.push(...(await getInquisitor()));
+    perlParams.push('-I', getPerlAssetsPath(), '-MInquisitor');
     nLog(
         `Starting perl compilation check with the equivalent of: ${
             settings.perlPath
@@ -92,12 +91,6 @@ export const perlcompile = async (
         (str) => JSON.parse(str) as Diagnostic
     );
     return { diags: uniq_diagnostics, perlDoc: mergedDoc };
-};
-
-const getInquisitor = async (): Promise<string[]> => {
-    const inq_path = await getPerlAssetsPath();
-    const inq: string[] = ['-I', inq_path, '-MInquisitor'];
-    return inq;
 };
 
 const translateCode = (code: string): string => {
@@ -226,7 +219,7 @@ export const perlcritic = async (
     settings: PGLanguageServerSettings
 ): Promise<Diagnostic[]> => {
     if (!settings.perlcriticEnabled) return [];
-    const critic_path = join(await getPerlAssetsPath(), 'pgCriticWrapper.pl');
+    const critic_path = join(getPerlAssetsPath(), 'pgCriticWrapper.pl');
     let criticParams: string[] = [...settings.perlParams, critic_path].concat(
         getCriticProfile(workspaceFolder, settings)
     );

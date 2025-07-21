@@ -27,7 +27,6 @@ import { homedir } from 'os';
 import { LRUCache } from 'lru-cache';
 
 import { perlcompile, perlcritic } from './diagnostics';
-import { cleanupTemporaryAssetPath } from './assets';
 //import { getDefinition, getAvailableMods } from './navigation';
 //import { getSymbols , getWorkspaceSymbols } from './symbols';
 import type { PGLanguageServerSettings, PerlDocument /*, PerlElem */ } from './types';
@@ -37,7 +36,6 @@ import { formatDoc, formatRange } from './formatting';
 import { nLog } from './utils';
 import { startProgress, endProgress } from './progress';
 //import { getSignature } from './signatures';
-import { getPerlAssetsPath } from './assets';
 
 // It the editor doesn't request node-ipc, use stdio instead. Make sure this runs before createConnection
 if (process.argv.length <= 2) {
@@ -54,7 +52,7 @@ const documents = new TextDocuments<TextDocument>(TextDocument);
 let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
 
-connection.onInitialize(async (params: InitializeParams) => {
+connection.onInitialize((params: InitializeParams) => {
     const capabilities = params.capabilities;
 
     // Does the client support the `workspace/configuration` request?
@@ -87,18 +85,13 @@ connection.onInitialize(async (params: InitializeParams) => {
             */
         }
     };
-    if (hasWorkspaceFolderCapability) {
-        result.capabilities.workspace = { workspaceFolders: { supported: true } };
-    }
-    await getPerlAssetsPath(); // Ensures assets are unpacked. Should this be in onInitialized?
+    if (hasWorkspaceFolderCapability) result.capabilities.workspace = { workspaceFolders: { supported: true } };
     return result;
 });
 
 connection.onInitialized(() => {
-    if (hasConfigurationCapability) {
-        // Register for all configuration changes.
-        void connection.client.register(DidChangeConfigurationNotification.type, undefined);
-    }
+    // Register for all configuration changes.
+    if (hasConfigurationCapability) void connection.client.register(DidChangeConfigurationNotification.type, undefined);
 });
 
 // The global settings, used when the `workspace/configuration` request is not supported by the client.
@@ -485,11 +478,7 @@ connection.onSignatureHelp(async (params) => {
 */
 
 connection.onShutdown(() => {
-    try {
-        cleanupTemporaryAssetPath();
-    } catch {
-        /* Ignored */
-    }
+    /* Ignored */
 });
 
 process.on('unhandledRejection', (reason, p) => {

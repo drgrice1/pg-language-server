@@ -4,8 +4,7 @@ import { URI } from 'vscode-uri';
 import { realpathSync, realpath } from 'fs';
 import { join } from 'path';
 import { PerlDocument, PerlElem, PGLanguageServerSettings, PerlSymbolKind } from './types';
-import { getIncPaths, async_execFile, getSymbol, lookupSymbol, nLog, isFile } from './utils';
-import { getPerlAssetsPath } from './assets';
+import { getIncPaths, async_execFile, getSymbol, lookupSymbol, nLog, isFile, getPerlAssetsPath } from './utils';
 import { refineElement } from './refinement';
 
 export const getDefinition = async (
@@ -131,7 +130,7 @@ export const getAvailableMods = async (
     settings: PGLanguageServerSettings
 ): Promise<Map<string, string>> => {
     const perlParams = settings.perlParams.concat(getIncPaths(workspaceFolder, settings));
-    perlParams.push(join(await getPerlAssetsPath(), 'ModHunter.pl'));
+    perlParams.push(join(getPerlAssetsPath(), 'ModHunter.pl'));
     nLog('Starting to look for perl modules with ' + perlParams.join(' '), settings);
 
     const mods = new Map<string, string>();

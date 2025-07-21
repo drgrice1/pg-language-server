@@ -10,8 +10,7 @@ import type { TextDocument } from 'vscode-languageserver-textdocument';
 import { join } from 'path';
 import { URI } from 'vscode-uri';
 import type { PGLanguageServerSettings } from './types';
-import { async_execFile, nLog } from './utils';
-import { getPerlAssetsPath } from './assets';
+import { async_execFile, nLog, getPerlAssetsPath } from './utils';
 import { startProgress, endProgress } from './progress';
 
 export const formatDoc = async (
@@ -76,7 +75,7 @@ const pgTidy = async (
     if (!settings.perltidyEnabled) return;
 
     const tidyParams: string[] = [
-        join(await getPerlAssetsPath(), 'pgTidyWrapper.pl'),
+        join(getPerlAssetsPath(), 'pgTidyWrapper.pl'),
         ...getTidyProfile(workspaceFolder, settings)
     ];
     nLog('Now starting pg-perltidy with: ' + tidyParams.join(' '), settings);
