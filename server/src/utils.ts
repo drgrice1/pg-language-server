@@ -10,7 +10,11 @@ import { PerlSymbolKind, ElemSource } from './types';
 
 export const async_execFile = promisify(execFile);
 
-export const getPerlAssetsPath = (): string => join(dirname(__dirname), 'server', 'src', 'perl');
+// In production __dirname will be the dist directory.  Otherwise it is the server/src directory.
+export const getProjectRoot = (): string =>
+    join(process.env.NODE_ENV === 'production' ? dirname(__dirname) : dirname(dirname(__dirname)));
+
+export const getPerlAssetsPath = (): string => join(getProjectRoot(), 'server', 'src', 'perl');
 
 export const getIncPaths = (
     workspaceFolder: WorkspaceFolder | undefined,

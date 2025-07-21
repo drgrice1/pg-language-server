@@ -5,6 +5,7 @@ import * as oniguruma from 'vscode-oniguruma';
 import * as fs from 'fs';
 import * as path from 'path';
 import { type PerlDocument, type PerlElem, PerlSymbolKind, ParseType, TagKind, ElemSource } from './types';
+import { getProjectRoot } from './utils';
 
 const init_doc = (textDocument: TextDocument): PerlDocument => {
     return {
@@ -179,13 +180,11 @@ const labels = (state: ParserState): boolean => {
     return true;
 };
 
+// Keep track of explicit imports for filtering
 const imports = (state: ParserState): boolean => {
     const match = /^use\s+([\w:]+)\b/.exec(state.stmt);
     if (!match) return false;
-
-    // Keep track of explicit imports for filtering
-    const importPkg = match[1];
-    MakeElem(importPkg, TagKind.UseStatement, '', state);
+    MakeElem(match[1], TagKind.UseStatement, '', state);
     return true;
 };
 
@@ -414,7 +413,9 @@ const packageEndLine = (state: ParserState): number => {
     return state.codeArray.length;
 };
 
-const wasmBin = fs.readFileSync(path.join(__dirname, './../node_modules/vscode-oniguruma/release/onig.wasm')).buffer;
+const wasmBin = fs.readFileSync(
+    path.join(getProjectRoot(), 'node_modules', 'vscode-oniguruma', 'release', 'onig.wasm')
+).buffer;
 const vscodeOnigurumaLib = oniguruma.loadWASM(wasmBin).then(() => {
     return {
         createOnigScanner(patterns: string[]) {
@@ -429,7 +430,7 @@ const vscodeOnigurumaLib = oniguruma.loadWASM(wasmBin).then(() => {
 const registry = new vsctm.Registry({
     onigLib: vscodeOnigurumaLib,
     loadGrammar: async () => {
-        const grammarpath = path.join(__dirname, './../perl.tmLanguage.json');
+        const grammarpath = path.join(getProjectRoot(), 'server', 'perl.tmLanguage.json');
         const grammar = await fs.promises.readFile(grammarpath, 'utf8');
         return vsctm.parseRawGrammar(grammar, grammarpath);
     }

@@ -37,10 +37,8 @@ import { nLog } from './utils';
 import { startProgress, endProgress } from './progress';
 //import { getSignature } from './signatures';
 
-// It the editor doesn't request node-ipc, use stdio instead. Make sure this runs before createConnection
-if (process.argv.length <= 2) {
-    process.argv.push('--stdio');
-}
+// It the editor doesn't request node-ipc, use stdio instead. Make sure this runs before createConnection.
+if (process.argv.length <= 2) process.argv.push('--stdio');
 
 // Create a connection for the server
 // Also include all preview / proposed LSP features.
