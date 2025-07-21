@@ -73,11 +73,9 @@ const parseElem = (perlTag: string, perlDoc: PerlDocument): void => {
         perlDoc.canonicalElems.set(name, newElem);
     }
 
-    if (type == PerlSymbolKind.Canonical.valueOf()) {
-        // This object is only intended as the canonicalLookup, not for anything else.
-        // This doesn't do anything until fancy object types are moved into the typeDetail field
-        return;
-    }
+    // This object is only intended as the canonicalLookup, not for anything else.
+    // This doesn't do anything until fancy object types are moved into the typeDetail field
+    if (type == PerlSymbolKind.Canonical.valueOf()) return;
 
     if (type == PerlSymbolKind.AutoLoadVar.valueOf()) {
         perlDoc.autoloads.set(name, newElem);

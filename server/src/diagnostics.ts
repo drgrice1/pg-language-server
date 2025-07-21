@@ -18,7 +18,7 @@ export const perlcompile = async (
 
     if (!settings.perlCompileEnabled) {
         const parsedDoc = await parsingPromise;
-        return { diags: [], perlDoc: parsedDoc };
+        return { diagnostics: [], perlDoc: parsedDoc };
     }
     const perlParams: string[] = [...settings.perlParams, '-c'];
     const filePath = URI.parse(textDocument.uri).fsPath;
@@ -90,7 +90,7 @@ export const perlcompile = async (
     const uniq_diagnostics = Array.from(new Set(diagnostics.map((diag) => JSON.stringify(diag)))).map(
         (str) => JSON.parse(str) as Diagnostic
     );
-    return { diags: uniq_diagnostics, perlDoc: mergedDoc };
+    return { diagnostics: uniq_diagnostics, perlDoc: mergedDoc };
 };
 
 const translateCode = (code: string): string => {

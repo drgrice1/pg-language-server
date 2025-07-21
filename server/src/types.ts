@@ -64,7 +64,7 @@ export enum ParseType {
 }
 
 export interface CompilationResults {
-    diags: Diagnostic[];
+    diagnostics: Diagnostic[];
     perlDoc: PerlDocument;
 }
 

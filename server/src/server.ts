@@ -124,11 +124,11 @@ let globalSettings: PGLanguageServerSettings = defaultSettings;
 // Cache the settings of all open documents
 const documentSettings = new Map<string, PGLanguageServerSettings>();
 
-// Store recent critic diags to prevent blinking of diagnostics
-const documentDiags = new Map<string, Diagnostic[]>();
+// Store recent critic diagnostics to prevent blinking of diagnostics
+const documentCriticDiagnostics = new Map<string, Diagnostic[]>();
 
-// Store recent compilation diags to prevent old diagnostics from resurfacing
-const documentCompDiags = new Map<string, Diagnostic[]>();
+// Store recent compilation diagnostics to prevent old diagnostics from resurfacing
+const documentCompilationDiagnostics = new Map<string, Diagnostic[]>();
 
 // A ballpark estimate is that 350k symbols will be about 35MB. A huge map, but a reasonable limit.
 const navSymbols = new LRUCache({
@@ -245,8 +245,8 @@ const getDocumentSettings = async (resource: string): Promise<PGLanguageServerSe
 // Only keep settings for open documents
 documents.onDidClose((e) => {
     documentSettings.delete(e.document.uri);
-    documentDiags.delete(e.document.uri);
-    documentCompDiags.delete(e.document.uri);
+    documentCriticDiagnostics.delete(e.document.uri);
+    documentCompilationDiagnostics.delete(e.document.uri);
     navSymbols.delete(e.document.uri);
     void connection.sendDiagnostics({ uri: e.document.uri, diagnostics: [] });
 });
@@ -283,62 +283,45 @@ const validatePerlDocument = async (textDocument: TextDocument): Promise<void> =
             : `Initializing diagnostics for ${fileName}`
     );
 
-    const start = Date.now();
-
     const workspaceFolder = await getCurrentWorkspaceFolder(textDocument);
 
-    const pCompile = perlcompile(textDocument, workspaceFolder, settings);
-    const pCritic = perlcritic(textDocument, workspaceFolder, settings);
+    // Compile the file contents.
+    const compilationStart = Date.now();
+    const perlOut = await perlcompile(textDocument, workspaceFolder, settings);
+    nLog('Compilation Time: ' + ((Date.now() - compilationStart) / 1000).toString() + ' seconds', settings);
 
-    const perlOut = await pCompile;
-    nLog('Compilation Time: ' + ((Date.now() - start) / 1000).toString() + ' seconds', settings);
-    const oldCriticDiags = documentDiags.get(textDocument.uri);
     if (!perlOut) {
-        documentCompDiags.delete(textDocument.uri);
+        documentCompilationDiagnostics.delete(textDocument.uri);
         endProgress(connection, progressToken);
         return;
     }
-    documentCompDiags.set(textDocument.uri, perlOut.diags);
-
-    let mixOldAndNew = perlOut.diags;
-    if (oldCriticDiags && settings.perlcriticEnabled) {
-        // Resend old critic diags to avoid overall file "blinking" in between receiving compilation and critic.
-        // TODO: async wait if it's not that long.
-        mixOldAndNew = perlOut.diags.concat(oldCriticDiags);
-    }
-    sendDiags({ uri: textDocument.uri, diagnostics: mixOldAndNew });
-
+    documentCompilationDiagnostics.set(textDocument.uri, perlOut.diagnostics);
     navSymbols.set(textDocument.uri, perlOut.perlDoc);
 
-    // Perl critic things
-    const diagCritic = await pCritic;
-    let newDiags: Diagnostic[] = [];
+    const criticDiagnostics: Diagnostic[] = [];
 
     if (settings.perlcriticEnabled) {
-        newDiags = newDiags.concat(diagCritic);
-        nLog('Perl Critic Time: ' + ((Date.now() - start) / 1000).toString() + ' seconds', settings);
+        // Execute perl critic on the file contents.
+        const perlCriticStart = Date.now();
+        criticDiagnostics.push(...(await perlcritic(textDocument, workspaceFolder, settings)));
+        nLog('Perl Critic Time: ' + ((Date.now() - perlCriticStart) / 1000).toString() + ' seconds', settings);
     }
 
-    documentDiags.set(textDocument.uri, newDiags); // May need to clear out old ones if a user changed their settings.
+    // Set this even if perlcritic is disabled as old diagnostics
+    // may need to be cleared if a user changed their settings.
+    documentCriticDiagnostics.set(textDocument.uri, criticDiagnostics);
 
-    let compDiags = documentCompDiags.get(textDocument.uri);
-    compDiags = compDiags ?? [];
+    const diagnostics = (documentCompilationDiagnostics.get(textDocument.uri) ?? []).concat(criticDiagnostics);
+    if (diagnostics.length) sendDiagnostics({ uri: textDocument.uri, diagnostics });
 
-    if (newDiags.length) {
-        const allNewDiags = compDiags.concat(newDiags);
-        sendDiags({ uri: textDocument.uri, diagnostics: allNewDiags });
-    }
     endProgress(connection, progressToken);
     return;
 };
 
-const sendDiags = (params: PublishDiagnosticsParams): void => {
+const sendDiagnostics = (params: PublishDiagnosticsParams): void => {
     // Before sending new diagnostics, check if the file is still open.
-    if (documents.get(params.uri)) {
-        void connection.sendDiagnostics(params);
-    } else {
-        void connection.sendDiagnostics({ uri: params.uri, diagnostics: [] });
-    }
+    if (documents.get(params.uri)) void connection.sendDiagnostics(params);
+    else void connection.sendDiagnostics({ uri: params.uri, diagnostics: [] });
 };
 
 connection.onDidChangeConfiguration((change) => {
