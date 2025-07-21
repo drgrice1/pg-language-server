@@ -29,7 +29,11 @@ const extractAssetsIfNecessary = async (): Promise<string> => {
 
         haveExtractedAssets = true;
         // Allow time to copy. TODO: Change writeStreams to be async and just wait on them
-        return new Promise((resolve) => setTimeout(() => resolve(pkgAssetPath), 50));
+        return new Promise((resolve) =>
+            setTimeout(() => {
+                resolve(pkgAssetPath);
+            }, 50)
+        );
     }
     return pkgAssetPath;
 };

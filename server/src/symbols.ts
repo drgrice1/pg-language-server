@@ -26,23 +26,11 @@ export const getSymbols = async (textDocument: TextDocument, uri: string): Promi
                 case PerlSymbolKind.Package:
                     kind = SymbolKind.Package;
                     break;
-                case PerlSymbolKind.Class:
-                    kind = SymbolKind.Class;
-                    break;
-                case PerlSymbolKind.Role:
-                    kind = SymbolKind.Interface;
-                    break;
-                case PerlSymbolKind.Field:
-                    kind = SymbolKind.Field;
-                    break;
                 case PerlSymbolKind.Label:
                     kind = SymbolKind.Key;
                     break;
                 case PerlSymbolKind.Phaser:
                     kind = SymbolKind.Event;
-                    break;
-                case PerlSymbolKind.Constant:
-                    kind = SymbolKind.Constant;
                     break;
                 case PerlSymbolKind.HttpRoute:
                     kind = SymbolKind.Interface;

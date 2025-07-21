@@ -21,7 +21,7 @@ export const refineElementIfSub = async (
         return;
     }
 
-    if (elem.source == ElemSource.parser && params && elem.line == params.position.line) {
+    if (elem.source == ElemSource.parser && elem.line == params.position.line) {
         // We're typing the actual signature or hovering over the definition. No pop-up needed.
         return;
     }
@@ -42,20 +42,16 @@ export const refineElement = async (elem: PerlElem, perlDoc: PerlDocument): Prom
         if (!doc) return refined;
 
         let refinedElems: PerlElem[] | undefined;
-        if ([PerlSymbolKind.Package, PerlSymbolKind.Class].includes(elem.type)) {
+        if (elem.type === PerlSymbolKind.Package) {
             refinedElems = doc.elems.get(elem.name);
         } else {
-            // Looks up Foo::Bar::baz by only the function name baz
-            // Will fail if you have multiple same name functions in the same file.
-            const match = elem.name.match(/\w+$/);
-            if (match) {
-                refinedElems = doc.elems.get(match[0]);
-            }
+            // Looks up Foo::Bar::baz by only the function name baz.
+            // This will fail if there are multiple functions by the same name in one file.
+            const match = /\w+$/.exec(elem.name);
+            if (match) refinedElems = doc.elems.get(match[0]);
         }
 
-        if (refinedElems && refinedElems.length == 1) {
-            refined = refinedElems[0];
-        }
+        if (refinedElems && refinedElems.length == 1) refined = refinedElems[0];
     }
     return refined;
 };
@@ -69,17 +65,13 @@ const getUriFromElement = async (elem: PerlElem, perlDoc: PerlDocument): Promise
     if (!elemResolved) return;
 
     for (const potentialElem of elemResolved) {
-        if (await isFile(potentialElem.uri)) {
-            return potentialElem.uri;
-        }
+        if (await isFile(potentialElem.uri)) return potentialElem.uri;
     }
 };
 
 const isFile = async (uri: string): Promise<boolean> => {
     const file = URI.parse(uri).fsPath;
-    if (!file || file.length < 1) {
-        return false;
-    }
+    if (!file || file.length < 1) return false;
     try {
         const stats = await fs.promises.stat(file);
         return stats.isFile();

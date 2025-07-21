@@ -2,7 +2,7 @@ import type { ExtensionContext } from 'vscode';
 import { LanguageClient, TransportKind } from 'vscode-languageclient/node';
 import { join } from 'path';
 
-let client: LanguageClient;
+let client: LanguageClient | undefined;
 
 export const activate = (context: ExtensionContext) => {
     const serverModule = context.asAbsolutePath(join('dist', 'server.js'));
@@ -29,7 +29,7 @@ export const activate = (context: ExtensionContext) => {
         }
     );
 
-    client.start();
+    void client.start();
 };
 
 export const deactivate = (): Thenable<void> | undefined => {

@@ -109,7 +109,7 @@ const getTidyProfile = (workspaceFolder: WorkspaceFolder | undefined, settings: 
     const profileCmd: string[] = [];
     if (settings.perltidyProfile) {
         const profile = settings.perltidyProfile;
-        if (profile.indexOf('$workspaceFolder') != -1) {
+        if (profile.includes('$workspaceFolder')) {
             if (workspaceFolder) {
                 const workspaceUri = URI.parse(workspaceFolder.uri).fsPath;
                 profileCmd.push('--profile');

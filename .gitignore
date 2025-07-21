@@ -4,3 +4,4 @@ lib
 vim-*-project
 .vim
 .netrwhist
+/misc

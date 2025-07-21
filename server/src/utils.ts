@@ -15,8 +15,8 @@ export const getIncPaths = (
 ): string[] => {
     let includePaths: string[] = [];
 
-    for (const path of settings.includePaths) {
-        if (path.indexOf('$workspaceFolder') != -1) {
+    for (const path of settings.includePaths ?? []) {
+        if (path.includes('$workspaceFolder')) {
             if (workspaceFolder) {
                 const incPath = URI.parse(workspaceFolder.uri).fsPath;
                 includePaths = includePaths.concat(['-I', path.replaceAll('$workspaceFolder', incPath)]);
@@ -99,14 +99,14 @@ export const getSymbol = (position: Position, txtDoc: TextDocument): string => {
     }
 
     let match;
-    if (symbol.match(/^->\w+$/)) {
+    if (/^->\w+$/.exec(symbol)) {
         // If you have Foo::Bar->new(...)->func, the extracted symbol will be ->func
         // We can special case this to Foo::Bar->func. The regex allows arguments to new(),
         // including params with matched ()
-        const match = prefix.match(/(\w(?:\w|::\w)*)->new\((?:\([^()]*\)|[^()])*\)$/);
+        const match = /(\w(?:\w|::\w)*)->new\((?:\([^()]*\)|[^()])*\)$/.exec(prefix);
 
         if (match) symbol = match[1] + symbol;
-    } else if ((match = symbol.match(/^(\w(?:\w|::\w)*)->new->(\w+)$/))) {
+    } else if ((match = /^(\w(?:\w|::\w)*)->new->(\w+)$/.exec(symbol))) {
         // If you have Foo::Bar->new->func, the extracted symbol will be Foo::Bar->new->func
         symbol = match[1] + '->' + match[2];
     }
@@ -116,15 +116,15 @@ export const getSymbol = (position: Position, txtDoc: TextDocument): string => {
 
 const findRecent = (found: PerlElem[], line: number): PerlElem => {
     let best = found[0];
-    for (let i = 0; i < found.length; i++) {
+    for (const item of found) {
         // TODO: is this flawed because not all lookups are in the same file?
         // Find the most recently declared variable. Modules and Packages are both declared at line 0,
         // so Package is tiebreaker (better navigation; modules can be faked by Moose)
         if (
-            (found[i].line > best.line && found[i].line <= line) ||
-            (found[i].line == best.line && found[i].type == PerlSymbolKind.Package)
+            (item.line > best.line && item.line <= line) ||
+            (item.line == best.line && item.type == PerlSymbolKind.Package)
         ) {
-            best = found[i];
+            best = item;
         }
     }
     return best;
@@ -227,7 +227,7 @@ export const lookupSymbol = (
         }
     }
 
-    if (symbol.match(/^(\w(?:\w|::\w)*)$/)) {
+    if (/^(\w(?:\w|::\w)*)$/.exec(symbol)) {
         // Running out of options here. Perhaps it's a Package, and the
         // file is in the symbol table under its individual functions.
 

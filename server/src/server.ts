@@ -49,7 +49,7 @@ if (process.argv.length <= 2) {
 const connection = createConnection(ProposedFeatures.all);
 
 // Create a simple text document manager.
-const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
+const documents = new TextDocuments<TextDocument>(TextDocument);
 
 let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
@@ -97,7 +97,7 @@ connection.onInitialize(async (params: InitializeParams) => {
 connection.onInitialized(() => {
     if (hasConfigurationCapability) {
         // Register for all configuration changes.
-        connection.client.register(DidChangeConfigurationNotification.type, undefined);
+        void connection.client.register(DidChangeConfigurationNotification.type, undefined);
     }
 });
 
@@ -131,13 +131,13 @@ const defaultSettings: PGLanguageServerSettings = {
 let globalSettings: PGLanguageServerSettings = defaultSettings;
 
 // Cache the settings of all open documents
-const documentSettings: Map<string, PGLanguageServerSettings> = new Map();
+const documentSettings = new Map<string, PGLanguageServerSettings>();
 
 // Store recent critic diags to prevent blinking of diagnostics
-const documentDiags: Map<string, Diagnostic[]> = new Map();
+const documentDiags = new Map<string, Diagnostic[]>();
 
 // Store recent compilation diags to prevent old diagnostics from resurfacing
-const documentCompDiags: Map<string, Diagnostic[]> = new Map();
+const documentCompDiags = new Map<string, Diagnostic[]>();
 
 // A ballpark estimate is that 350k symbols will be about 35MB. A huge map, but a reasonable limit.
 const navSymbols = new LRUCache({
@@ -147,7 +147,7 @@ const navSymbols = new LRUCache({
     }
 });
 
-const timers: Map<string, NodeJS.Timeout> = new Map();
+const timers = new Map<string, NodeJS.Timeout>();
 
 /*
 // Keep track of modules available for import. Building this is a slow operations and varies based on workspace
@@ -212,15 +212,13 @@ const expandTildePaths = (paths: string, settings: PGLanguageServerSettings): st
 };
 
 const getDocumentSettings = async (resource: string): Promise<PGLanguageServerSettings> => {
-    if (!hasConfigurationCapability) {
-        return globalSettings;
-    }
+    if (!hasConfigurationCapability) return globalSettings;
+
     let result = documentSettings.get(resource);
     if (!result) {
-        result = await connection.workspace.getConfiguration({
-            scopeUri: resource,
-            section: 'pg'
-        });
+        result = (await connection.workspace.getConfiguration({ scopeUri: resource, section: 'pg' })) as
+            | PGLanguageServerSettings
+            | undefined;
         if (!result) return globalSettings;
         const resolvedSettings = { ...globalSettings, ...result };
 
@@ -259,16 +257,16 @@ documents.onDidClose((e) => {
     documentDiags.delete(e.document.uri);
     documentCompDiags.delete(e.document.uri);
     navSymbols.delete(e.document.uri);
-    connection.sendDiagnostics({ uri: e.document.uri, diagnostics: [] });
+    void connection.sendDiagnostics({ uri: e.document.uri, diagnostics: [] });
 });
 
 documents.onDidOpen((change) => {
-    validatePerlDocument(change.document);
+    void validatePerlDocument(change.document);
     //buildModCache(change.document);
 });
 
 documents.onDidSave((change) => {
-    validatePerlDocument(change.document);
+    void validatePerlDocument(change.document);
 });
 
 documents.onDidChangeContent((change) => {
@@ -277,7 +275,7 @@ documents.onDidChangeContent((change) => {
     if (timer) clearTimeout(timer);
     timers.set(
         change.document.uri,
-        setTimeout(() => validatePerlDocument(change.document), 1000)
+        setTimeout(() => void validatePerlDocument(change.document), 1000)
     );
 });
 
@@ -302,7 +300,7 @@ const validatePerlDocument = async (textDocument: TextDocument): Promise<void> =
     const pCritic = perlcritic(textDocument, workspaceFolder, settings);
 
     const perlOut = await pCompile;
-    nLog('Compilation Time: ' + (Date.now() - start) / 1000 + ' seconds', settings);
+    nLog('Compilation Time: ' + ((Date.now() - start) / 1000).toString() + ' seconds', settings);
     const oldCriticDiags = documentDiags.get(textDocument.uri);
     if (!perlOut) {
         documentCompDiags.delete(textDocument.uri);
@@ -327,7 +325,7 @@ const validatePerlDocument = async (textDocument: TextDocument): Promise<void> =
 
     if (settings.perlcriticEnabled) {
         newDiags = newDiags.concat(diagCritic);
-        nLog('Perl Critic Time: ' + (Date.now() - start) / 1000 + ' seconds', settings);
+        nLog('Perl Critic Time: ' + ((Date.now() - start) / 1000).toString() + ' seconds', settings);
     }
 
     documentDiags.set(textDocument.uri, newDiags); // May need to clear out old ones if a user changed their settings.
@@ -335,7 +333,7 @@ const validatePerlDocument = async (textDocument: TextDocument): Promise<void> =
     let compDiags = documentCompDiags.get(textDocument.uri);
     compDiags = compDiags ?? [];
 
-    if (newDiags) {
+    if (newDiags.length) {
         const allNewDiags = compDiags.concat(newDiags);
         sendDiags({ uri: textDocument.uri, diagnostics: allNewDiags });
     }
@@ -346,28 +344,33 @@ const validatePerlDocument = async (textDocument: TextDocument): Promise<void> =
 const sendDiags = (params: PublishDiagnosticsParams): void => {
     // Before sending new diagnostics, check if the file is still open.
     if (documents.get(params.uri)) {
-        connection.sendDiagnostics(params);
+        void connection.sendDiagnostics(params);
     } else {
-        connection.sendDiagnostics({ uri: params.uri, diagnostics: [] });
+        void connection.sendDiagnostics({ uri: params.uri, diagnostics: [] });
     }
 };
 
-connection.onDidChangeConfiguration(async (change) => {
-    if (hasConfigurationCapability) {
-        // Reset all cached document settings
-        documentSettings.clear();
-    } else {
-        globalSettings = { ...defaultSettings, ...change?.settings?.pg };
-    }
-
-    // Despite what it looks like, this fires on all settings changes, not just pg language server settings.
-    if (change?.settings?.pg) {
-        //await rebuildModCache();
-        for (const doc of documents.all()) {
-            // sequential changes
-            await validatePerlDocument(doc);
+connection.onDidChangeConfiguration((change) => {
+    void (async () => {
+        if (hasConfigurationCapability) {
+            // Reset all cached document settings
+            documentSettings.clear();
+        } else {
+            globalSettings = {
+                ...defaultSettings,
+                ...((change.settings as { pg: PGLanguageServerSettings } | undefined)?.pg ?? {})
+            } as PGLanguageServerSettings;
         }
-    }
+
+        // This fires on all settings changes, not just pg language server settings.
+        if ((change.settings as { pg: PGLanguageServerSettings } | undefined)?.pg) {
+            //await rebuildModCache();
+            for (const doc of documents.all()) {
+                // sequential changes
+                await validatePerlDocument(doc);
+            }
+        }
+    })();
 });
 
 /*
@@ -442,7 +445,7 @@ connection.onWorkspaceSymbol((params) => {
 connection.onDocumentFormatting(async (params) => {
     const document = documents.get(params.textDocument.uri);
     const settings = await getDocumentSettings(params.textDocument.uri);
-    if (!document || !settings) return;
+    if (!document) return;
 
     const editOut: TextEdit[] | undefined = await formatDoc(
         params,
@@ -457,7 +460,7 @@ connection.onDocumentFormatting(async (params) => {
 connection.onDocumentRangeFormatting(async (params) => {
     const document = documents.get(params.textDocument.uri);
     const settings = await getDocumentSettings(params.textDocument.uri);
-    if (!document || !settings) return;
+    if (!document) return;
 
     const editOut: TextEdit[] | undefined = await formatRange(
         params,
@@ -489,9 +492,9 @@ connection.onShutdown(() => {
     }
 });
 
-process.on('unhandledRejection', (reason, p) =>
-    console.error('Caught an unhandled Rejection at: Promise ', p, ' reason: ', reason)
-);
+process.on('unhandledRejection', (reason, p) => {
+    console.error('Caught an unhandled Rejection at: Promise ', p, ' reason: ', reason);
+});
 
 // Make the text document manager listen on the connection
 // for open, change and close text document events

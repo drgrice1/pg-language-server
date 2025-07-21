@@ -3,6 +3,7 @@ import type { WorkspaceFolder } from 'vscode-languageserver-protocol';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
 import { join } from 'path';
+import type { ExecException } from 'child_process';
 import { ParseType, type PGLanguageServerSettings, type CompilationResults, type PerlDocument } from './types';
 import { getIncPaths, async_execFile, nLog } from './utils';
 import { buildNav } from './parseTags';
@@ -13,7 +14,7 @@ export const perlcompile = async (
     textDocument: TextDocument,
     workspaceFolder: WorkspaceFolder | undefined,
     settings: PGLanguageServerSettings
-): Promise<CompilationResults | void> => {
+): Promise<CompilationResults | undefined> => {
     const parsingPromise = parseDocument(textDocument, ParseType.selfNavigation);
 
     if (!settings.perlCompileEnabled) {
@@ -43,7 +44,7 @@ export const perlcompile = async (
         const options: {
             timeout: number;
             maxBuffer: number;
-            env?: { [key: string]: string | undefined };
+            env?: Record<string, string | undefined>;
         } = { timeout: 10000, maxBuffer: 20 * 1024 * 1024 };
         if (settings.perlEnv) {
             if (settings.perlEnvAdd) {
@@ -68,12 +69,12 @@ export const perlcompile = async (
     } catch (error: any) {
         // TODO: Check if we overflowed the buffer.
         if ('stderr' in error && 'stdout' in error) {
-            output = error.stderr.toString();
-            stdout = error.stdout.toString();
+            output = (error as ExecException).stderr?.toString() ?? '';
+            stdout = (error as ExecException).stdout?.toString() ?? '';
             severity = DiagnosticSeverity.Error;
         } else {
             nLog('Perlcompile failed with unknown error', settings);
-            nLog(error, settings);
+            nLog(error as unknown as string, settings);
             return;
         }
     }
@@ -87,8 +88,8 @@ export const perlcompile = async (
     }
 
     // If a base object throws a warning multiple times, we want to deduplicate it to declutter the problems tab.
-    const uniq_diagnostics = Array.from(new Set(diagnostics.map((diag) => JSON.stringify(diag)))).map((str) =>
-        JSON.parse(str)
+    const uniq_diagnostics = Array.from(new Set(diagnostics.map((diag) => JSON.stringify(diag)))).map(
+        (str) => JSON.parse(str) as Diagnostic
     );
     return { diags: uniq_diagnostics, perlDoc: mergedDoc };
 };
@@ -134,7 +135,7 @@ const getAdjustedPerlCode = (textDocument: TextDocument, filePath: string): stri
         const module_name = module_name_match[1];
         const inc_filename = module_name.replaceAll('::', '/') + '.pm';
         // make sure the package found actually matches the filename
-        if (filePath.indexOf(inc_filename) != -1) {
+        if (filePath.includes(inc_filename)) {
             register_inc_path = `$INC{'${inc_filename}'} = '${filePath}';`;
             break;
         } else {
@@ -167,7 +168,7 @@ const maybeAddCompDiag = (
     const lineNum = output.lineNum;
     violation = output.violation;
 
-    if (violation.indexOf('=PerlWarning=') != -1) {
+    if (violation.includes('=PerlWarning=')) {
         // Downgrade severity for explicitly marked severities
         severity = DiagnosticSeverity.Warning;
         violation = violation.replaceAll('=PerlWarning=', ''); // Don't display the PerlWarnings
@@ -188,8 +189,8 @@ const localizeErrors = (
     violation: string,
     filePath: string,
     perlDoc: PerlDocument
-): { violation: string; lineNum: number } | void => {
-    if (violation.indexOf('Too late to run CHECK block') != -1) return;
+): { violation: string; lineNum: number } | undefined => {
+    if (violation.includes('Too late to run CHECK block')) return;
 
     let match = /^(.+)at\s+(.+?)\s+line\s+(\d+)/i.exec(violation);
 
@@ -273,7 +274,7 @@ const getCriticProfile = (
     const profileCmd: string[] = [];
     if (settings.perlcriticProfile) {
         const profile = settings.perlcriticProfile;
-        if (profile.indexOf('$workspaceFolder') != -1) {
+        if (profile.includes('$workspaceFolder')) {
             if (workspaceFolder) {
                 const workspaceUri = URI.parse(workspaceFolder.uri).fsPath;
                 profileCmd.push('--profile');

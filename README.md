@@ -60,13 +60,13 @@ npm run build
 
 The following Perl dependencies are needed.
 
-- Perl::Tidy
+- Class::Inspector
+- Devel::Symdump
 - Mojolicious
 - PPI
 - Perl::Critic
+- Perl::Tidy
 - Sub::Util
-- Devel::Symdump
-- Class::Inspector
 
 ### Vim Installation (via coc.nvim)
 

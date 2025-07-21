@@ -25,6 +25,7 @@ export const getPod = async (
     let podBuffer = ''; // We "buffer" pod when searching to avoid empty sections
     let meaningFullContent = false;
     let searchItem;
+
     if ([PerlSymbolKind.Package, PerlSymbolKind.Module].includes(elem.type)) {
         // Search all. Note I'm not really treating packages different from Modules
     } else if (
@@ -32,7 +33,6 @@ export const getPod = async (
             PerlSymbolKind.ImportedSub,
             PerlSymbolKind.Method,
             PerlSymbolKind.Inherited,
-            PerlSymbolKind.PathedField,
             PerlSymbolKind.LocalMethod,
             PerlSymbolKind.LocalSub
         ].includes(elem.type)
@@ -58,8 +58,8 @@ export const getPod = async (
         // Ensure it's not an empty get/set pair.
         if (
             !(
-                (match2 = searchItem.match(/^get_(\w+)$/)) &&
-                match[1].match(new RegExp(`^(?:# +set_${match2[1]}\\r?\\n)?[\\s#]*$`))
+                (match2 = /^get_(\w+)$/.exec(searchItem)) &&
+                new RegExp(`^(?:# +set_${match2[1]}\\r?\\n)?[\\s#]*$`).exec(match[1])
             )
         ) {
             let content = match[1].replace(/^ *#+ ?/gm, '');
@@ -72,22 +72,21 @@ export const getPod = async (
     }
 
     // Split the file into lines and iterate through them
-    const lines = fileContent.split(/\r?\n/);
-    for (const line of lines) {
+    for (const line of fileContent.split(/\r?\n/)) {
         // =cut lines are not added.
         if (line.startsWith('=cut')) inPodBlock = false;
 
-        if (line.match(/^=(pod|head\d|over|item|back|begin|end|for|encoding)/)) {
+        if (/^=(pod|head\d|over|item|back|begin|end|for|encoding)/.exec(line)) {
             inPodBlock = true;
             meaningFullContent = false;
-            if (searchItem && line.match(new RegExp(`^=(head\\d|item).*\\b${searchItem}\\b`))) {
+            if (searchItem && new RegExp(`^=(head\\d|item).*\\b${searchItem}\\b`).exec(line)) {
                 // This is structured so if we hit two relevant block in a row, we keep them both
                 inRelevantBlock = true;
             } else {
                 inRelevantBlock = false;
                 podBuffer = '';
             }
-        } else if (line.match(/\w/)) {
+        } else if (/\w/.exec(line)) {
             // For this section, we found something that's not a header and has content
             meaningFullContent = true;
         }
@@ -146,7 +145,7 @@ const resolvePathForDoc = async (
 const fsPathOrAlt = async (fsPath: string | undefined): Promise<string | undefined> => {
     if (!fsPath) return;
 
-    if (/\.pm$/.test(fsPath)) {
+    if (fsPath.endsWith('.pm')) {
         const podPath = fsPath.replace(/\.pm$/, '.pod');
         if (!(await badFile(podPath))) return podPath;
     }
@@ -161,17 +160,17 @@ const badFile = async (fsPath: string): Promise<boolean> => {
     return false;
 };
 
-type ConversionState = {
+interface ConversionState {
     inList: boolean;
     inVerbatim: boolean;
     inCustomBlock: boolean;
     markdown: string;
     encoding: string | null; // Currently processed, but not used
     waitingForListTitle: boolean;
-};
+}
 
 const convertPODToMarkdown = (pod: string): string => {
-    let finalMarkdown: string = '';
+    let finalMarkdown = '';
     let state: ConversionState = {
         inList: false,
         inVerbatim: false,
@@ -181,11 +180,7 @@ const convertPODToMarkdown = (pod: string): string => {
         waitingForListTitle: false
     };
 
-    const lines = pod.split('\n');
-
-    for (let i = 0; i < lines.length; i++) {
-        let line = lines[i];
-
+    for (let line of pod.split('\n')) {
         // Check for verbatim blocks first, perhaps ending a prior one
         if (shouldConsiderVerbatim(line) || state.inVerbatim) {
             state = processVerbatim(line, state);
@@ -259,7 +254,7 @@ const processHeadings = (line: string): string => {
 };
 
 const processList = (line: string, state: ConversionState): ConversionState => {
-    let markdown: string = '';
+    let markdown = '';
 
     if (line.startsWith('=over')) {
         // The =over command starts a list.
@@ -380,14 +375,14 @@ const processInlineElements = (line: string): string => {
     line = line.replace(/C<([^<>]*)L<< (?:.+?\|\/?)?(.+?) >>([^<>]*)>/g, 'C<< $1 $2 $3 >>');
 
     // Handle code (C<code>), while allowing E<> replacements
-    line = line.replace(/C<((?:[^<>]|[EL]<[^<>]+>)+?)>/g, (_match, code) => escapeBackticks(code));
+    line = line.replace(/C<((?:[^<>]|[EL]<[^<>]+>)+?)>/g, (_match, code: string) => escapeBackticks(code));
 
     // Unfortunately doesn't require the <<< to be matched in quantity. E<> is allowed automatically
-    line = line.replace(/C<< (.+?) >>/g, (_match, code) => escapeBackticks(code));
-    line = line.replace(/C<<<+ (.+?) >+>>/g, (_match, code) => escapeBackticks(code));
+    line = line.replace(/C<< (.+?) >>/g, (_match, code: string) => escapeBackticks(code));
+    line = line.replace(/C<<<+ (.+?) >+>>/g, (_match, code: string) => escapeBackticks(code));
 
     // Handle special characters (E<entity>)
-    line = line.replace(/E<([^>]+)>/g, (_match, entity) => convertE(entity));
+    line = line.replace(/E<([^>]+)>/g, (_match, entity: string) => convertE(entity));
 
     // Mapping the Unicode non-character U+FFFF back to escaped backticks
     line = line.replace(new RegExp(tempPlaceholder, 'g'), '\\`');
@@ -425,7 +420,7 @@ const processInlineElements = (line: string): string => {
 const escapeRegExp = (str: string): string => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const escapeHTML = (str: string): string => {
-    const map: { [key: string]: string } = {
+    const map: Record<string, string> = {
         '&': '&amp;',
         '<': '&lt;',
         '>': '&gt;',
@@ -441,7 +436,7 @@ const escapeHTML = (str: string): string => {
     };
 
     // If the number of backticks is odd, it means backticks are unbalanced
-    const backtickCount = (str.match(/`/g) || []).length;
+    const backtickCount = (str.match(/`/g) ?? []).length;
     const segments = str.split('`');
 
     if (backtickCount % 2 !== 0 || segments.length % 2 === 0) {
@@ -460,7 +455,7 @@ const escapeHTML = (str: string): string => {
 };
 
 const escapeBackticks = (str: string): string => {
-    const count = (str.match(new RegExp(tempPlaceholder, 'g')) || []).length;
+    const count = (str.match(new RegExp(tempPlaceholder, 'g')) ?? []).length;
     str = str.replace(new RegExp(tempPlaceholder, 'g'), '`'); // Backticks inside don't need to be escaped.
     const delimiters = '`'.repeat(count + 1);
     return `${delimiters}${str}${delimiters}`;

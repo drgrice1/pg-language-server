@@ -8,7 +8,21 @@ export default [
     { ignores: ['**/dist/*', '**/lib/*', 'server/src/perl/pg/*'] },
     { files: ['**/*.{js,mjs,cjs,ts}'] },
     pluginJs.configs.recommended,
-    ...tseslint.configs.recommended,
+    ...tseslint.configs.strictTypeChecked,
+    ...tseslint.configs.stylisticTypeChecked,
+    {
+        languageOptions: {
+            globals: { ...globals.node, ...globals.browser },
+            parserOptions: {
+                projectService: true,
+                tsconfigRootDir: import.meta.dirname
+            }
+        }
+    },
+    {
+        files: ['**/*.{js,mjs,cjs}'],
+        ...tseslint.configs.disableTypeChecked
+    },
     eslintConfigPrettier,
     {
         languageOptions: { globals: globals.node },

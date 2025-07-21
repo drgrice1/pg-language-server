@@ -61,10 +61,10 @@ const buildHoverDoc = (symbol: string, elem: PerlElem, refined: PerlElem | undef
             // We either know the object type, or it's $self
             return `(object) ${elem.package}`;
     }
-    if (refined && refined.signature) {
+    if (refined?.signature) {
         let signature = refined.signature;
         signature = [...signature];
-        if (symbol.indexOf('->') != -1 && refined.type != PerlSymbolKind.LocalMethod) {
+        if (symbol.includes('->') && refined.type != PerlSymbolKind.LocalMethod) {
             signature.shift();
             name = name.replace(/::(\w+)$/, '->$1');
         }
@@ -88,9 +88,6 @@ const buildHoverDoc = (symbol: string, elem: PerlElem, refined: PerlElem | undef
             // Not very interesting info
             // desc = `(variable) ${symbol}`;
             break;
-        case PerlSymbolKind.Constant:
-            desc = `(constant) ${symbol}`;
-            break;
         case PerlSymbolKind.ImportedVar:
             desc = `${name}: ${elem.value}`;
             if (elem.package) desc += ` [${elem.package}]`; // Is this ever known?
@@ -102,22 +99,11 @@ const buildHoverDoc = (symbol: string, elem: PerlElem, refined: PerlElem | undef
             desc = `(package) ${elem.name}`;
             break;
         case PerlSymbolKind.Module: {
-            const file = URI.parse(elem.uri).fsPath;
-            desc = `(module) ${elem.name}: ${file}`;
+            desc = `(module) ${elem.name}: ${URI.parse(elem.uri).fsPath}`;
             break;
         }
         case PerlSymbolKind.Label:
             desc = `(label) ${symbol}`;
-            break;
-        case PerlSymbolKind.Class:
-            desc = `(class) ${symbol}`;
-            break;
-        case PerlSymbolKind.Role:
-            desc = `(role) ${symbol}`;
-            break;
-        case PerlSymbolKind.Field:
-        case PerlSymbolKind.PathedField:
-            desc = `(attribute) ${elem.name}`;
             break;
         case PerlSymbolKind.Phaser:
             desc = `(phase) ${symbol}`;

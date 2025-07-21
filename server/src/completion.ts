@@ -70,12 +70,12 @@ const getPrefix = (text: string, position: number): CompletionPrefix => {
     let symbol = text.substring(l, position);
     const prefix = text.substring(0, l);
     let stripPackage = false;
-    if (symbol.match(/^-(?:>\w*)?$/)) {
+    if (/^-(?:>\w*)?$/.exec(symbol)) {
         // Matches -  or -> or ->\w
         // If you have Foo::Bar->new(...)->func, the extracted symbol will be ->func
         // We can special case this to Foo::Bar->func. The regex allows arguments to new(),
         // including params with matched ()
-        const match = prefix.match(/(\w(?:\w|::\w)*)->new\((?:\([^()]*\)|[^()])*\)$/);
+        const match = /(\w(?:\w|::\w)*)->new\((?:\([^()]*\)|[^()])*\)$/.exec(prefix);
 
         if (match) {
             symbol = match[1] + symbol;
@@ -160,7 +160,7 @@ const getMatches = (perlDoc: PerlDocument, symbol: string, replace: Range, strip
         if (/^[$@%].$/.test(elemName)) continue;
 
         // Get the canonical (typed) element, otherwise just grab the first one.
-        const element = perlDoc.canonicalElems.get(elemName) || elements[0];
+        const element = perlDoc.canonicalElems.get(elemName) ?? elements[0];
 
         let qualifiedElemName = elemName;
 
@@ -168,12 +168,7 @@ const getMatches = (perlDoc: PerlDocument, symbol: string, replace: Range, strip
         // because imports clutter the list, despite perl allowing them called on $self->
         if (
             bSelf &&
-            [
-                PerlSymbolKind.LocalSub,
-                PerlSymbolKind.Inherited,
-                PerlSymbolKind.LocalMethod,
-                PerlSymbolKind.Field
-            ].includes(element.type)
+            [PerlSymbolKind.LocalSub, PerlSymbolKind.Inherited, PerlSymbolKind.LocalMethod].includes(element.type)
         )
             qualifiedElemName = `$self::${qualifiedElemName}`;
 
@@ -197,9 +192,7 @@ const getMatches = (perlDoc: PerlDocument, symbol: string, replace: Range, strip
                     PerlSymbolKind.ImportedSub,
                     PerlSymbolKind.Inherited,
                     PerlSymbolKind.LocalMethod,
-                    PerlSymbolKind.Method,
-                    PerlSymbolKind.Field,
-                    PerlSymbolKind.PathedField
+                    PerlSymbolKind.Method
                 ].includes(element.type)
             )
                 continue;
@@ -207,17 +200,12 @@ const getMatches = (perlDoc: PerlDocument, symbol: string, replace: Range, strip
             // (I assume them to be instance methods/attributes, not class)
             if (
                 !/^\$.*->\w+$/.test(aligned) &&
-                [
-                    PerlSymbolKind.LocalMethod,
-                    PerlSymbolKind.Method,
-                    PerlSymbolKind.Field,
-                    PerlSymbolKind.PathedField
-                ].includes(element.type)
+                [PerlSymbolKind.LocalMethod, PerlSymbolKind.Method].includes(element.type)
             )
                 continue;
             if (
-                aligned.indexOf('-:') != -1 || // We look things up like this, but don't let them slip through
-                (aligned.startsWith('$') && aligned.indexOf('::', 1) != -1)
+                aligned.includes('-:') || // We look things up like this, but don't let them slip through
+                (aligned.startsWith('$') && aligned.includes('::', 1))
             )
                 // $Foo::Bar, I don't really hunt for these anyway
                 continue;
@@ -298,9 +286,6 @@ const buildMatches = (
                 docs.push(`Value: ${elem.value}`);
                 break;
             case PerlSymbolKind.ImportedHash:
-            case PerlSymbolKind.Constant:
-                kind = CompletionItemKind.Constant;
-                break;
             case PerlSymbolKind.LocalSub:
                 // For consistency with the other $self methods. VScode seems to hide documentation if less populated?
                 if (lookupName.startsWith('$self-')) docs.push(elem.name);
@@ -320,16 +305,6 @@ const buildMatches = (
                 break;
             case PerlSymbolKind.Label: // Loop labels
                 kind = CompletionItemKind.Reference;
-                break;
-            case PerlSymbolKind.Class:
-                kind = CompletionItemKind.Class;
-                break;
-            case PerlSymbolKind.Role:
-                kind = CompletionItemKind.Interface;
-                break;
-            case PerlSymbolKind.Field:
-            case PerlSymbolKind.PathedField:
-                kind = CompletionItemKind.Field;
                 break;
             case PerlSymbolKind.Phaser:
             case PerlSymbolKind.HttpRoute:
@@ -391,7 +366,7 @@ const getSortText = (label: string): string => {
         // Public methods / functions
         sortText = '2';
         // Prioritize '->new'
-        if (label.indexOf('->new') != -1) sortText += '1';
+        if (label.includes('->new')) sortText += '1';
         sortText += label;
     } else {
         // Variables and regex mistakes

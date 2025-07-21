@@ -17,14 +17,14 @@ export interface PGLanguageServerSettings {
     perltidyEnabled: boolean;
     perltidyProfile: string;
     perlCompileEnabled: boolean;
-    perlEnv: undefined | { [key: string]: string };
+    perlEnv: undefined | Record<string, string>;
     perlEnvAdd: boolean;
     severity5: string;
     severity4: string;
     severity3: string;
     severity2: string;
     severity1: string;
-    includePaths: string[];
+    includePaths?: string[];
     logging: boolean;
 }
 
@@ -89,17 +89,12 @@ export interface completionElem {
 export enum PerlSymbolKind {
     Module = 'm',
     Package = 'p',
-    Class = 'a',
-    Role = 'b',
     ImportedSub = 't',
     Inherited = 'i',
-    Field = 'f', // Instance fields
-    PathedField = 'd', // Instance fields
     LocalSub = 's',
     LocalMethod = 'o', // Assumed to be instance methods
     Method = 'x', // Assumed to be instance methods
     LocalVar = 'v',
-    Constant = 'n',
     Label = 'l',
     Phaser = 'e',
     Canonical = '1', // 2 and 3 are also reserved

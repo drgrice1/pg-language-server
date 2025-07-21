@@ -1,7 +1,7 @@
 import { type ExtensionContext, workspace, services, LanguageClient, TransportKind } from 'coc.nvim';
 import { join } from 'path';
 
-export const activate = async (context: ExtensionContext): Promise<void> => {
+export const activate = (context: ExtensionContext): void => {
     if (!workspace.getConfiguration('coc-pg').get<boolean>('enable', true)) return;
 
     const serverModule = context.asAbsolutePath(join('..', 'dist', 'server.js'));

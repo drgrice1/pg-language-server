@@ -3,7 +3,7 @@ import type { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
 import { realpathSync, realpath } from 'fs';
 import { join } from 'path';
-import type { PerlDocument, PerlElem, PGLanguageServerSettings } from './types';
+import { PerlDocument, PerlElem, PGLanguageServerSettings, PerlSymbolKind } from './types';
 import { getIncPaths, async_execFile, getSymbol, lookupSymbol, nLog, isFile } from './utils';
 import { getPerlAssetsPath } from './assets';
 import { refineElement } from './refinement';
@@ -61,21 +61,19 @@ const resolveElemForNav = async (
     elem: PerlElem,
     symbol: string
 ): Promise<PerlElem | undefined> => {
-    const refined = await refineElement(elem, perlDoc);
-    elem = refined || elem;
+    const refined = await refineElement(elem, perlDoc).catch(() => undefined);
+    elem = refined ?? elem;
     if (!badFile(elem.uri)) {
         if (perlDoc.uri == elem.uri && symbol.includes('->')) {
-            // Corinna methods don't have line numbers. Let's hunt for them.
-            // If you dont find anything better, just return the original element.
+            // Corinna methods don't have line numbers. So hunt for them.
+            // If nothing better is found, return the original element.
             const method = symbol.split('->').pop();
             if (method) {
-                // Shouldn't this always be defined? Double check
                 const found = perlDoc.elems.get(method);
-
                 if (found) {
-                    if (elem.line == 0 && elem.type == 'x') {
+                    if (elem.line == 0 && elem.type == PerlSymbolKind.Method) {
                         if (found[0].uri == perlDoc.uri) return found[0];
-                    } else if (elem.line > 0 && elem.type == 't') {
+                    } else if (elem.line > 0 && elem.type == PerlSymbolKind.ImportedSub) {
                         // Solve the off-by-one error at least for these.
                         // Eventually, you could consult a tagger for this step.
 
@@ -136,7 +134,7 @@ export const getAvailableMods = async (
     perlParams.push(join(await getPerlAssetsPath(), 'ModHunter.pl'));
     nLog('Starting to look for perl modules with ' + perlParams.join(' '), settings);
 
-    const mods: Map<string, string> = new Map();
+    const mods = new Map<string, string>();
 
     let output: string;
     try {

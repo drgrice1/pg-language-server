@@ -41,7 +41,7 @@ const parseElem = (perlTag: string, perlDoc: PerlDocument): void => {
 
     const value = items[6] || '';
 
-    if (type == TagKind.UseStatement) {
+    if (type == TagKind.UseStatement.valueOf()) {
         // Explictly loaded module. Helpful for focusing autocomplete results
         perlDoc.imported.set(name, startLine);
         // TODO: Build mapping of common constructors to types
@@ -49,7 +49,7 @@ const parseElem = (perlTag: string, perlDoc: PerlDocument): void => {
         return; // Don't store it as an element
     }
 
-    if (type == TagKind.Canonical2) {
+    if (type == TagKind.Canonical2.valueOf()) {
         perlDoc.parents.set(name, typeDetail);
         return; // Don't store it as an element
     }
@@ -73,13 +73,13 @@ const parseElem = (perlTag: string, perlDoc: PerlDocument): void => {
         perlDoc.canonicalElems.set(name, newElem);
     }
 
-    if (type == PerlSymbolKind.Canonical) {
+    if (type == PerlSymbolKind.Canonical.valueOf()) {
         // This object is only intended as the canonicalLookup, not for anything else.
         // This doesn't do anything until fancy object types are moved into the typeDetail field
         return;
     }
 
-    if (type == PerlSymbolKind.AutoLoadVar) {
+    if (type == PerlSymbolKind.AutoLoadVar.valueOf()) {
         perlDoc.autoloads.set(name, newElem);
         return; // Don't store it as an element
     }
@@ -90,7 +90,7 @@ const parseElem = (perlTag: string, perlDoc: PerlDocument): void => {
 };
 
 const addVal = (map: Map<string, unknown[]>, key: string, value: unknown) => {
-    const array = map.get(key) || [];
+    const array = map.get(key) ?? [];
     array.push(value);
     map.set(key, array);
 };
