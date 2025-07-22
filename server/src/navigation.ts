@@ -3,7 +3,7 @@ import type { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
 import { realpathSync, realpath } from 'fs';
 import { join } from 'path';
-import { PerlDocument, PerlElement, PGLanguageServerSettings, PerlSymbolKind } from './types';
+import { type PerlDocument, type PerlElement, type PGLanguageServerSettings, PerlSymbolKind } from './types';
 import { getIncPaths, async_execFile, getSymbol, lookupSymbol, nLog, isFile, getPerlAssetsPath } from './utils';
 import { refineElement } from './refinement';
 

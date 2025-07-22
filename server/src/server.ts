@@ -4,19 +4,19 @@ import type {
     Diagnostic,
     InitializeParams,
     InitializeResult,
-    WorkspaceFolder
+    WorkspaceFolder,
     //Location,
     //CompletionItem,
     //CompletionList
     //TextDocumentPositionParams,
+    TextEdit
 } from 'vscode-languageserver/node';
 import {
     createConnection,
     TextDocuments,
     ProposedFeatures,
     DidChangeConfigurationNotification,
-    TextDocumentSyncKind,
-    TextEdit
+    TextDocumentSyncKind
 } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import type { PublishDiagnosticsParams } from 'vscode-languageserver-protocol';

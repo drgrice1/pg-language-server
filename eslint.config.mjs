@@ -20,6 +20,10 @@ export default [
         }
     },
     {
+        files: ['**/*.ts'],
+        rules: { '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }] }
+    },
+    {
         files: ['**/*.{js,mjs,cjs}'],
         ...tseslint.configs.disableTypeChecked
     },
