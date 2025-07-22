@@ -1,7 +1,7 @@
 import type { TextDocumentPositionParams } from 'vscode-languageserver/node';
 import { URI } from 'vscode-uri';
 import * as fs from 'fs';
-import { ElementSource, ParseType, type PerlDocument, type PerlElement, PerlSymbolKind } from './types';
+import { ElementSource, type PerlDocument, type PerlElement, PerlSymbolKind } from './types';
 import { parseFromUri } from './parser';
 
 export const refineElementIfSub = async (
@@ -36,7 +36,7 @@ export const refineElement = async (element: PerlElement, perlDoc: PerlDocument)
         const resolvedUri = await getUriFromElement(element, perlDoc);
         if (!resolvedUri) return refined;
 
-        const doc = await parseFromUri(resolvedUri, ParseType.refinement);
+        const doc = await parseFromUri(resolvedUri);
         if (!doc) return refined;
 
         let refinedElements: PerlElement[] | undefined;

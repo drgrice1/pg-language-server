@@ -221,7 +221,11 @@
         "build": "export NODE_OPTIONS=--openssl-legacy-provider; webpack --mode production --devtool hidden-source-map"
     },
     "devDependencies": {
+        "@codemirror/autocomplete": "^6.20.3",
+        "@codemirror/state": "^6.7.4",
         "@eslint/js": "^10.0.1",
+        "@lezer/common": "^1.5.2",
+        "@openwebwork/codemirror-lang-pg": "^0.0.6",
         "@stylistic/eslint-plugin": "^5.10.0",
         "@types/node": "^22.20.2",
         "@types/uuid": "^10.0.0",
@@ -240,8 +244,6 @@
         "vscode-languageclient": "^10.1.1",
         "vscode-languageserver": "^10.1.1",
         "vscode-languageserver-textdocument": "^1.0.14",
-        "vscode-oniguruma": "^2.0.1",
-        "vscode-textmate": "^9.3.2",
         "vscode-uri": "^3.2.0",
         "webpack": "^5.110.3",
         "webpack-cli": "^7.2.3",

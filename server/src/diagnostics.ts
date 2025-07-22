@@ -4,7 +4,7 @@ import type { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
 import { join } from 'path';
 import type { ExecException } from 'child_process';
-import { ParseType, type PGLanguageServerSettings, type CompilationResults, type PerlDocument } from './types';
+import type { PGLanguageServerSettings, CompilationResults, PerlDocument } from './types';
 import { getIncPaths, async_execFile, nLog, getPerlAssetsPath } from './utils';
 import { buildNav } from './parseTags';
 import { parseDocument } from './parser';
@@ -14,10 +14,9 @@ export const perlcompile = async (
     workspaceFolder: WorkspaceFolder | undefined,
     settings: PGLanguageServerSettings
 ): Promise<CompilationResults | undefined> => {
-    const parsingPromise = parseDocument(textDocument, ParseType.selfNavigation);
+    const parsedDoc = parseDocument(textDocument);
 
     if (!settings.perlCompileEnabled) {
-        const parsedDoc = await parsingPromise;
         return { diagnostics: [], perlDoc: parsedDoc };
     }
     const perlParams: string[] = [...settings.perlParams, '-c'];
@@ -79,7 +78,6 @@ export const perlcompile = async (
     }
 
     const compiledDoc = buildNav(stdout, filePath, textDocument.uri);
-    const parsedDoc = await parsingPromise;
     const mergedDoc = mergeDocs(parsedDoc, compiledDoc);
 
     for (const violation of output.split('\n')) {

@@ -49,6 +49,9 @@ export interface PerlDocument {
     imported: Map<string, number>;
     parents: Map<string, string>;
     uri: string;
+    // Filenames passed to loadMacros(...) calls. Not yet consumed anywhere; plumbing for wiring PG macro/lib
+    // files into the symbol table in a future pass.
+    loadedMacros?: string[];
 }
 
 export enum ElementSource {
@@ -56,12 +59,6 @@ export enum ElementSource {
     modHunter,
     parser,
     packageInference
-}
-
-export enum ParseType {
-    outline,
-    selfNavigation,
-    refinement
 }
 
 export interface CompilationResults {

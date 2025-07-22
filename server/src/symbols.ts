@@ -5,11 +5,11 @@ import {
     type WorkspaceSymbolParams
 } from 'vscode-languageserver/node';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
-import { ParseType, PerlSymbolKind } from './types';
+import { PerlSymbolKind } from './types';
 import { parseDocument } from './parser';
 
-export const getSymbols = async (textDocument: TextDocument, uri: string): Promise<SymbolInformation[]> => {
-    const perlDoc = await parseDocument(textDocument, ParseType.outline);
+export const getSymbols = (textDocument: TextDocument, uri: string): SymbolInformation[] => {
+    const perlDoc = parseDocument(textDocument);
 
     const symbols: SymbolInformation[] = [];
     for (const [elementName, elements] of perlDoc.elements) {

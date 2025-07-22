@@ -375,7 +375,7 @@ connection.onDefinition(async (params) => {
     return await getDefinition(params, perlDoc, document, availableMods.get('default') ?? new Map<string, string>());
 });
 
-connection.onDocumentSymbol(async (params) => {
+connection.onDocumentSymbol((params) => {
     const document = documents.get(params.textDocument.uri);
     if (!document) return;
     return getSymbols(document, params.textDocument.uri);
