@@ -385,7 +385,7 @@ sub filter_modpacks {
 }
 
 sub dump_loaded_mods {
-    my @modules = my $displays = {};
+    my $displays = {};
 
     for my $module (keys %INC) {
         my $display_mod = $module;
@@ -400,8 +400,8 @@ sub dump_loaded_mods {
 
     for my $key_to_print (@$filtered_modules) {
         my $path = $displays->{$key_to_print};
-        next if !$path;    # If we don't have a path, the modHunter module would be better
-        print_tag("$key_to_print", 'm', '', $path, $key_to_print, 0, '');
+        next if !$path;    # If there is no path, the modHunter module would be better.
+        print_tag($key_to_print, 'm', '', $path, $key_to_print, 0, '');
     }
     return;
 }
@@ -418,7 +418,7 @@ sub load_source {
 
     if ($sourceFilePath) {
         # Currently loading the source twice, which is a waste. TODO: Move some stuff around
-        open my $fh, '<:utf8', $sourceFilePath or die "Can't open file $!";    ## no critic (UTF8)
+        open my $fh, '<:encoding(UTF-8)', $sourceFilePath or die "Can't open file $!";
         $file   = $sourceFilePath;
         $source = do { local $/; <$fh> };
         $offset = 1;

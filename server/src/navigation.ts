@@ -1,7 +1,7 @@
 import type { DefinitionParams, Location, WorkspaceFolder } from 'vscode-languageserver/node';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
-import { realpathSync, realpath } from 'fs';
+import { realpath } from 'fs/promises';
 import { join } from 'path';
 import { type PerlDocument, type PerlElement, type PGLanguageServerSettings, PerlSymbolKind } from './types';
 import { getIncPaths, async_execFile, getSymbol, lookupSymbol, nLog, isFile, getPerlAssetsPath } from './utils';
@@ -35,7 +35,11 @@ export const getDefinition = async (
 
             if (!(await isFile(file))) continue; // Make sure the file exists and hasn't been deleted.
 
-            uri = URI.file(realpathSync(file)).toString(); // Resolve symlinks
+            try {
+                uri = URI.file(await realpath(file)).toString(); // Resolve symlinks
+            } catch {
+                continue;
+            }
         } else {
             // Sending to current file (including untitled files)
             uri = perlDoc.uri;
@@ -98,18 +102,6 @@ const resolveElementForNav = async (
                 }
             }
         }
-
-        // Finding the module with the stored mod didn't work.
-        // Let's try navigating to the package itself instead of Foo::Bar->method().
-        // Many Moose methods end up here.
-        // Not very helpful, since the user can simply click on the module manually if they want
-        // const base_module = symbol.match(/^([\w:]+)->\w+$/);
-        // if(base_module){
-        //     const elementResolved = perlDoc.elements.get(base_module);
-        //     if(elementResolved && elementResolved.file && !badFile(element.file)){
-        //         return elementResolved;
-        //     }
-        // }
     }
     return;
 };
@@ -145,7 +137,7 @@ export const getAvailableMods = async (
         output = out.stdout;
         nLog('Success running mod hunter', settings);
     } catch (error: unknown) {
-        nLog('ModHunter failed. You will lose autocomplete on importing modules. Not a huge deal', settings);
+        nLog('ModHunter failed. Autocomplete on imported modules will not work.', settings);
         nLog(error as string, settings);
         return mods;
     }
@@ -155,14 +147,12 @@ export const getAvailableMods = async (
 
         if (items.length != 5 || items[1] != 'M' || !items[2] || !items[3]) continue;
 
-        // Load file
-        realpath(items[3], (err, path) => {
-            if (!err) {
-                if (!path) return; // Could file be empty, but no error?
-                const uri = URI.file(path).toString(); // Resolve symlinks
-                mods.set(items[2], uri);
-            }
-        });
+        try {
+            const path = await realpath(items[3]); // Resolve symlinks
+            mods.set(items[2], URI.file(path).toString());
+        } catch {
+            /* Ignore */
+        }
     }
     return mods;
 };

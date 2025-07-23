@@ -20,21 +20,22 @@ export const getIncPaths = (
     workspaceFolder: WorkspaceFolder | undefined,
     settings: PGLanguageServerSettings
 ): string[] => {
-    let includePaths: string[] = [];
+    const includePaths: string[] = [];
 
     for (const path of settings.includePaths ?? []) {
         if (path.includes('$workspaceFolder')) {
             if (workspaceFolder) {
-                const incPath = URI.parse(workspaceFolder.uri).fsPath;
-                includePaths = includePaths.concat(['-I', path.replaceAll('$workspaceFolder', incPath)]);
+                includePaths.push('-I', path.replaceAll('$workspaceFolder', URI.parse(workspaceFolder.uri).fsPath));
             } else {
                 nLog(
-                    `You used $workspaceFolder in your config, but didn't add any workspace folders. Skipping ${path}`,
+                    `You used $workspaceFolder in your config, but didn't add any workspace folders. Skipping "${
+                        path
+                    }".`,
                     settings
                 );
             }
         } else {
-            includePaths = includePaths.concat(['-I', path]);
+            includePaths.push('-I', path);
         }
     }
 
@@ -54,11 +55,8 @@ export const getSymbol = (position: Position, txtDoc: TextDocument): string => {
 
     const index = txtDoc.offsetAt(position) - txtDoc.offsetAt(start);
 
-    const leftRg = /[\p{L}\p{N}_:>-]/u;
-    const rightRg = /[\p{L}\p{N}_]/u;
-
-    const leftAllow = (c: string) => leftRg.exec(c);
-    const rightAllow = (c: string) => rightRg.exec(c);
+    const leftAllow = (c: string) => /[\p{L}\p{N}_:>-]/u.exec(c);
+    const rightAllow = (c: string) => /[\p{L}\p{N}_]/u.exec(c);
 
     let left = index - 1;
     let right = index;
@@ -73,28 +71,23 @@ export const getSymbol = (position: Position, txtDoc: TextDocument): string => {
 
     while (left >= 0 && leftAllow(text[left])) {
         // Allow for ->, but not => or > (e.g. $foo->bar, but not $foo=>bar or $foo>bar)
-        if (text[left] === '>' && left - 1 >= 0 && text[left - 1] !== '-') {
-            break;
-        }
+        if (text[left] === '>' && left - 1 >= 0 && text[left - 1] !== '-') break;
         left -= 1;
     }
     left = Math.max(0, left + 1);
-    while (right < text.length && rightAllow(text[right])) {
-        right += 1;
-    }
+    while (right < text.length && rightAllow(text[right])) right += 1;
     right = Math.max(left, right);
 
     let symbol = text.substring(left, right);
-    const prefix = text.substring(0, left);
 
     const lChar = left > 0 ? text[left - 1] : '';
     const llChar = left > 1 ? text[left - 2] : '';
     const rChar = right < text.length ? text[right] : '';
 
     if (lChar === '$') {
-        if (rChar === '[' && llChar != '$') {
+        if (rChar === '[' && llChar !== '$') {
             symbol = '@' + symbol; // $foo[1] -> @foo  $$foo[1] -> $foo
-        } else if (rChar === '{' && llChar != '$') {
+        } else if (rChar === '{' && llChar !== '$') {
             symbol = '%' + symbol; // $foo{1} -> %foo   $$foo{1} -> $foo
         } else {
             symbol = '$' + symbol; //  $foo  $foo->[1]  $foo->{1} -> $foo
@@ -110,6 +103,7 @@ export const getSymbol = (position: Position, txtDoc: TextDocument): string => {
         // If you have Foo::Bar->new(...)->func, the extracted symbol will be ->func
         // We can special case this to Foo::Bar->func. The regex allows arguments to new(),
         // including params with matched ()
+        const prefix = text.substring(0, left);
         const match = /(\w(?:\w|::\w)*)->new\((?:\([^()]*\)|[^()])*\)$/.exec(prefix);
 
         if (match) symbol = match[1] + symbol;
@@ -179,9 +173,7 @@ export const lookupSymbol = (
             const recentChild = findRecent(child, line);
             if (recentChild.package) {
                 const parentVar = perlDoc.parents.get(recentChild.package);
-                if (parentVar) {
-                    qSymbol = qSymbol.replace(/^\$\w+->SUPER/, parentVar);
-                }
+                if (parentVar) qSymbol = qSymbol.replace(/^\$\w+->SUPER/, parentVar);
             }
         }
     }
@@ -193,13 +185,10 @@ export const lookupSymbol = (
     }
 
     // Add what we mean when someone wants ->new().
-    const synonyms = ['_init', 'BUILD'];
-    for (const synonym of synonyms) {
+    for (const synonym of ['_init', 'BUILD']) {
         found = perlDoc.elements.get(symbol.replace(/->new$/, '::' + synonym));
         if (found?.length) return [found[0]];
     }
-    found = perlDoc.elements.get(symbol.replace(/DBI->new$/, 'DBI::connect'));
-    if (found?.length) return [found[0]];
 
     qSymbol = qSymbol.replaceAll('->', '::'); // Module->method() can be found via Module::method
     qSymbol = qSymbol.replace(/^main::(\w+)$/g, '$1'); // main::foo is just tagged as foo
@@ -237,11 +226,9 @@ export const lookupSymbol = (
     if (/^(\w(?:\w|::\w)*)$/.exec(symbol)) {
         // Running out of options here. Perhaps it's a Package, and the
         // file is in the symbol table under its individual functions.
-
         for (const potentialElement of perlDoc.elements.values()) {
-            const element = potentialElement[0]; // All Elements are with same name are normally the same.
+            const element = potentialElement[0]; // All Elements with same name are normally the same.
             if (element.package && element.package == symbol) {
-                // Just return the first one. The others would likely be the same
                 return [
                     {
                         name: symbol,

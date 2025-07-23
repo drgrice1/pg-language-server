@@ -1,15 +1,11 @@
-/* Perl Navigator server. See licenses.txt file for licensing and copyright information */
-
 import type {
     Diagnostic,
     InitializeParams,
     InitializeResult,
-    WorkspaceFolder,
-    //Location,
+    WorkspaceFolder
     //CompletionItem,
-    //CompletionList
-    //TextDocumentPositionParams,
-    TextEdit
+    //CompletionList,
+    //TextDocumentPositionParams
 } from 'vscode-languageserver/node';
 import {
     createConnection,
@@ -28,7 +24,7 @@ import { LRUCache } from 'lru-cache';
 
 import { perlcompile, perlcritic } from './diagnostics';
 //import { getDefinition, getAvailableMods } from './navigation';
-//import { getSymbols , getWorkspaceSymbols } from './symbols';
+//import { getSymbols, getWorkspaceSymbols } from './symbols';
 import type { PGLanguageServerSettings, PerlDocument /*, PerlElement */ } from './types';
 //import { getHover } from './hover';
 //import { getCompletions, getCompletionDoc } from './completion';
@@ -61,15 +57,10 @@ connection.onInitialize((params: InitializeParams) => {
     const result: InitializeResult = {
         capabilities: {
             textDocumentSync: TextDocumentSyncKind.Incremental,
-
             /*
-            completionProvider: {
-                resolveProvider: true,
-                triggerCharacters: ['$', '@', '%', '-', '>', ':']
-            },
-
-            definitionProvider: true, // goto definition
-            documentSymbolProvider: true, // Outline view and breadcrumbs
+            completionProvider: { resolveProvider: true, triggerCharacters: ['$', '@', '%', '-', '>', ':'] },
+            definitionProvider: true,
+            documentSymbolProvider: true,
             workspaceSymbolProvider: true,
             hoverProvider: true,
             */
@@ -93,8 +84,8 @@ connection.onInitialized(() => {
 });
 
 // The global settings, used when the `workspace/configuration` request is not supported by the client.
-// Does not happen with the vscode client could happen with other clients.
-// The "real" default settings are in the top-level package.json
+// Does not happen with the vscode client, but could happen with other clients.
+// The "real" default settings are in the top-level package.json.
 const defaultSettings: PGLanguageServerSettings = {
     perlPath: 'perl',
     perlParams: [],
@@ -121,13 +112,13 @@ const defaultSettings: PGLanguageServerSettings = {
 
 let globalSettings: PGLanguageServerSettings = defaultSettings;
 
-// Cache the settings of all open documents
+// Cache the settings of all open documents.
 const documentSettings = new Map<string, PGLanguageServerSettings>();
 
-// Store recent critic diagnostics to prevent blinking of diagnostics
+// Store recent critic diagnostics to prevent blinking of diagnostics.
 const documentCriticDiagnostics = new Map<string, Diagnostic[]>();
 
-// Store recent compilation diagnostics to prevent old diagnostics from resurfacing
+// Store recent compilation diagnostics to prevent old diagnostics from resurfacing.
 const documentCompilationDiagnostics = new Map<string, Diagnostic[]>();
 
 // A ballpark estimate is that 350k symbols will be about 35MB. A huge map, but a reasonable limit.
@@ -141,16 +132,16 @@ const navSymbols = new LRUCache({
 const timers = new Map<string, NodeJS.Timeout>();
 
 /*
-// Keep track of modules available for import. Building this is a slow operations and varies based on workspace
-// settings, not documents
-const availableMods: Map<string, Map<string, string>> = new Map();
-let modCacheBuilt: boolean = false;
+// Keep track of modules available for import. Building this is a slow operation
+// and varies based on workspace settings, not documents.
+const availableMods = new Map<string, Map<string, string>>();
+let modCacheBuilt = false;
 
 const rebuildModCache = async (): Promise<void> => {
     const allDocs = documents.all();
     if (allDocs.length > 0) {
         modCacheBuilt = true;
-        dispatchForMods(allDocs[allDocs.length - 1]); // Rebuild with recent file
+        await dispatchForMods(allDocs[allDocs.length - 1]); // Rebuild with recent file
     }
     return;
 };
@@ -158,7 +149,7 @@ const rebuildModCache = async (): Promise<void> => {
 const buildModCache = async (textDocument: TextDocument): Promise<void> => {
     if (!modCacheBuilt) {
         modCacheBuilt = true; // Set true first to prevent other files from building concurrently.
-        dispatchForMods(textDocument);
+        await dispatchForMods(textDocument);
     }
     return;
 };
@@ -167,35 +158,29 @@ const dispatchForMods = async (textDocument: TextDocument): Promise<void> => {
     // BIG TODO: Resolution of workspace settings? How to do? Maybe build a hash of all include paths.
     const settings = await getDocumentSettings(textDocument.uri);
     const workspaceFolder = await getCurrentWorkspaceFolder(textDocument);
-    const newMods = await getAvailableMods(workspaceFolder, settings);
-    availableMods.set('default', newMods);
+    availableMods.set('default', await getAvailableMods(workspaceFolder, settings));
     return;
 };
 */
 
 const getCurrentWorkspaceFolder = async (currentDocument: TextDocument): Promise<WorkspaceFolder | undefined> => {
     try {
-        const workspaceFolders = await connection.workspace.getWorkspaceFolders();
-        if (!workspaceFolders) return;
-        workspaceFolders.sort((a, b) => b.uri.length - a.uri.length);
-        const currentFolder = workspaceFolders.find((f) =>
-            process.platform === 'win32' || process.platform === 'darwin'
-                ? currentDocument.uri.toLowerCase().startsWith(f.uri)
-                : currentDocument.uri.startsWith(f.uri)
-        );
-        return currentFolder;
+        return (await connection.workspace.getWorkspaceFolders())
+            ?.sort((a, b) => b.uri.length - a.uri.length)
+            .find((f) =>
+                process.platform === 'win32' || process.platform === 'darwin'
+                    ? currentDocument.uri.toLowerCase().startsWith(f.uri)
+                    : currentDocument.uri.startsWith(f.uri)
+            );
     } catch {
         return;
     }
 };
 
-const expandTildePaths = (paths: string, settings: PGLanguageServerSettings): string => {
-    const path = paths;
-    // Consider that this is not a Windows feature,
-    // So, Windows "%USERPROFILE%" currently is ignored (and rarely used).
+const expandTildePath = (path: string, settings: PGLanguageServerSettings): string => {
     if (path.startsWith('~/')) {
         const newPath = homedir() + path.slice(1);
-        nLog("Expanding tilde path '" + path + "' to '" + newPath + "'", settings);
+        nLog(`Expanding tilde path "${path}" to "${newPath}"`, settings);
         return newPath;
     } else {
         return path;
@@ -215,23 +200,23 @@ const getDocumentSettings = async (resource: string): Promise<PGLanguageServerSe
 
         if (resolvedSettings.includePaths) {
             resolvedSettings.includePaths = resolvedSettings.includePaths.map((path: string) =>
-                expandTildePaths(path, resolvedSettings)
+                expandTildePath(path, resolvedSettings)
             );
         }
         if (resolvedSettings.perlPath) {
-            resolvedSettings.perlPath = expandTildePaths(resolvedSettings.perlPath, resolvedSettings);
+            resolvedSettings.perlPath = expandTildePath(resolvedSettings.perlPath, resolvedSettings);
         }
         if (resolvedSettings.perltidyProfile) {
-            resolvedSettings.perltidyProfile = expandTildePaths(resolvedSettings.perltidyProfile, resolvedSettings);
+            resolvedSettings.perltidyProfile = expandTildePath(resolvedSettings.perltidyProfile, resolvedSettings);
         }
         if (resolvedSettings.perlcriticProfile) {
-            resolvedSettings.perlcriticProfile = expandTildePaths(resolvedSettings.perlcriticProfile, resolvedSettings);
+            resolvedSettings.perlcriticProfile = expandTildePath(resolvedSettings.perlcriticProfile, resolvedSettings);
         }
         if (resolvedSettings.perlEnv) {
             resolvedSettings.perlEnv = Object.fromEntries(
                 Object.entries(resolvedSettings.perlEnv).map(([key, value]) => [
                     key,
-                    expandTildePaths(value, resolvedSettings)
+                    expandTildePath(value, resolvedSettings)
                 ])
             );
         }
@@ -253,7 +238,7 @@ documents.onDidClose((e) => {
 
 documents.onDidOpen((change) => {
     void validatePerlDocument(change.document);
-    //buildModCache(change.document);
+    //void buildModCache(change.document);
 });
 
 documents.onDidSave((change) => {
@@ -270,8 +255,10 @@ documents.onDidChangeContent((change) => {
     );
 });
 
-const validatePerlDocument = async (textDocument: TextDocument): Promise<void> => {
+const validatePerlDocument = async (textDocument: TextDocument /*, rebuildModuleCache = false */): Promise<void> => {
     const settings = await getDocumentSettings(textDocument.uri);
+
+    //if (rebuildModuleCache) await rebuildModCache();
 
     const fileName = basename(URI.parse(textDocument.uri).fsPath);
     nLog(`Filename is ${fileName}`, settings);
@@ -325,26 +312,21 @@ const sendDiagnostics = (params: PublishDiagnosticsParams): void => {
 };
 
 connection.onDidChangeConfiguration((change) => {
-    void (async () => {
-        if (hasConfigurationCapability) {
-            // Reset all cached document settings
-            documentSettings.clear();
-        } else {
-            globalSettings = {
-                ...defaultSettings,
-                ...((change.settings as { pg: PGLanguageServerSettings } | undefined)?.pg ?? {})
-            } as PGLanguageServerSettings;
-        }
+    if (hasConfigurationCapability) {
+        // Reset all cached document settings
+        documentSettings.clear();
+    } else {
+        globalSettings = {
+            ...defaultSettings,
+            ...((change.settings as { pg: PGLanguageServerSettings } | undefined)?.pg ?? {})
+        } as PGLanguageServerSettings;
+    }
 
-        // This fires on all settings changes, not just pg language server settings.
-        if ((change.settings as { pg: PGLanguageServerSettings } | undefined)?.pg) {
-            //await rebuildModCache();
-            for (const doc of documents.all()) {
-                // sequential changes
-                await validatePerlDocument(doc);
-            }
-        }
-    })();
+    //let rebuild = true; // Only rebuild the module cache once.
+    for (const doc of documents.all()) {
+        void validatePerlDocument(doc /*, rebuild */);
+        //rebuild = false;
+    }
 });
 
 /*
@@ -352,31 +334,26 @@ connection.onDidChangeConfiguration((change) => {
 connection.onCompletion((params: TextDocumentPositionParams): CompletionList | undefined => {
     const document = documents.get(params.textDocument.uri);
     const perlDoc = navSymbols.get(params.textDocument.uri);
-    let mods = availableMods.get('default');
-
-    if (!document) return;
-    if (!perlDoc) return;
-    if (!mods) mods = new Map();
-    const completions: CompletionItem[] = getCompletions(params, perlDoc, document, mods);
+    if (!document || !perlDoc) return;
     return {
-        items: completions,
+        items: getCompletions(params, perlDoc, document, availableMods.get('default') ?? new Map<string, string>()),
         isIncomplete: false
     };
 });
 
 connection.onCompletionResolve(async (item: CompletionItem): Promise<CompletionItem> => {
-    const perlElement: PerlElement = item.data.perlElement;
+    const itemData = item.data as { perlElement: PerlElement; docUri: string };
 
-    const perlDoc = navSymbols.get(item.data?.docUri);
+    const perlDoc = navSymbols.get(itemData.docUri);
     if (!perlDoc) return item;
 
-    let mods = availableMods.get('default');
-    if (!mods) mods = new Map();
+    const docs = await getCompletionDoc(
+        itemData.perlElement,
+        perlDoc,
+        availableMods.get('default') ?? new Map<string, string>()
+    );
+    if (docs?.match(/\w/)) item.documentation = { kind: 'markdown', value: docs };
 
-    const docs = await getCompletionDoc(perlElement, perlDoc, mods);
-    if (docs?.match(/\w/)) {
-        item.documentation = { kind: 'markdown', value: docs };
-    }
     return item;
 });
 */
@@ -395,14 +372,13 @@ connection.onDefinition(async (params) => {
     const document = documents.get(params.textDocument.uri);
     const perlDoc = navSymbols.get(params.textDocument.uri);
     if (!document || !perlDoc) return;
-    return await getDefinition(params, perlDoc, document, availableMods.get('default') ?? new Map());
+    return await getDefinition(params, perlDoc, document, availableMods.get('default') ?? new Map<string, string>());
 });
 */
 
 /*
 connection.onDocumentSymbol(async (params) => {
     const document = documents.get(params.textDocument.uri);
-    // It may be neccessary to async wait for the document to be processed, but I suspect the order is fine.
     if (!document) return;
     return getSymbols(document, params.textDocument.uri);
 });
@@ -418,32 +394,27 @@ connection.onWorkspaceSymbol((params) => {
 
 connection.onDocumentFormatting(async (params) => {
     const document = documents.get(params.textDocument.uri);
-    const settings = await getDocumentSettings(params.textDocument.uri);
     if (!document) return;
-
-    const editOut: TextEdit[] | undefined = await formatDoc(
+    return await formatDoc(
         params,
         document,
-        settings,
+        await getDocumentSettings(params.textDocument.uri),
         await getCurrentWorkspaceFolder(document),
         connection
     );
-    return editOut;
 });
 
 connection.onDocumentRangeFormatting(async (params) => {
     const document = documents.get(params.textDocument.uri);
-    const settings = await getDocumentSettings(params.textDocument.uri);
     if (!document) return;
 
-    const editOut: TextEdit[] | undefined = await formatRange(
+    return await formatRange(
         params,
         document,
-        settings,
+        await getDocumentSettings(params.textDocument.uri),
         await getCurrentWorkspaceFolder(document),
         connection
     );
-    return editOut;
 });
 
 /*

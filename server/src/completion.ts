@@ -19,18 +19,17 @@ export const getCompletions = (
 ): CompletionItem[] => {
     const position = params.position;
     const start = { line: position.line, character: 0 };
-    const end = { line: position.line + 1, character: 0 };
-    const text = txtDoc.getText({ start, end });
+    const text = txtDoc.getText({ start, end: { line: position.line + 1, character: 0 } });
     const index = txtDoc.offsetAt(position) - txtDoc.offsetAt(start);
 
-    const imPrefix = getImportPrefix(text, index);
-    if (imPrefix) {
+    const importPrefix = getImportPrefix(text, index);
+    if (importPrefix) {
         return getImportMatches(
             modMap,
-            imPrefix.symbol,
+            importPrefix.symbol,
             {
-                start: { line: position.line, character: imPrefix.charStart },
-                end: { line: position.line, character: imPrefix.charEnd }
+                start: { line: position.line, character: importPrefix.charStart },
+                end: { line: position.line, character: importPrefix.charEnd }
             },
             perlDoc
         );
@@ -90,9 +89,12 @@ const getPrefix = (text: string, position: number): CompletionPrefix => {
 const getImportPrefix = (text: string, position: number): CompletionPrefix | undefined => {
     const partialImport = /^\s*(?:use|require)\s+([\w:]+)$/.exec(text.substring(0, position));
     if (!partialImport) return;
-
-    const symbol = partialImport[1];
-    return { symbol: symbol, charStart: position - symbol.length, charEnd: position, stripPackage: false };
+    return {
+        symbol: partialImport[1],
+        charStart: position - partialImport[1].length,
+        charEnd: position,
+        stripPackage: false
+    };
 };
 
 const getImportMatches = (
@@ -106,25 +108,24 @@ const getImportMatches = (
     const lcSymbol = symbol.toLowerCase();
     for (const [mod, modFile] of modMap) {
         if (mod.toLowerCase().startsWith(lcSymbol)) {
-            const modUri = URI.parse(modFile).toString();
-            const modElement: PerlElement = {
-                name: symbol,
-                type: PerlSymbolKind.Module,
-                typeDetail: '',
-                uri: modUri,
-                package: symbol,
-                line: 0,
-                lineEnd: 0,
-                value: '',
-                source: ElementSource.modHunter
-            };
-            const newElement: completionElement = { perlElement: modElement, docUri: perlDoc.uri };
-
             matches.push({
                 label: mod,
                 textEdit: { newText: mod, range: replace },
                 kind: CompletionItemKind.Module,
-                data: newElement
+                data: {
+                    perlElement: {
+                        name: symbol,
+                        type: PerlSymbolKind.Module,
+                        typeDetail: '',
+                        uri: URI.parse(modFile).toString(),
+                        package: symbol,
+                        line: 0,
+                        lineEnd: 0,
+                        value: '',
+                        source: ElementSource.modHunter
+                    },
+                    docUri: perlDoc.uri
+                }
             });
         }
     }

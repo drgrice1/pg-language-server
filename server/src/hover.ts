@@ -22,7 +22,7 @@ export const getHover = async (
     if (!element) {
         const elements = lookupSymbol(perlDoc, modMap, symbol, position.line);
         // Nothing or too many things.
-        if (elements.length != 1) return;
+        if (elements.length !== 1) return;
         element = elements[0];
     }
 
@@ -52,15 +52,16 @@ export const getHover = async (
 };
 
 const buildHoverDoc = (symbol: string, element: PerlElement, refined: PerlElement | undefined): string | undefined => {
-    let sig = '';
-    let name = element.name;
-    // Early return.
     if ([PerlSymbolKind.LocalVar, PerlSymbolKind.ImportedVar, PerlSymbolKind.Canonical].includes(element.type)) {
         if (element.typeDetail.length > 0) return `(object) ${element.typeDetail}`;
         else if (symbol.startsWith('$self'))
             // We either know the object type, or it's $self
             return `(object) ${element.package}`;
     }
+
+    let sig = '';
+    let name = element.name;
+
     if (refined?.signature) {
         let signature = refined.signature;
         signature = [...signature];
