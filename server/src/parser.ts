@@ -79,9 +79,8 @@ export const parseDocument = async (textDocument: TextDocument, parseType: Parse
 const knownObj = (state: ParserState): boolean => {
     let match;
 
-    // TODO, allow specifying list of constructor names as config
-    // Declaring an object. Let's store the type
-    // my $constructors = qr/(?:new|connect)/;
+    // TODO, allow specifying list of constructor names in config.
+    // Declaring an object. Store the type.
     if (
         (match = /^(?:my|our|local|state)\s+(\$\w+)\s*=\s*([\w:]+)->new\s*(?:\((?!.*\)->)|;)/.exec(state.stmt)) ||
         (match = /^(?:my|our|local|state)\s+(\$\w+)\s*=\s*new (\w[\w:]+)\s*(?:\((?!.*\)->)|;)/.exec(state.stmt))
@@ -99,11 +98,11 @@ const knownObj = (state: ParserState): boolean => {
 
 const localVars = (state: ParserState): boolean => {
     // This is a variable declaration if one was started on the previous
-    // line, or if this line starts with my or local
+    // line, or if this line starts with my, our, local, or state.
     let match;
     if (state.var_continues || (match = /^(?:my|our|local|state)\b/.exec(state.stmt))) {
         // The declaration continues unless there's a semicolon, signature end, or sub start.
-        // This can get tripped up with comments, but it's not a huge deal. subroutines are more important
+        // This can get tripped up with comments, but it's not a huge deal. Subroutines are more important.
         state.var_continues = !/[)=}{;]/.exec(state.stmt);
 
         let mod_stmt = state.stmt;

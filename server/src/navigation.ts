@@ -1,10 +1,20 @@
 import type { DefinitionParams, Location, WorkspaceFolder } from 'vscode-languageserver/node';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
-import { realpath } from 'fs/promises';
+import { parse } from 'yaml';
+import { readFile, readdir, realpath } from 'fs/promises';
 import { join } from 'path';
 import { type PerlDocument, type PerlElement, type PGLanguageServerSettings, PerlSymbolKind } from './types';
-import { getIncPaths, async_execFile, getSymbol, lookupSymbol, nLog, isFile, getPerlAssetsPath } from './utils';
+import {
+    getIncPaths,
+    async_execFile,
+    getSymbol,
+    lookupSymbol,
+    nLog,
+    isFile,
+    getPerlAssetsPath,
+    getMacroPaths
+} from './utils';
 import { refineElement } from './refinement';
 
 export const getDefinition = async (
@@ -155,4 +165,39 @@ export const getAvailableMods = async (
         }
     }
     return mods;
+};
+
+export const getAvailableMacros = async (
+    workspaceFolder: WorkspaceFolder | undefined,
+    settings: PGLanguageServerSettings
+): Promise<Map<string, string>> => {
+    nLog('Loading macros.', settings);
+
+    const macros = new Map<string, string>();
+
+    const pgRoot = join(getPerlAssetsPath(), 'pg');
+
+    const macroPaths = getMacroPaths(workspaceFolder, settings);
+
+    try {
+        const pgConfigContents = await readFile(join(pgRoot, 'conf', 'pg_config.dist.yml'), 'utf8');
+        const pgConfig = parse(pgConfigContents) as { directories?: { macrosPath?: string[] } };
+        for (const path of pgConfig.directories?.macrosPath ?? []) {
+            if (path === '.') continue;
+            macroPaths.push(path.replace('$pg_root', pgRoot));
+        }
+    } catch (error: unknown) {
+        nLog('Failed to load macro paths from the PG configuration file.', settings);
+        nLog(error as string, settings);
+    }
+
+    for (const path of macroPaths) {
+        const files = await readdir(path, { withFileTypes: true });
+        for (const file of files) {
+            if (file.isDirectory() || !file.name.endsWith('.pl')) continue;
+            macros.set(file.name, join(file.parentPath, file.name));
+        }
+    }
+
+    return macros;
 };

@@ -42,6 +42,32 @@ export const getIncPaths = (
     return includePaths;
 };
 
+export const getMacroPaths = (
+    workspaceFolder: WorkspaceFolder | undefined,
+    settings: PGLanguageServerSettings
+): string[] => {
+    const additionalPaths: string[] = [];
+
+    for (const path of settings.macroPaths ?? []) {
+        if (path.includes('$workspaceFolder')) {
+            if (workspaceFolder) {
+                additionalPaths.push(path.replaceAll('$workspaceFolder', URI.parse(workspaceFolder.uri).fsPath));
+            } else {
+                nLog(
+                    `You used $workspaceFolder in your config, but didn't add any workspace folders. Skipping "${
+                        path
+                    }".`,
+                    settings
+                );
+            }
+        } else {
+            additionalPaths.push(path);
+        }
+    }
+
+    return additionalPaths;
+};
+
 export const getSymbol = (position: Position, txtDoc: TextDocument): string => {
     // Gets symbol from text at position.
     // Ignore :: going left, but stop at :: when going to the right.
@@ -96,6 +122,8 @@ export const getSymbol = (position: Position, txtDoc: TextDocument): string => {
         symbol = lChar + symbol; // @foo, %foo -> @foo, %foo
     } else if (lChar === '{' && rChar === '}' && ['$', '%', '@'].includes(llChar)) {
         symbol = llChar + symbol; // ${foo} -> $foo
+    } else if (rChar === '.' && /^\.pl\b/.exec(text.substring(right))) {
+        symbol += '.pl';
     }
 
     let match;

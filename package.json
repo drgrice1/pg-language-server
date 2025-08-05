@@ -183,6 +183,12 @@
                     "default": [],
                     "description": "Array of paths added to @INC. You can use $workspaceFolder as a placeholder."
                 },
+                "pg.macroPaths": {
+                    "scope": "resource",
+                    "type": "array",
+                    "default": [],
+                    "description": "Array of paths to be searched for additional macros. You can use $workspaceFolder as a placeholder."
+                },
                 "pg.logging": {
                     "scope": "resource",
                     "type": "boolean",
@@ -236,7 +242,8 @@
         "vscode-textmate": "^9.2.0",
         "vscode-uri": "^3.1.0",
         "webpack": "^5.100.2",
-        "webpack-cli": "^6.0.1"
+        "webpack-cli": "^6.0.1",
+        "yaml": "^2.8.0"
     },
     "overrides": {
         "coc.nvim": {

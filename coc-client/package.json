@@ -187,6 +187,12 @@
                     "default": [],
                     "description": "Array of paths added to @INC. You can use $workspaceFolder as a placeholder."
                 },
+                "pg.macroPaths": {
+                    "scope": "resource",
+                    "type": "array",
+                    "default": [],
+                    "description": "Array of paths to be searched for additional macros. You can use $workspaceFolder as a placeholder."
+                },
                 "pg.logging": {
                     "scope": "resource",
                     "type": "boolean",

@@ -2,10 +2,10 @@ import type {
     Diagnostic,
     InitializeParams,
     InitializeResult,
-    WorkspaceFolder
-    //CompletionItem,
-    //CompletionList,
-    //TextDocumentPositionParams
+    WorkspaceFolder,
+    CompletionItem,
+    CompletionList,
+    TextDocumentPositionParams
 } from 'vscode-languageserver/node';
 import {
     createConnection,
@@ -23,11 +23,11 @@ import { homedir } from 'os';
 import { LRUCache } from 'lru-cache';
 
 import { perlcompile, perlcritic } from './diagnostics';
-//import { getDefinition, getAvailableMods } from './navigation';
-//import { getSymbols, getWorkspaceSymbols } from './symbols';
-import type { PGLanguageServerSettings, PerlDocument /*, PerlElement */ } from './types';
-//import { getHover } from './hover';
-//import { getCompletions, getCompletionDoc } from './completion';
+import { getDefinition, getAvailableMods } from './navigation';
+import { getSymbols, getWorkspaceSymbols } from './symbols';
+import type { PGLanguageServerSettings, PerlDocument, PerlElement } from './types';
+import { getHover } from './hover';
+import { getCompletions, getCompletionDoc } from './completion';
 import { formatDoc, formatRange } from './formatting';
 import { nLog } from './utils';
 import { startProgress, endProgress } from './progress';
@@ -57,13 +57,11 @@ connection.onInitialize((params: InitializeParams) => {
     const result: InitializeResult = {
         capabilities: {
             textDocumentSync: TextDocumentSyncKind.Incremental,
-            /*
             completionProvider: { resolveProvider: true, triggerCharacters: ['$', '@', '%', '-', '>', ':'] },
             definitionProvider: true,
             documentSymbolProvider: true,
             workspaceSymbolProvider: true,
             hoverProvider: true,
-            */
             documentFormattingProvider: true,
             documentRangeFormattingProvider: true
             /*
@@ -107,6 +105,7 @@ const defaultSettings: PGLanguageServerSettings = {
     severity2: 'hint',
     severity1: 'hint',
     includePaths: [],
+    macroPaths: [],
     logging: true
 };
 
@@ -129,11 +128,10 @@ const navSymbols = new LRUCache({
     }
 });
 
-const timers = new Map<string, NodeJS.Timeout>();
-
-/*
 // Keep track of modules available for import. Building this is a slow operation
 // and varies based on workspace settings, not documents.
+// FIXME: The above comment is false.  This does vary with the document, since the workspace folder (and thus the
+// workspace setings) can vary for different documents.
 const availableMods = new Map<string, Map<string, string>>();
 let modCacheBuilt = false;
 
@@ -161,7 +159,6 @@ const dispatchForMods = async (textDocument: TextDocument): Promise<void> => {
     availableMods.set('default', await getAvailableMods(workspaceFolder, settings));
     return;
 };
-*/
 
 const getCurrentWorkspaceFolder = async (currentDocument: TextDocument): Promise<WorkspaceFolder | undefined> => {
     try {
@@ -220,6 +217,11 @@ const getDocumentSettings = async (resource: string): Promise<PGLanguageServerSe
                 ])
             );
         }
+        if (resolvedSettings.macroPaths) {
+            resolvedSettings.macroPaths = resolvedSettings.macroPaths.map((path: string) =>
+                expandTildePath(path, resolvedSettings)
+            );
+        }
 
         documentSettings.set(resource, resolvedSettings);
         return resolvedSettings;
@@ -238,12 +240,14 @@ documents.onDidClose((e) => {
 
 documents.onDidOpen((change) => {
     void validatePerlDocument(change.document);
-    //void buildModCache(change.document);
+    void buildModCache(change.document);
 });
 
 documents.onDidSave((change) => {
     void validatePerlDocument(change.document);
 });
+
+const timers = new Map<string, NodeJS.Timeout>();
 
 documents.onDidChangeContent((change) => {
     // VSCode sends a firehose of change events. Only check after it's been quiet for 1 second.
@@ -255,10 +259,10 @@ documents.onDidChangeContent((change) => {
     );
 });
 
-const validatePerlDocument = async (textDocument: TextDocument /*, rebuildModuleCache = false */): Promise<void> => {
+const validatePerlDocument = async (textDocument: TextDocument, rebuildModuleCache = false): Promise<void> => {
     const settings = await getDocumentSettings(textDocument.uri);
 
-    //if (rebuildModuleCache) await rebuildModCache();
+    if (rebuildModuleCache) await rebuildModCache();
 
     const fileName = basename(URI.parse(textDocument.uri).fsPath);
     nLog(`Filename is ${fileName}`, settings);
@@ -298,17 +302,19 @@ const validatePerlDocument = async (textDocument: TextDocument /*, rebuildModule
     // may need to be cleared if a user changed their settings.
     documentCriticDiagnostics.set(textDocument.uri, criticDiagnostics);
 
-    const diagnostics = (documentCompilationDiagnostics.get(textDocument.uri) ?? []).concat(criticDiagnostics);
-    if (diagnostics.length) sendDiagnostics({ uri: textDocument.uri, diagnostics });
+    await sendDiagnostics({
+        uri: textDocument.uri,
+        diagnostics: (documentCompilationDiagnostics.get(textDocument.uri) ?? []).concat(criticDiagnostics)
+    });
 
     endProgress(connection, progressToken);
     return;
 };
 
-const sendDiagnostics = (params: PublishDiagnosticsParams): void => {
+const sendDiagnostics = async (params: PublishDiagnosticsParams): Promise<void> => {
     // Before sending new diagnostics, check if the file is still open.
-    if (documents.get(params.uri)) void connection.sendDiagnostics(params);
-    else void connection.sendDiagnostics({ uri: params.uri, diagnostics: [] });
+    if (documents.get(params.uri)) await connection.sendDiagnostics(params);
+    else await connection.sendDiagnostics({ uri: params.uri, diagnostics: [] });
 };
 
 connection.onDidChangeConfiguration((change) => {
@@ -322,14 +328,13 @@ connection.onDidChangeConfiguration((change) => {
         } as PGLanguageServerSettings;
     }
 
-    //let rebuild = true; // Only rebuild the module cache once.
+    let rebuild = true; // Only rebuild the module cache once.
     for (const doc of documents.all()) {
-        void validatePerlDocument(doc /*, rebuild */);
-        //rebuild = false;
+        void validatePerlDocument(doc, rebuild);
+        rebuild = false;
     }
 });
 
-/*
 // This handler provides the initial list of the completion items.
 connection.onCompletion((params: TextDocumentPositionParams): CompletionList | undefined => {
     const document = documents.get(params.textDocument.uri);
@@ -356,41 +361,32 @@ connection.onCompletionResolve(async (item: CompletionItem): Promise<CompletionI
 
     return item;
 });
-*/
 
-/*
 connection.onHover(async (params) => {
     const document = documents.get(params.textDocument.uri);
     const perlDoc = navSymbols.get(params.textDocument.uri);
     if (!document || !perlDoc) return;
     return await getHover(params, perlDoc, document, availableMods.get('default') ?? new Map<string, string>());
 });
-*/
 
-/*
 connection.onDefinition(async (params) => {
     const document = documents.get(params.textDocument.uri);
     const perlDoc = navSymbols.get(params.textDocument.uri);
     if (!document || !perlDoc) return;
     return await getDefinition(params, perlDoc, document, availableMods.get('default') ?? new Map<string, string>());
 });
-*/
 
-/*
 connection.onDocumentSymbol(async (params) => {
     const document = documents.get(params.textDocument.uri);
     if (!document) return;
     return getSymbols(document, params.textDocument.uri);
 });
-*/
 
-/*
 connection.onWorkspaceSymbol((params) => {
     const defaultMods = availableMods.get('default');
     if (!defaultMods) return;
     return getWorkspaceSymbols(params, defaultMods);
 });
-*/
 
 connection.onDocumentFormatting(async (params) => {
     const document = documents.get(params.textDocument.uri);
