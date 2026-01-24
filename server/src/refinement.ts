@@ -49,7 +49,7 @@ export const refineElement = async (element: PerlElement, perlDoc: PerlDocument)
             if (match) refinedElements = doc.elements.get(match[0]);
         }
 
-        if (refinedElements && refinedElements.length == 1) refined = refinedElements[0];
+        if (refinedElements?.length == 1) refined = refinedElements[0];
     }
     return refined;
 };

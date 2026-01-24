@@ -61,8 +61,8 @@ export const perlcompile = async (
         perlProcess.child.stdin?.end();
         const out = await perlProcess;
 
-        output = out.stderr.toString();
-        stdout = out.stdout.toString();
+        output = out.stderr;
+        stdout = out.stdout;
         severity = DiagnosticSeverity.Warning;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
