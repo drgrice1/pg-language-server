@@ -112,8 +112,8 @@ The PG Language Server is free software licensed under the MIT License. This wor
 
 ## Vim PG Filetype
 
-This project also contains a Vim ftdetect file `vim-pg/ftdetext/pg.vim`, syntax file `vim-pg/syntax/pg.vim`, and indent
-file `vim-pg/indent/pg.vim`. Copy the ftdetext file to the `ftdetect` subdirectory, the syntax file to the `syntax`
+This project also contains a Vim ftdetect file `vim-pg/ftdetect/pg.vim`, syntax file `vim-pg/syntax/pg.vim`, and indent
+file `vim-pg/indent/pg.vim`. Copy the ftdetect file to the `ftdetect` subdirectory, the syntax file to the `syntax`
 subdirectory, and the indent file to the `indent` subdirectory of the vim configuration directory (usually `~/.vim`).
 Alternately, copy the entire `vim-pg` directory into the `pack/plugins/start` subdirectory of the vim configuration
 directory (create those directories if not present).
