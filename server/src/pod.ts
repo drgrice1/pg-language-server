@@ -56,12 +56,10 @@ export const getPod = async (
         ))
     ) {
         // Ensure it's not an empty get/set pair.
-        if (
-            !(
-                (match2 = /^get_(\w+)$/.exec(searchItem)) &&
-                new RegExp(`^(?:# +set_${match2[1]}\\r?\\n)?[\\s#]*$`).exec(match[1])
-            )
-        ) {
+        if (!(
+            (match2 = /^get_(\w+)$/.exec(searchItem)) &&
+            new RegExp(`^(?:# +set_${match2[1]}\\r?\\n)?[\\s#]*$`).exec(match[1])
+        )) {
             let content = match[1].replace(/^ *#+ ?/gm, '');
             content = content.replace(/^\s+|\s+$/g, '');
             if (content) {
@@ -344,24 +342,18 @@ const processFormatSpecificBlock = (line: string): string => {
     const text = parts.slice(1).join(' ').trim();
 
     // Choose the Markdown representation based on the format.
-    let markdown = '';
     switch (format) {
         case 'text':
             // Plain text, just add it.
-            markdown = `${text}\n`;
-            break;
+            return `${text}\n`;
         case 'html':
             // If it's HTML, encapsulate it within comments for safety.
-            markdown = `<!-- HTML: ${text} -->\n`;
-            break;
+            return `<!-- HTML: ${text} -->\n`;
         // Add more cases as you find the need for other specific formats.
         default:
             // For unsupported or custom formats, wrap it in a comment.
-            markdown = `<!-- ${format} block: ${text} -->\n`;
-            break;
+            return `<!-- ${format} block: ${text} -->\n`;
     }
-
-    return markdown;
 };
 
 // Mapping backticks to the Unicode non-character U+FFFF which is not allowed to appear in text
@@ -434,14 +426,7 @@ const escapeHTML = (str: string): string => {
         "\\'": "\\'"
     };
 
-    // If the number of backticks is odd, it means backticks are unbalanced
-    const backtickCount = (str.match(/`/g) ?? []).length;
     const segments = str.split('`');
-
-    if (backtickCount % 2 !== 0 || segments.length % 2 === 0) {
-        // Handle the unbalanced backticks here
-        str = str.replaceAll('`', '');
-    }
 
     // Escape special characters and create a regex pattern
     const pattern = new RegExp(Object.keys(map).map(escapeRegExp).join('|'), 'g');

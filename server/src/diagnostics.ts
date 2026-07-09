@@ -73,7 +73,7 @@ export const perlcompile = async (
             severity = DiagnosticSeverity.Error;
         } else {
             nLog('Perlcompile failed with unknown error', settings);
-            nLog(error as unknown as string, settings);
+            nLog(error as string, settings);
             return;
         }
     }

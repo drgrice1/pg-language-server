@@ -100,7 +100,7 @@ const localVars = (state: ParserState): boolean => {
     // This is a variable declaration if one was started on the previous
     // line, or if this line starts with my, our, local, or state.
     let match;
-    if (state.var_continues || (match = /^(?:my|our|local|state)\b/.exec(state.stmt))) {
+    if (state.var_continues || /^(?:my|our|local|state)\b/.exec(state.stmt)) {
         // The declaration continues unless there's a semicolon, signature end, or sub start.
         // This can get tripped up with comments, but it's not a huge deal. Subroutines are more important.
         state.var_continues = !/[)=}{;]/.exec(state.stmt);
@@ -126,7 +126,7 @@ const localVars = (state: ParserState): boolean => {
         makeElement(match[2], PerlSymbolKind.LocalVar, '', state);
         // Lexical match variables if(my ($foo, $bar) ~= ).
         // Optional to detect (my $newstring = $oldstring) =~ s/foo/bar/g;
-    } else if ((match = /^(?:\}\s*elsif|if|unless|while|until|for)?\s*\(\s*my\b(.*)$/.exec(state.stmt))) {
+    } else if (/^(?:\}\s*elsif|if|unless|while|until|for)?\s*\(\s*my\b(.*)$/.exec(state.stmt)) {
         // Remove any assignment piece
         const mod_stmt = state.stmt.replace(/\s*=.*/, '');
         const vars = mod_stmt.matchAll(/([$@%][\w]+)\b/g);

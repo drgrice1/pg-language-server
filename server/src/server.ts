@@ -190,8 +190,7 @@ const getDocumentSettings = async (resource: string): Promise<PGLanguageServerSe
     let result = documentSettings.get(resource);
     if (!result) {
         result = (await connection.workspace.getConfiguration({ scopeUri: resource, section: 'pg' })) as
-            | PGLanguageServerSettings
-            | undefined;
+            PGLanguageServerSettings | undefined;
         if (!result) return globalSettings;
         const resolvedSettings = { ...globalSettings, ...result };
 
@@ -325,7 +324,7 @@ connection.onDidChangeConfiguration((change) => {
         globalSettings = {
             ...defaultSettings,
             ...((change.settings as { pg: PGLanguageServerSettings } | undefined)?.pg ?? {})
-        } as PGLanguageServerSettings;
+        };
     }
 
     let rebuild = true; // Only rebuild the module cache once.

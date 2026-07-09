@@ -47,7 +47,11 @@ export default [
             noParse: /vscode-languageserver-types/,
             rules: [{ test: /\.ts$/, exclude: /node_modules/, use: [{ loader: 'ts-loader' }] }]
         },
-        externals: { vscode: 'commonjs vscode' },
+        externals: {
+            vscode: 'commonjs vscode',
+            'vscode-languageclient': 'commonjs vscode-languageclient',
+            'vscode-languageclient/node': 'commonjs vscode-languageclient/node'
+        },
         performance: { hints: false },
         devtool: 'source-map'
     },
@@ -78,7 +82,12 @@ export default [
             noParse: /vscode-languageserver-types/,
             rules: [{ test: /\.ts$/, exclude: /node_modules/, use: [{ loader: 'ts-loader' }] }]
         },
-        externals: { vscode: 'commonjs vscode' },
+        externals: {
+            vscode: 'commonjs vscode',
+            'vscode-languageserver': 'commonjs vscode-languageserver',
+            'vscode-languageserver/node': 'commonjs vscode-languageserver/node',
+            'vscode-languageserver-protocol': 'commonjs vscode-languageserver-protocol'
+        },
         performance: { hints: false },
         devtool: 'source-map'
     }
