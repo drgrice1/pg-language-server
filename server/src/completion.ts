@@ -247,7 +247,7 @@ const goodMatch = (
         // Thing looks like a module, but was not explicitly imported
         return false;
     } else {
-        // Thing was either explictly imported or not a module function
+        // Thing was either explicitly imported or not a module function
         return true;
     }
 };

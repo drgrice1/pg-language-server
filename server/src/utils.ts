@@ -228,7 +228,7 @@ export const lookupSymbol = (
         // Launching to the wrong explicitly stated module is a bad experience, and common with "require'd" modules
         const method = qSymbol.split('::').pop();
         if (method) {
-            // Perhaps the method is within our current scope, explictly imported,
+            // Perhaps the method is within our current scope, explicitly imported,
             // or an inherited method (dumper by Inquisitor)
             found = perlDoc.elements.get(method);
             if (found?.length) return [found[0]];

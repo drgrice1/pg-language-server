@@ -10,7 +10,7 @@ use WeBWorK::PG::Tidy qw(pgtidy);
 
 my ($file, $profile);
 GetOptions("profile=s" => \$profile);
-die "PerlTidy profile not readable" if $profile && !-f $profile;    # Profie may be undef
+die "PerlTidy profile not readable" if $profile && !-f $profile;    # Profile may be undef
 
 my $source = do { local $/; <> };
 die "The source must be passed via stdin" if !defined $source;

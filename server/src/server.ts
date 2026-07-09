@@ -131,7 +131,7 @@ const navSymbols = new LRUCache({
 // Keep track of modules available for import. Building this is a slow operation
 // and varies based on workspace settings, not documents.
 // FIXME: The above comment is false.  This does vary with the document, since the workspace folder (and thus the
-// workspace setings) can vary for different documents.
+// workspace settings) can vary for different documents.
 const availableMods = new Map<string, Map<string, string>>();
 let modCacheBuilt = false;
 

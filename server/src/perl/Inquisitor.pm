@@ -336,7 +336,7 @@ sub filter_modpacks {
     my ($modpacks) = @_;
 
     # Some of these things I've imported in here, some are just piles of C code.
-    # We'll still nav to modules and find anything explictly imported so we can be aggressive at removing these.
+    # We'll still nav to modules and find anything explicitly imported so we can be aggressive at removing these.
     my @to_remove = (
         'if',                      'Cwd',            'B',                         'main',
         'version',                 'POSIX',          'Fcntl',                     'Errno',
@@ -444,7 +444,7 @@ sub load_source {
 }
 
 sub tags_to_symbols {
-    # Currently only used for testing. Turns an output of tags into a hash of symbol array, similiar to ParseDocument.ts
+    # Currently only used for testing. Turns an output of tags into a hash of symbol array, similar to ParseDocument.ts
     my $tags    = shift;
     my $symbols = {};
     for my $tag_str (split("\n", $tags)) {

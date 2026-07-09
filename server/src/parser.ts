@@ -273,7 +273,7 @@ const makeElement = (
     if (lineEnd == 0) lineEnd = state.line_number;
 
     if (type == TagKind.UseStatement) {
-        // Explictly loaded module. Helpful for focusing autocomplete results
+        // Explicitly loaded module. Helpful for focusing autocomplete results
         state.perlDoc.imported.set(name, state.line_number);
         // TODO: Build mapping of common constructors to types
         // if(/\bDBI$/.exec(name)) perlDoc.imported.set(name + "::db", true);

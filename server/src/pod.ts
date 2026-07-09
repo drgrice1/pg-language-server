@@ -45,7 +45,7 @@ export const getPod = async (
 
     let markdown = '';
 
-    // Quick search for leading comments of a very specific form with comment blocks the preceed a sub (and aren't
+    // Quick search for leading comments of a very specific form with comment blocks that precede a sub (and aren't
     // simply get/set without docs). These regexes are painful, but I didn't want to mix this with the line-by-line POD
     // parsing which would overcomplicate that piece
     let match, match2;

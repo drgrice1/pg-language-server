@@ -42,7 +42,7 @@ const parseElement = (perlTag: string, perlDoc: PerlDocument): void => {
     const value = items[6] || '';
 
     if (type == TagKind.UseStatement.valueOf()) {
-        // Explictly loaded module. Helpful for focusing autocomplete results
+        // Explicitly loaded module. Helpful for focusing autocomplete results
         perlDoc.imported.set(name, startLine);
         // TODO: Build mapping of common constructors to types
         // if(/\bDBI$/.exec(name)) perlDoc.imported.set(name + "::db", true);
