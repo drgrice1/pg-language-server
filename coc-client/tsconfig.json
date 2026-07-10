@@ -9,9 +9,10 @@
         "strict": true,
         "outDir": "./lib",
         "rootDir": "./src",
-        "declaration": false,
         "noImplicitAny": false,
-        "esModuleInterop": true
+        "esModuleInterop": true,
+        "composite": true
     },
-    "include": ["./src/*.ts"]
+    "include": ["./src/*.ts"],
+    "exclude": ["node_modules"]
 }

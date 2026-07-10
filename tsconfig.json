@@ -6,7 +6,12 @@
         "moduleResolution": "nodenext",
         "types": ["node"],
         "strict": true,
-        "sourceMap": true
+        "sourceMap": true,
+        "outDir": "lib",
+        "rootDir": ".",
+        "skipLibCheck": true,
+        "noEmit": true,
+        "declaration": false
     },
     "exclude": ["node_modules"],
     "references": [{ "path": "./coc-client" }, { "path": "./vscode-client" }, { "path": "./server" }]

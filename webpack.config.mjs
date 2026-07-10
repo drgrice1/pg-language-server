@@ -17,7 +17,23 @@ export default [
             mainFields: ['module', 'main'],
             mainFiles: ['extension']
         },
-        module: { rules: [{ test: /\.ts$/, exclude: /node_modules/, use: [{ loader: 'ts-loader' }] }] },
+        module: {
+            rules: [
+                {
+                    test: /\.ts$/,
+                    exclude: /node_modules/,
+                    use: [
+                        {
+                            loader: 'ts-loader',
+                            options: {
+                                projectReferences: false,
+                                compilerOptions: { composite: false, declaration: false, declarationMap: false }
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
         externals: { 'coc.nvim': 'commonjs coc.nvim' },
         devtool: 'source-map'
     },
@@ -45,7 +61,21 @@ export default [
         },
         module: {
             noParse: /vscode-languageserver-types/,
-            rules: [{ test: /\.ts$/, exclude: /node_modules/, use: [{ loader: 'ts-loader' }] }]
+            rules: [
+                {
+                    test: /\.ts$/,
+                    exclude: /node_modules/,
+                    use: [
+                        {
+                            loader: 'ts-loader',
+                            options: {
+                                projectReferences: false,
+                                compilerOptions: { composite: false, declaration: false, declarationMap: false }
+                            }
+                        }
+                    ]
+                }
+            ]
         },
         externals: {
             vscode: 'commonjs vscode',
@@ -80,7 +110,21 @@ export default [
         },
         module: {
             noParse: /vscode-languageserver-types/,
-            rules: [{ test: /\.ts$/, exclude: /node_modules/, use: [{ loader: 'ts-loader' }] }]
+            rules: [
+                {
+                    test: /\.ts$/,
+                    exclude: /node_modules/,
+                    use: [
+                        {
+                            loader: 'ts-loader',
+                            options: {
+                                projectReferences: false,
+                                compilerOptions: { composite: false, declaration: false, declarationMap: false }
+                            }
+                        }
+                    ]
+                }
+            ]
         },
         externals: {
             vscode: 'commonjs vscode',
