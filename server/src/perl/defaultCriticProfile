@@ -1,22 +1,14 @@
 severity=4
 
-# Can not "use safe" or "use warnings" in the safe compartment.
 [-TestingAndDebugging::RequireUseStrict]
 [-TestingAndDebugging::RequireUseWarnings]
-[-Community::StrictWarnings]
-[-Freenode::StrictWarnings]
-
-# Problems commonly have packages that don't match the filename, have multiple packages, and contain code outside of
-# package delclarations.
 [-Modules::RequireExplicitPackage]
 [-Modules::ProhibitMultiplePackages]
 [-Modules::RequireFilenameMatchesPackage]
-
 [-Modules::RequireEndWithOne]
+[-Subroutines::RequireArgUnpacking]
 [-Subroutines::ProhibitBuiltinHomonyms]
+[-Variables::RequireLocalizedPunctuationVars]
 
-# Problems are allowed to use $a and $b.
-[-Community::DollarAB]
-[-Freenode::DollarAB]
-[Variables::RequireLocalizedPunctuationVars]
-allow = $a $b @a @b
+# Make sure that Community and Freenode policies are not used if installed on the system.
+exclude = .*::Community::.*|.*::Freenode::.*

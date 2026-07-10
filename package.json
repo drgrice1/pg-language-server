@@ -78,7 +78,7 @@
                     "scope": "resource",
                     "type": "string",
                     "default": "",
-                    "description": "Path to perl critic profile. Otherwise perlcritic itself will default to ~/.perlcriticrc."
+                    "description": "Path to pg critic profile. Otherwise will default to the internal default profile."
                 },
                 "pg.perlcriticEnabled": {
                     "scope": "resource",
