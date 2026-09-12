@@ -218,7 +218,8 @@
         "lint": "npm run lint:check",
         "compile": "tsc -b",
         "watch": "tsc -b -w",
-        "build": "export NODE_OPTIONS=--openssl-legacy-provider; webpack --mode production --devtool hidden-source-map"
+        "build": "export NODE_OPTIONS=--openssl-legacy-provider; webpack --mode production --devtool hidden-source-map",
+        "test": "mocha"
     },
     "devDependencies": {
         "@codemirror/autocomplete": "^6.20.3",
@@ -227,6 +228,7 @@
         "@lezer/common": "^1.5.2",
         "@openwebwork/codemirror-lang-pg": "^0.0.6",
         "@stylistic/eslint-plugin": "^5.10.0",
+        "@types/mocha": "^10.0.10",
         "@types/node": "^22.20.2",
         "@types/uuid": "^10.0.0",
         "@types/vscode": "^1.137.0",
@@ -234,10 +236,13 @@
         "coc.nvim": "^0.0.83-next.9",
         "eslint": "^10.10.0",
         "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-mocha": "^12.0.2",
         "globals": "^17.12.0",
         "lru-cache": "^11.5.2",
+        "mocha": "^12.0.1",
         "prettier": "^3.9.6",
         "ts-loader": "^9.6.2",
+        "tsx": "^4.23.13",
         "typescript": "^6.0.3",
         "typescript-eslint": "^8.70.0",
         "uuid": "^14.0.2",

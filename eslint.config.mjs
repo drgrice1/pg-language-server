@@ -3,6 +3,7 @@ import pluginJs from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import stylistic from '@stylistic/eslint-plugin';
+import mochaPlugin from 'eslint-plugin-mocha';
 
 export default [
     { ignores: ['**/dist/*', '**/lib/*', 'server/src/perl/pg/*'] },
@@ -10,6 +11,7 @@ export default [
     pluginJs.configs.recommended,
     ...tseslint.configs.strictTypeChecked,
     ...tseslint.configs.stylisticTypeChecked,
+    { files: ['test/**/*.ts'], ...mochaPlugin.configs.recommended },
     {
         languageOptions: {
             globals: { ...globals.node, ...globals.browser },
@@ -52,7 +54,7 @@ export default [
             '@stylistic/space-before-blocks': ['error', 'always'],
             '@stylistic/space-before-function-paren': [
                 'error',
-                { named: 'never', anonymous: 'never', asyncArrow: 'ignore' }
+                { named: 'never', anonymous: 'always', asyncArrow: 'ignore' }
             ],
             '@stylistic/space-in-parens': ['error', 'never'],
             '@stylistic/space-infix-ops': ['error'],

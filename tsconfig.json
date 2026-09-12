@@ -13,6 +13,6 @@
         "noEmit": true,
         "declaration": false
     },
-    "exclude": ["node_modules"],
+    "exclude": ["node_modules", "test"],
     "references": [{ "path": "./coc-client" }, { "path": "./vscode-client" }, { "path": "./server" }]
 }
