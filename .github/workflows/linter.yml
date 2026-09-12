@@ -12,14 +12,14 @@ on:
 jobs:
     eslint:
         name: Lint TypeScript and JavaScript files with eslint
-        runs-on: ubuntu-24.04
+        runs-on: ubuntu-26.04
         steps:
             - name: Checkout code
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
             - name: Install Node
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v6
               with:
-                  node-version: '20'
+                  node-version: '24'
             - name: Install Dependencies and Build
               run: npm ci --ignore-scripts && npm run build
             - name: Lint files with eslint
@@ -27,14 +27,14 @@ jobs:
 
     perlcritic:
         name: Lint Perl files with perlcritic
-        runs-on: ubuntu-24.04
+        runs-on: ubuntu-26.04
         container:
-            image: perl:5.38
+            image: perl:5.40
         steps:
             - name: Checkout code
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
             - name: Install dependencies
-              run: cpanm -n Perl::Critic@1.152 Perl::Critic::Community@1.0.3
+              run: cpanm -n Perl::Critic@1.156 Perl::Critic::Community@1.0.4
             - name: Run perlcritic
               shell: bash
               run: perlcritic ./server/src/perl
