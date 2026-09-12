@@ -41,10 +41,23 @@ const parseWithGrammar = (parser: { parse: (code: string) => Tree }, textDocumen
     const code = textDocument.getText();
     const text = Text.of(code.split('\n'));
 
+    // Try/catch isn't understood by the Perl or PG codemirror parsers (both parse it as a nested bareword call). So the
+    // catch variable is picked up as plain text instead. This is meaningless for problem files, since try/catch can't
+    // be used in a problem file.
+    scanForCatchVariables(code, perlDoc);
+
     const tree = parser.parse(code);
     walkSiblings(tree.topNode, text, code, perlDoc, '');
 
     return perlDoc;
+};
+
+const scanForCatchVariables = (code: string, perlDoc: PerlDocument): void => {
+    const lines = code.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+        const match = /^\s*\}?\s*catch\s*\(\s*(\$\w+)\s*\)\s*\{?\s*$/.exec(lines[i]);
+        if (match) makeElement(perlDoc, match[1], PerlSymbolKind.LocalVar, '', '', i);
+    }
 };
 
 // Returns the 0-indexed line number of pos in text.
@@ -194,6 +207,14 @@ const handleNode = (node: SyntaxNode, text: Text, code: string, perlDoc: PerlDoc
             walkSiblings(node, text, code, perlDoc, pkg);
             return pkg;
         }
+        case 'UseNoStatement':
+        case 'RequireStatement': {
+            // PG problem files can't call use, require, or no as they are trapped in the safe compartment.
+            // So this only matters when parsing a Perl file.
+            handleImport(node, text, code, perlDoc);
+            walkSiblings(node, text, code, perlDoc, pkg);
+            return pkg;
+        }
         default: {
             walkSiblings(node, text, code, perlDoc, pkg);
             return pkg;
@@ -295,6 +316,12 @@ const stringLiteralValue = (node: SyntaxNode, code: string): string | undefined 
     if (interpolated) return code.slice(interpolated.from, interpolated.to);
     // A plain single-quoted string with no interpolation has no dedicated content child.
     return code.slice(node.from, node.to).slice(1, -1);
+};
+
+const handleImport = (node: SyntaxNode, text: Text, code: string, perlDoc: PerlDocument): void => {
+    const packageNode = node.getChild('PackageName');
+    if (!packageNode) return;
+    perlDoc.imported.set(code.slice(packageNode.from, packageNode.to), lineOf(node.from, text));
 };
 
 // Parse a loadMacros(...) call and extract the arguments.
