@@ -234,6 +234,7 @@
         "@types/vscode": "^1.137.0",
         "@types/webpack-env": "^1.18.8",
         "coc.nvim": "^0.0.83-next.9",
+        "codemirror-lang-perl": "^0.1.9",
         "eslint": "^10.10.0",
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-mocha": "^12.0.2",

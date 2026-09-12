@@ -3,7 +3,8 @@ import { URI } from 'vscode-uri';
 import * as fs from 'fs';
 import { Text } from '@codemirror/state';
 import { pgLanguage } from '@openwebwork/codemirror-lang-pg';
-import type { TreeCursor, SyntaxNode } from '@lezer/common';
+import { perlLanguage } from 'codemirror-lang-perl';
+import type { Tree, TreeCursor, SyntaxNode } from '@lezer/common';
 import { type PerlDocument, type PerlElement, PerlSymbolKind, ElementSource } from './types';
 
 export const parseFromUri = async (uri: string): Promise<PerlDocument | undefined> => {
@@ -12,13 +13,21 @@ export const parseFromUri = async (uri: string): Promise<PerlDocument | undefine
     try {
         const content = await fs.promises.readFile(absolutePath, 'utf8');
         const document = TextDocument.create(uri, 'perl', 1, content);
-        return parseDocument(document);
+        return parsePerlDocument(document);
     } catch {
         /* Ignore errors */
     }
 };
 
-export const parseDocument = (textDocument: TextDocument): PerlDocument => {
+// Parses a .pg problem file with @openwebwork/codemirror-lang-pg.
+export const parseDocument = (textDocument: TextDocument): PerlDocument =>
+    parseWithGrammar(pgLanguage.parser, textDocument);
+
+// Parses a Perl file with codemirror-lang-perl.
+const parsePerlDocument = (textDocument: TextDocument): PerlDocument =>
+    parseWithGrammar(perlLanguage.parser, textDocument);
+
+const parseWithGrammar = (parser: { parse: (code: string) => Tree }, textDocument: TextDocument): PerlDocument => {
     const perlDoc: PerlDocument = {
         elements: new Map(),
         canonicalElements: new Map(),
@@ -32,7 +41,7 @@ export const parseDocument = (textDocument: TextDocument): PerlDocument => {
     const code = textDocument.getText();
     const text = Text.of(code.split('\n'));
 
-    const tree = pgLanguage.parser.parse(code);
+    const tree = parser.parse(code);
     walkSiblings(tree.topNode, text, code, perlDoc, '');
 
     return perlDoc;
@@ -218,7 +227,8 @@ const handleVariableDeclaration = (
     }
 };
 
-// Parse assignments to hash keys such as `$self->{_foo} = ...;`, `$self->{_foo} ||= ...;`, or `$self->{_foo} //= ...;`.
+// Parse assignments to hash keys of $self such as `$self->{_foo} = ...;`, `$self->{_foo} ||= ...;`,
+// or `$self->{_foo} //= ...;`. These are potential autoload methods.
 const handleAutoload = (node: SyntaxNode, text: Text, code: string, perlDoc: PerlDocument, pkg: string): void => {
     const lhs = node.firstChild;
     if (!lhs) return;
