@@ -259,5 +259,8 @@
         "coc.nvim": {
             "@types/node": ">=20.14.10"
         }
+    },
+    "allowScripts": {
+        "esbuild": false
     }
 }
