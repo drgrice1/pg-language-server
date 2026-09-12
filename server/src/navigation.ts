@@ -13,9 +13,11 @@ import {
     nLog,
     isFile,
     getPerlAssetsPath,
-    getMacroPaths
+    getMacroPaths,
+    mergeElementsInto
 } from './utils';
 import { refineElement } from './refinement';
+import { parseFromUri } from './parser';
 
 export const getDefinition = async (
     params: DefinitionParams,
@@ -200,4 +202,40 @@ export const getAvailableMacros = async (
     }
 
     return macros;
+};
+
+// Resolves and parses every macro named (transitively) in perlDoc's loadMacros(...) calls, merging their symbols
+// into perlDoc. Macro files load other macro files themselves, so this follows those transitively, guarding
+// against cycles with a visited set. macroDocCache is keyed by resolved absolute path and is expected to be a
+// long-lived, session-scoped cache owned by the caller (macro file contents aren't edited through this LSP).
+export const resolveLoadedMacros = async (
+    perlDoc: PerlDocument,
+    macroPaths: Map<string, string>,
+    macroDocCache: Map<string, PerlDocument>,
+    settings: PGLanguageServerSettings
+): Promise<void> => {
+    const visited = new Set<string>();
+    const queue = [...(perlDoc.loadedMacros ?? [])];
+
+    for (let macroName = queue.shift(); macroName; macroName = queue.shift()) {
+        if (visited.has(macroName)) continue;
+        visited.add(macroName);
+
+        const macroPath = macroPaths.get(macroName);
+        if (!macroPath) {
+            nLog(`Could not resolve macro "${macroName}" to a file.`, settings);
+            continue;
+        }
+
+        let macroDoc = macroDocCache.get(macroPath);
+        if (!macroDoc) {
+            const parsed = await parseFromUri(URI.file(macroPath).toString());
+            if (!parsed) continue;
+            macroDoc = parsed;
+            macroDocCache.set(macroPath, macroDoc);
+        }
+
+        mergeElementsInto(perlDoc, macroDoc);
+        queue.push(...(macroDoc.loadedMacros ?? []));
+    }
 };

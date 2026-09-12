@@ -291,3 +291,12 @@ export const isFile = async (file: string): Promise<boolean> => {
         return false;
     }
 };
+
+// Folds source's symbols into target, with target's own entries winning on name collision. Used both to merge the
+// compiled symbol-table dump into a document's own parse, and to merge in symbols from a loaded macro file.
+export const mergeElementsInto = (target: PerlDocument, source: PerlDocument): void => {
+    target.autoloads = new Map([...target.autoloads, ...source.autoloads]);
+    target.canonicalElements = new Map([...target.canonicalElements, ...source.canonicalElements]);
+    target.elements = new Map([...source.elements, ...target.elements]);
+    target.parents = new Map([...target.parents, ...source.parents]);
+};

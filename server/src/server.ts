@@ -23,7 +23,7 @@ import { homedir } from 'os';
 import { LRUCache } from 'lru-cache';
 
 import { perlcompile, perlcritic } from './diagnostics';
-import { getDefinition, getAvailableMods } from './navigation';
+import { getDefinition, getAvailableMods, getAvailableMacros, resolveLoadedMacros } from './navigation';
 import { getSymbols, getWorkspaceSymbols } from './symbols';
 import type { PGLanguageServerSettings, PerlDocument, PerlElement } from './types';
 import { getHover } from './hover';
@@ -133,6 +133,10 @@ const navSymbols = new LRUCache({
 // FIXME: The above comment is false.  This does vary with the document, since the workspace folder (and thus the
 // workspace settings) can vary for different documents.
 const availableMods = new Map<string, Map<string, string>>();
+const availableMacros = new Map<string, Map<string, string>>();
+// Parsed PerlDocuments for macro files, keyed by resolved absolute path. Session-scoped and never invalidated --
+// macro file contents aren't edited through this LSP (see resolveLoadedMacros).
+const macroDocCache = new Map<string, PerlDocument>();
 let modCacheBuilt = false;
 
 const rebuildModCache = async (): Promise<void> => {
@@ -157,6 +161,7 @@ const dispatchForMods = async (textDocument: TextDocument): Promise<void> => {
     const settings = await getDocumentSettings(textDocument.uri);
     const workspaceFolder = await getCurrentWorkspaceFolder(textDocument);
     availableMods.set('default', await getAvailableMods(workspaceFolder, settings));
+    availableMacros.set('default', await getAvailableMacros(workspaceFolder, settings));
     return;
 };
 
@@ -239,7 +244,6 @@ documents.onDidClose((e) => {
 
 documents.onDidOpen((change) => {
     void validatePerlDocument(change.document);
-    void buildModCache(change.document);
 });
 
 documents.onDidSave((change) => {
@@ -262,6 +266,7 @@ const validatePerlDocument = async (textDocument: TextDocument, rebuildModuleCac
     const settings = await getDocumentSettings(textDocument.uri);
 
     if (rebuildModuleCache) await rebuildModCache();
+    else await buildModCache(textDocument);
 
     const fileName = basename(URI.parse(textDocument.uri).fsPath);
     nLog(`Filename is ${fileName}`, settings);
@@ -286,6 +291,13 @@ const validatePerlDocument = async (textDocument: TextDocument, rebuildModuleCac
         return;
     }
     documentCompilationDiagnostics.set(textDocument.uri, perlOut.diagnostics);
+
+    await resolveLoadedMacros(
+        perlOut.perlDoc,
+        availableMacros.get('default') ?? new Map<string, string>(),
+        macroDocCache,
+        settings
+    );
     navSymbols.set(textDocument.uri, perlOut.perlDoc);
 
     const criticDiagnostics: Diagnostic[] = [];

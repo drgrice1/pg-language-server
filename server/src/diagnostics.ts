@@ -5,7 +5,7 @@ import { URI } from 'vscode-uri';
 import { join } from 'path';
 import type { ExecException } from 'child_process';
 import type { PGLanguageServerSettings, CompilationResults, PerlDocument } from './types';
-import { getIncPaths, async_execFile, nLog, getPerlAssetsPath } from './utils';
+import { getIncPaths, async_execFile, nLog, getPerlAssetsPath, mergeElementsInto } from './utils';
 import { buildNav } from './parseTags';
 import { parseDocument } from './parser';
 
@@ -338,15 +338,8 @@ const getCriticDiagnosticSeverity = (
 };
 
 const mergeDocs = (doc1: PerlDocument, doc2: PerlDocument): PerlDocument => {
-    // TODO: Redo this code. Instead of merging sources, you should keep track of where symbols came from
-
-    doc1.autoloads = new Map([...doc1.autoloads, ...doc2.autoloads]);
-    doc1.canonicalElements = new Map([...doc1.canonicalElements, ...doc2.canonicalElements]);
-
-    // TODO: Should elements be merged? Probably. Or tagged doc and compilation results are totally split
-    doc1.elements = new Map([...doc2.elements, ...doc1.elements]); // Tagged docs have priority?
+    mergeElementsInto(doc1, doc2);
     doc1.imported = new Map([...doc1.imported, ...doc2.imported]);
-    doc1.parents = new Map([...doc1.parents, ...doc2.parents]);
     doc1.uri = doc2.uri;
 
     return doc1;
