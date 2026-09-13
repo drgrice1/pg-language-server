@@ -204,10 +204,8 @@ export const getAvailableMacros = async (
     return macros;
 };
 
-// Resolves and parses every macro named (transitively) in perlDoc's loadMacros(...) calls, merging their symbols
-// into perlDoc. Macro files load other macro files themselves, so this follows those transitively, guarding
-// against cycles with a visited set. macroDocCache is keyed by resolved absolute path and is expected to be a
-// long-lived, session-scoped cache owned by the caller (macro file contents aren't edited through this LSP).
+// Resolves and parses macros loaded via a loadMacros call, and merges their symbols into perlDoc. Macro files can load
+// other macro files, and so this follows those transitively, guarding against cycles with a visited set.
 export const resolveLoadedMacros = async (
     perlDoc: PerlDocument,
     macroPaths: Map<string, string>,

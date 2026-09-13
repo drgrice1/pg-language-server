@@ -134,8 +134,8 @@ const navSymbols = new LRUCache({
 // workspace settings) can vary for different documents.
 const availableMods = new Map<string, Map<string, string>>();
 const availableMacros = new Map<string, Map<string, string>>();
-// Parsed PerlDocuments for macro files, keyed by resolved absolute path. Session-scoped and never invalidated --
-// macro file contents aren't edited through this LSP (see resolveLoadedMacros).
+
+// Parsed PerlDocuments for macro files, keyed by resolved absolute path. Session-scoped and never invalidated.
 const macroDocCache = new Map<string, PerlDocument>();
 let modCacheBuilt = false;
 
